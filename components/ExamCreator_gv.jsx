@@ -25,6 +25,16 @@ const ExamCreator_gv = ({ onBack_gv }) => {
     saCount_gv: 0,
     saScore_gv: 0,
   });
+   /* ===== exams (Sheet Exams) ===== */
+  mammoth.convertToHtml(
+  { arrayBuffer },
+  {
+    convertImage: mammoth.images.imgElement(async (image) => {
+      const buffer = await image.read("base64");
+      return { src: `data:${image.contentType};base64,${buffer}` };
+    })
+  }
+)
 
   /* ===== exam_data ===== */
   const [questions_gv, setQuestions_gv] = useState([]);
@@ -61,72 +71,36 @@ const ExamCreator_gv = ({ onBack_gv }) => {
 
   /* ================== UPLOAD & PARSE WORD ================== */
   const handleFileUpload_gv = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
+  const file = e.target.files[0];
+  if (!file) return;
 
-    const buffer = await file.arrayBuffer();
-    const { value: html } = await mammoth.convertToHtml({ arrayBuffer: buffer });
-
-    parseWordToQuestions_gv(html);
-  };
-
-  const parseWordToQuestions_gv = (html) => {
-    const doc = new DOMParser().parseFromString(html, "text/html");
-    const nodes = [...doc.body.children];
-
-    let part = "";
-    let current = null;
-    const result = [];
-
-    nodes.forEach((n) => {
-      const text = n.textContent.trim();
-
-      if (/^Phần I/i.test(text)) return (part = "I");
-      if (/^Phần II/i.test(text)) return (part = "II");
-      if (/^Phần III/i.test(text)) return (part = "III");
-
-      if (/^Câu\s*\d+/i.test(text)) {
-        current = {
-          part,
-          question: text.replace(/^Câu\s*\d+[\.:]?\s*/i, ""),
-          options: [],
-          answer: part === "II" ? [] : "",
-          explanation: "",
-        };
-        result.push(current);
-        return;
+  setLoading_gv(true);
+  try {
+    const arrayBuffer = await file.arrayBuffer();
+    const result = await mammoth.convertToHtml(
+      { arrayBuffer },
+      {
+        convertImage: mammoth.images.imgElement(async (image) => {
+          const buffer = await image.read("base64");
+          return { src: `data:${image.contentType};base64,${buffer}` };
+        }),
+        ignoreEmptyParagraphs: false,
       }
+    );
 
-      if (!current) return;
+    const html = result.value;
+    parseWordToQuestions_gv(html);  // hàm bạn đã có
 
-      if (part === "I" && /^[A-D]\./.test(text)) {
-        const correct = n.innerHTML.includes("<u>");
-        current.options.push(text.replace(/^[A-D]\.\s*/, ""));
-        if (correct) current.answer = text[0];
-      }
+    // Optional: Lưu html để preview
+    // setExamHtml_gv(html);
 
-      if (part === "II" && /^[a-d]\)/.test(text)) {
-        const correct = n.innerHTML.includes("<u>");
-        current.options.push(text.replace(/^[a-d]\)\s*/, ""));
-        if (correct) current.answer.push(text[0]);
-      }
-
-      if (part === "III") {
-        const m = n.innerHTML.match(/<key\s*=\s*(.+?)>/i);
-        if (m) current.answer = m[1];
-      }
-    });
-
-    setQuestions_gv(result);
-
-    // auto count
-    setConfig_gv((p) => ({
-      ...p,
-      mcqCount_gv: result.filter((q) => q.part === "I").length,
-      tfCount_gv: result.filter((q) => q.part === "II").length,
-      saCount_gv: result.filter((q) => q.part === "III").length,
-    }));
-  };
+  } catch (err) {
+    console.error(err);
+    alert("Lỗi parse file Word: " + err.message);
+  } finally {
+    setLoading_gv(false);
+  }
+};
 
   /* ================== SAVE EXAMS ================== */
   const saveExams_gv = async () => {
@@ -218,6 +192,19 @@ const ExamCreator_gv = ({ onBack_gv }) => {
           </div>
         </>
       )}
+      {questions_gv.length > 0 && (
+  <div className="mt-4 p-4 bg-white/10 rounded">
+    <h3>Preview câu hỏi ({questions_gv.length} câu)</h3>
+    <ul>
+      {questions_gv.map((q, i) => (
+        <li key={i}>
+          <strong>Câu {i+1} ({q.type})</strong>: {q.question.substring(0, 100)}...
+        </li>
+      ))}
+    </ul>
+    {/* Nếu có html đầy đủ: <div dangerouslySetInnerHTML={{ __html: examHtml_gv }} /> */}
+  </div>
+)}
     </div>
   );
 };
