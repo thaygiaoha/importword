@@ -82,24 +82,33 @@ const ExamCreator_gv = ({ onBack_gv }) => {
   }
 };
   /* ================== UPLOAD & PARSE WORD ================== */
-  const handleFileUpload_gv = async (e) => {
+ const handleFileUpload_gv = async (e) => {
   const file = e.target.files[0];
   if (!file) return;
 
+  setLoading_gv(true); // Nếu bạn có state loading
+
   try {
-    // Đọc file thành ArrayBuffer đúng cách
-    const arrayBuffer = await file.arrayBuffer();  // <-- tên biến là arrayBuffer (hoặc buffer gì cũng được)
+    // Bước 1: Đọc file thành ArrayBuffer đúng cách
+    const arrayBufferData = await file.arrayBuffer();  // <-- dùng tên biến rõ ràng
 
-    // Convert với mammoth (dùng option đúng)
-    const result = await mammoth.convertToHtml({ arrayBuffer });
+    // Bước 2: Convert với mammoth
+    const result = await mammoth.convertToHtml({ arrayBuffer: arrayBufferData });
 
-    const html = result.value;  // hoặc result.html nếu version khác
-    console.log("HTML parsed:", html.substring(0, 200)); // debug
+    // result.value là HTML string
+    const html = result.value || result.html || ''; // fallback nếu version khác
+    console.log('HTML từ Word:', html.substring(0, 300)); // debug để kiểm tra
 
+    // Gọi hàm parse của bạn
     parseWordToQuestions_gv(html);
+
+    // Optional: Lưu HTML để preview sau
+    // setExamHtml_gv(html);
   } catch (err) {
-    console.error("Lỗi parse Word:", err);
-    alert("Lỗi khi đọc file Word: " + err.message);
+    console.error('Lỗi parse Word:', err);
+    alert('Lỗi khi đọc file .docx: ' + (err.message || 'Không xác định'));
+  } finally {
+    setLoading_gv(false);
   }
 };
 
