@@ -5,6 +5,26 @@ import mammoth from 'mammoth';
 
 const ExamCreator_gv = ({ onBack_gv }) => {
   // 1. Quản lý trạng thái xác minh
+  const [examId_gv, setExamId_gv] = useState("");
+const [idNumber_gv, setIdNumber_gv] = useState("");
+
+const [fulltime_gv, setFulltime_gv] = useState(90);
+const [mintime_gv, setMintime_gv] = useState(30);
+
+const [tabLimit_gv, setTabLimit_gv] = useState(3);
+const [closeTab_gv, setCloseTab_gv] = useState(1);
+
+const [imgURL_gv, setImgURL_gv] = useState("");
+
+const [mcqCount_gv, setMcqCount_gv] = useState(0);
+const [scoreMcq_gv, setScoreMcq_gv] = useState(0);
+
+const [tfCount_gv, setTfCount_gv] = useState(0);
+const [scoreTf_gv, setScoreTf_gv] = useState(0);
+
+const [saCount_gv, setSaCount_gv] = useState(0);
+const [scoreSa_gv, setScoreSa_gv] = useState(0);
+
   const [isVerified_gv, setIsVerified_gv] = useState(false);
   const [gvName_gv, setGvName_gv] = useState("");
   const [dsGiaoVien_gv, setDsGiaoVien_gv] = useState([]);
