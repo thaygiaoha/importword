@@ -52,30 +52,40 @@ const ExamCreator_gv = ({ onBack_gv }) => {
   loadGV();
 }, []);
   /* ================== VERIFY GV ================== */
-/* ================== VERIFY GV ================== */
-const handleVerify_gv = (idInput) => {
-  const trimmedId = idInput.trim();
-  if (!trimmedId) return alert("Vui lòng nhập ID GV");
+const handleVerify_gv = async () => {
+  const idInput = tempId_gv.trim();
+  if (!idInput) return alert("Nhập ID GV nhé!");
 
-  const gv = dsGiaoVien_gv.find((g) => String(g.id) === trimmedId);
-  
-  if (!gv) {
-    alert("ID GV không hợp lệ. Kiểm tra lại ID hoặc sheet admin nhé!");
-    return;
+  setLoading_gv(true);
+  try {
+    const res = await fetch(DANHGIA_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'verifyGv_gv', id: idInput }),
+    });
+
+    const json = await res.json();
+    console.log('Verify response:', json); // debug, mở F12 xem
+
+    if (json.status === 'success') {
+      setIsVerified_gv(true);
+      setGvName_gv(json.name);
+      setConfig_gv(p => ({
+        ...p,
+        idNumber_gv: idInput,
+        imgURL_gv: json.img || "",
+      }));
+      alert(`Xác minh thành công! Chào ${json.name}`);
+    } else {
+      alert(json.message || 'ID không hợp lệ');
+    }
+  } catch (err) {
+    console.error('Lỗi:', err);
+    alert('Lỗi kết nối, kiểm tra mạng hoặc URL');
+  } finally {
+    setLoading_gv(false);
   }
-
-  setIsVerified_gv(true);
-  setGvName_gv(gv.name);
-  setConfig_gv((p) => ({
-    ...p,
-    idNumber_gv: trimmedId,
-    imgURL_gv: gv.img || "",
-  }));
-
-  // Optional: alert vui vẻ
-  alert(`Xác minh OK! Chào mừng ${gv.name} 🎉`);
 };
-
   /* ================== UPLOAD & PARSE WORD ================== */
   const handleFileUpload_gv = async (e) => {
     const file = e.target.files[0];
@@ -183,22 +193,25 @@ const handleVerify_gv = (idInput) => {
       </h2>
 
       {/* Phần verify GV */}
-      <div className="flex gap-3 mb-6">
-        <input
-          placeholder="Nhập ID GV"
-          value={tempId_gv}
-          onChange={(e) => setTempId_gv(e.target.value)}
-          className="p-3 border rounded-xl flex-1 focus:outline-none focus:ring-2 focus:ring-green-500"
-          disabled={isVerified_gv}
-        />
-        <button
-          onClick={handleVerify_gv}
-          disabled={loading_gv || isVerified_gv}
-          className="bg-green-600 text-white px-8 py-3 rounded-xl font-semibold disabled:opacity-50"
-        >
-          {loading_gv ? "Đang xác minh..." : "Xác minh"}
-        </button>
-      </div>
+     <div className="flex gap-2 mb-4">
+  <input
+    placeholder="Nhập ID GV"
+    value={tempId_gv}
+    onChange={(e) => setTempId_gv(e.target.value)}
+    className="p-3 border rounded-xl flex-1"
+  />
+  <button
+    onClick={handleVerify_gv}
+    disabled={loading_gv}
+    className="bg-green-600 text-white px-6 py-3 rounded-xl"
+  >
+    {loading_gv ? 'Đang kiểm tra...' : 'Xác minh'}
+  </button>
+</div>
+
+{isVerified_gv && (
+  <p className="text-green-600 mb-4 font-medium">Đã xác minh: {gvName_gv}</p>
+)}
 
       {isVerified_gv && (
         <div className="space-y-4">
