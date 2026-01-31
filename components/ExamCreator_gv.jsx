@@ -169,13 +169,20 @@ const ExamCreator_gv = ({ onBack_gv }) => {
         Hệ thống tạo đề thi (GV)
       </h2>
 
-      <input
-        placeholder="Nhập ID GV"
-        disabled={loading_gv}
-        onBlur={(e) => handleVerify_gv(e.target.value)}
-        className="p-3 border rounded-xl mb-4"
-      />
-
+      <div className="flex gap-2 mb-4">
+  <input
+    placeholder="Nhập ID GV"
+    onChange={(e) => setTempId_gv(e.target.value)}  // thêm state tempId_gv = ''
+    className="p-3 border rounded-xl flex-1"
+  />
+  <button
+    onClick={() => handleVerify_gv(tempId_gv)}
+    disabled={loading_gv}
+    className="bg-green-600 text-white px-6 py-3 rounded-xl"
+  >
+    Xác minh
+  </button>
+</div>
       {isVerified_gv && (
         <>
           <input
