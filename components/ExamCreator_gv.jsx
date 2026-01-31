@@ -58,7 +58,7 @@ const ExamCreator_gv = ({ onBack_gv }) => {
       const res = await fetch(DANHGIA_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "verifyGv", id: tempId_gv }), // sửa action nếu backend dùng verifyGv
+        body: JSON.stringify({ action: "verifyGv_gv", id: tempId_gv }), // sửa action nếu backend dùng verifyGv
       });
       const json = await res.json();
 
