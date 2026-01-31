@@ -86,31 +86,20 @@ const ExamCreator_gv = ({ onBack_gv }) => {
   const file = e.target.files[0];
   if (!file) return;
 
-  setLoading_gv(true);
   try {
-    const arrayBuffer = await file.arrayBuffer();
-    const result = await mammoth.convertToHtml(
-      { arrayBuffer },
-      {
-        convertImage: mammoth.images.imgElement(async (image) => {
-          const buffer = await image.read("base64");
-          return { src: `data:${image.contentType};base64,${buffer}` };
-        }),
-        ignoreEmptyParagraphs: false,
-      }
-    );
+    // Đọc file thành ArrayBuffer đúng cách
+    const arrayBuffer = await file.arrayBuffer();  // <-- tên biến là arrayBuffer (hoặc buffer gì cũng được)
 
-    const html = result.value;
-    parseWordToQuestions_gv(html);  // hàm bạn đã có
+    // Convert với mammoth (dùng option đúng)
+    const result = await mammoth.convertToHtml({ arrayBuffer });
 
-    // Optional: Lưu html để preview
-    // setExamHtml_gv(html);
+    const html = result.value;  // hoặc result.html nếu version khác
+    console.log("HTML parsed:", html.substring(0, 200)); // debug
 
+    parseWordToQuestions_gv(html);
   } catch (err) {
-    console.error(err);
-    alert("Lỗi parse file Word: " + err.message);
-  } finally {
-    setLoading_gv(false);
+    console.error("Lỗi parse Word:", err);
+    alert("Lỗi khi đọc file Word: " + err.message);
   }
 };
 
