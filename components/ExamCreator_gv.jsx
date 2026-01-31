@@ -50,30 +50,28 @@ const ExamCreator_gv = ({ onBack_gv }) => {
   }, []);
 
   /* ================== VERIFY GV ================== */
- const handleVerify_gv = async (idInput) => {
-  if (!idInput) return;
-  setLoading_gv(true);
+/* ================== VERIFY GV ================== */
+const handleVerify_gv = (idInput) => {
+  const trimmedId = idInput.trim();
+  if (!trimmedId) return alert("Vui lòng nhập ID GV");
+
+  const gv = dsGiaoVien_gv.find((g) => String(g.id) === trimmedId);
   
-  try {
-    const res = await fetch(DANHGIA_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'verifyGv_gv', id: idInput }),
-    });
-    const json = await res.json();
-    
-    if (json.status === 'success') {
-      setIsVerified_gv(true);
-      setGvName_gv(json.name || 'GV không tên');
-      setConfig_gv(p => ({ ...p, idNumber_gv: idInput, imgURL_gv: json.img || '' }));
-    } else {
-      alert(json.message || 'ID GV không hợp lệ');
-    }
-  } catch (err) {
-    alert('Lỗi kết nối: ' + err.message);
-  } finally {
-    setLoading_gv(false);
+  if (!gv) {
+    alert("ID GV không hợp lệ. Kiểm tra lại ID hoặc sheet admin nhé!");
+    return;
   }
+
+  setIsVerified_gv(true);
+  setGvName_gv(gv.name);
+  setConfig_gv((p) => ({
+    ...p,
+    idNumber_gv: trimmedId,
+    imgURL_gv: gv.img || "",
+  }));
+
+  // Optional: alert vui vẻ
+  alert(`Xác minh OK! Chào mừng ${gv.name} 🎉`);
 };
 
   /* ================== UPLOAD & PARSE WORD ================== */
