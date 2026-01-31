@@ -31,24 +31,26 @@ const ExamCreator_gv = ({ onBack_gv }) => {
 
   /* ================== LOAD DANH SÁCH GV ================== */
   useEffect(() => {
-    const loadGV = async () => {
-      try {
-        const res = await fetch(`${DANHGIA_URL}?action=getIdGvList`);
-        const json = await res.json();
-        if (json.status === "success") {
-          setDsGiaoVien_gv(json.data);
-        } else {
-          console.error("Lỗi load GV:", json.message);
-        }
-      } catch (e) {
-        console.error("Lỗi fetch GV:", e);
-      } finally {
-        setLoading_gv(false);
+  const loadGV = async () => {
+    try {
+      const res = await fetch(`${DANHGIA_URL}?action=getIdGvList`);
+      console.log("Response status:", res.status); // debug
+      const json = await res.json();
+      console.log("JSON từ backend:", json); // debug quan trọng
+      if (json.status === "success") {
+        setDsGiaoVien_gv(json.data || []);
+        console.log("List GV loaded:", json.data);
+      } else {
+        console.error("Backend error:", json.message);
       }
-    };
-    loadGV();
-  }, []);
-
+    } catch (e) {
+      console.error("Fetch error:", e);
+    } finally {
+      setLoading_gv(false);
+    }
+  };
+  loadGV();
+}, []);
   /* ================== VERIFY GV ================== */
 /* ================== VERIFY GV ================== */
 const handleVerify_gv = (idInput) => {
