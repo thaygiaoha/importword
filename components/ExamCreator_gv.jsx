@@ -50,35 +50,31 @@ const ExamCreator_gv = ({ onBack_gv }) => {
   }, []);
 
   /* ================== VERIFY GV ================== */
-  const handleVerify_gv = async () => {
-    if (!tempId_gv) return alert("Vui lòng nhập ID GV");
-
-    setLoading_gv(true);
-    try {
-      const res = await fetch(DANHGIA_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "verifyGv_gv", id: tempId_gv }), // sửa action nếu backend dùng verifyGv
-      });
-      const json = await res.json();
-
-      if (json.status === "success") {
-        setIsVerified_gv(true);
-        setGvName_gv(json.name || "GV không tên");
-        setConfig_gv((p) => ({
-          ...p,
-          idNumber_gv: tempId_gv,
-          imgURL_gv: json.img || "",
-        }));
-      } else {
-        alert(json.message || "ID GV không hợp lệ");
-      }
-    } catch (err) {
-      alert("Lỗi kết nối server: " + err.message);
-    } finally {
-      setLoading_gv(false);
+ const handleVerify_gv = async (idInput) => {
+  if (!idInput) return;
+  setLoading_gv(true);
+  
+  try {
+    const res = await fetch(DANHGIA_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'verifyGv_gv', id: idInput }),
+    });
+    const json = await res.json();
+    
+    if (json.status === 'success') {
+      setIsVerified_gv(true);
+      setGvName_gv(json.name || 'GV không tên');
+      setConfig_gv(p => ({ ...p, idNumber_gv: idInput, imgURL_gv: json.img || '' }));
+    } else {
+      alert(json.message || 'ID GV không hợp lệ');
     }
-  };
+  } catch (err) {
+    alert('Lỗi kết nối: ' + err.message);
+  } finally {
+    setLoading_gv(false);
+  }
+};
 
   /* ================== UPLOAD & PARSE WORD ================== */
   const handleFileUpload_gv = async (e) => {
