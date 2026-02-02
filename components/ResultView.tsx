@@ -38,8 +38,6 @@ React.useEffect(() => {
   // Mặc định: coi như text thuần
   return lg;
 };
-
-
   return (
     <div className="max-w-5xl mx-auto space-y-8 animate-fade-in pb-20 font-sans">
       <div className="bg-white p-12 rounded-[3rem] shadow-2xl border border-slate-200 text-center relative overflow-hidden">
@@ -153,7 +151,7 @@ React.useEffect(() => {
             <span className="font-black text-blue-600">{label}.</span>
             {/* SỬA TẠI ĐÂY: item.q -> item.text */}
             <div className="text-slate-700 font-medium">
-             <MathText content={item.text || (item as any).q || ""} />
+              <MathText content={item.text} /> 
             </div>
           </div>
 
@@ -175,39 +173,28 @@ React.useEffect(() => {
   </div>
 )}
             {/* 4. Tổng kết đáp án (Dành cho Trắc nghiệm và Trả lời ngắn) */}
-{q.type !== 'true-false' && (
-  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-50 p-6 rounded-3xl border border-slate-100">
-    <div>
-      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Phương án đã chọn</p>
-      {/* SỬA TẠI ĐÂY: Bọc u vào MathText */}
-      <div className={`text-lg font-black ${isCorrect ? 'text-emerald-600' : 'text-red-600'}`}>
-        <MathText content={u?.toString() || "Không trả lời"} />
-      </div>
-    </div>
-    <div className="md:border-l md:pl-6 border-slate-200">
-      <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest mb-1">Đáp án đúng</p>
-      <div className="text-lg font-black text-emerald-700">
-        <MathText content={q.a?.toString() || ""} />
-      </div>
-    </div>
-  </div>
-)}
+            {q.type !== 'true-false' && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-50 p-6 rounded-3xl border border-slate-100">
+                <div>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Phương án đã chọn</p>
+                  <div className={`text-lg font-black ${isCorrect ? 'text-emerald-600' : 'text-red-600'}`}>{u || "Không trả lời"}</div>
+                </div>
+                <div className="md:border-l md:pl-6 border-slate-200">
+                  <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest mb-1">Đáp án đúng</p>
+                  <div className="text-lg font-black text-emerald-700">{q.a}</div>
+                </div>
+              </div>
+            )}
 
             {/* 5. Giải thích chi tiết */}
-          
             {q.loigiai && (
-            <div className="mt-8 p-6 bg-blue-50/50 rounded-3xl border-2 border-blue-100 border-dashed relative">
-            {/* Nhãn nhỏ xinh xắn ở góc */}
-            <div className="absolute -top-3 left-6 px-3 py-1 bg-blue-600 text-white text-[10px] font-black rounded-lg uppercase tracking-widest shadow-md">
-            Lời giải chi tiết(Xuất bản bởi: Nguyễn Văn Hà - Bắc Ninh)
-          </div>
-    
-          <div className="text-slate-700 leading-relaxed pt-2">
-          <MathText content={extractLoigiai(q.loigiai)} />
-
-    </div>
-  </div>
-)}
+              <div className="mt-8 p-6 bg-blue-50/50 rounded-3xl border-2 border-blue-100 border-dashed">
+                <p className="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-2">Hướng dẫn giải</p>
+                <div className="text-slate-700 leading-relaxed italic">
+                 <MathText content={extractLoigiai(q.loigiai)} />
+              </div>
+                </div>
+            )}
           </div>
         </div>
       );

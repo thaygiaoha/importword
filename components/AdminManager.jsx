@@ -1,11 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { DANHGIA_URL } from '../config';
-import { questionsBank } from '../questions'; // Hoặc đường dẫn file questions của thầy
+import { DANHGIA_URL, API_ROUTING } from '../config';
 
 const AdminPanel = ({ mode, onBack }) => {
- 
-  // Thêm 'duplicate' và 'delete' vào kiểu dữ liệu của useState
-const [currentTab, setCurrentTab] = useState('cauhoi');
+  const [currentTab, setCurrentTab] = useState(mode || 'cauhoi');
   const [loadingMatrix, setLoadingMatrix] = useState(false);
   const [loading, setLoading] = useState(false);
   const [isAdminVerified, setIsAdminVerified] = useState(false);
@@ -15,14 +12,6 @@ const [currentTab, setCurrentTab] = useState('cauhoi');
  
   const [jsonInput, setJsonInput] = useState('');
   const [subjects, setSubjects] = useState([]); // Khai báo này để chứa môn học
- // Bỏ cái ": string" đi là xong thầy nhé
-const normalizeText = (text) => {
-  return text
-    .toLowerCase()
-    .replace(/\s+/g, '') 
-    .replace(/[.,/#!$%^&*;:{}=\-_`~()]/g, "") 
-    .trim();
-};
   useEffect(() => {
   // Hàm này sẽ chạy ngay khi thầy mở trang Admin
   const loadConfig = async () => {
@@ -168,7 +157,7 @@ const handleWordParser = (text) => {
     
     const res = await resp.json();
     if (res.status === 'success') { 
-      alert(`🚀 Thành công! Đã chèn ${dataArray.length} câu hỏi vào ngân hàng.`); 
+      alert(`🚀 Thành công! Đã chèn ${dataArray.length} dòng.`); 
       setJsonInput(''); 
     }
   } catch (e) { alert("Lỗi gửi dữ liệu!"); }
@@ -210,96 +199,7 @@ const handleUploadLG = async () => {
   finally { setLoading(false); }
 };
 
-  // Tìm câu trùng
-  const handleFindDuplicates = () => {
-  const groups = []; // Chứa các nhóm câu trùng
-  const bank = questionsBank;
-  const processed = new Set();
-
-  for (let i = 0; i < bank.length; i++) {
-    if (processed.has(bank[i].id)) continue;
-    let currentGroup = [bank[i]];
-
-    for (let j = i + 1; j < bank.length; j++) {
-      const q1 = bank[i];
-      const q2 = bank[j];
-
-      // Tiêu chuẩn "Mềm" của thầy:
-      const sameAnswer = q1.loigiai === q2.loigiai; // Nếu thầy lưu đáp án trong loigiai
-      const similarContent = checkTextSimilarity(q1.question, q2.question) > 0.9;
-
-      if (sameAnswer || similarContent) {
-        currentGroup.push(q2);
-        processed.add(q2.id);
-      }
-    }
-    if (currentGroup.length > 1) {
-      groups.push(currentGroup);
-      processed.add(bank[i].id);
-    }
-  }
-  return groups;
-};
-const handleDeepScan = () => {
-  // Kiểm tra nếu bank chưa có dữ liệu
-  if (!questionsBank || questionsBank.length === 0) {
-    alert("Dữ liệu đang được tải hoặc ngân hàng trống. Thầy đợi tí nhé!");
-    return;
-  }
-  
-  const bank = questionsBank;
-  const groups = [];
-  const processed = new Set();
-  const resultDiv = document.getElementById('duplicateResult');
-  resultDiv.innerHTML = ''; // Xóa kết quả cũ
-
-  for (let i = 0; i < bank.length; i++) {
-    if (processed.has(bank[i].id)) continue;
-    let group = [bank[i]];
-
-    for (let j = i + 1; j < bank.length; j++) {
-      const q1 = bank[i];
-      const q2 = bank[j];
-
-      // TIÊU CHUẨN THẦY ĐẶT RA:
-      const isSameAnswer = q1.loigiai === q2.loigiai && q1.loigiai !== "";
-      // So sánh nội dung (loại bỏ khoảng trắng, dấu để so sánh chính xác)
-      const content1 = q1.question.replace(/\s+/g, '').toLowerCase();
-      const content2 = q2.question.replace(/\s+/g, '').toLowerCase();
-      const isSimilar = content1 === content2;
-
-      if (isSameAnswer || isSimilar) {
-        group.push(q2);
-        processed.add(q2.id);
-      }
-    }
-
-    if (group.length > 1) {
-      groups.push(group);
-      processed.add(bank[i].id);
-      
-      // Hiển thị kết quả ngay lên màn hình
-      const ids = group.map(g => g.id).join(', ');
-      resultDiv.innerHTML += `
-        <div class="p-4 bg-slate-50 rounded-2xl border-l-4 border-purple-500">
-          <div class="flex justify-between items-center mb-2">
-            <span class="font-black text-purple-600 text-sm uppercase">Nhóm trùng:</span>
-            <button onclick="navigator.clipboard.writeText('${ids}'); alert('Đã copy danh sách ID!')" class="text-[10px] bg-white px-2 py-1 rounded border font-bold hover:bg-purple-50">Copy tất cả ID</button>
-          </div>
-          <p class="text-xs font-bold text-slate-700 mb-1">Các ID: ${ids}</p>
-          <p class="text-[11px] text-slate-500 italic truncate">Nội dung: ${group[0].question.substring(0, 100)}...</p>
-        </div>
-      `;
-    }
-  }
-  
-  if(groups.length === 0) {
-    resultDiv.innerHTML = '<div class="text-center py-10 font-bold text-emerald-500">🎉 Tuyệt vời! Không có câu nào trùng lặp.</div>';
-  }
-  return groups;
-};
-
-  // --- 2. XÁC MINH XỬ LÝ NHẬP CÂU HỎI & SỬA LẺ (Giữ nguyên logic của thầy) ---
+  // --- 2. XÁC MINHXỬ LÝ NHẬP CÂU HỎI & SỬA LẺ (Giữ nguyên logic của thầy) ---
   const handleVerifyAdminOTP = () => {
     if (otp === "12345@" || otp === "6688@") setIsAdminVerified(true);
     else alert("Mã OTP sai!");
@@ -353,29 +253,7 @@ const handleDeepScan = () => {
 >
   <i className="fa-solid fa-lightbulb"></i> Import LG
 </button>
-{/* Nút Tìm câu trùng */}
-<button 
-  onClick={() => setCurrentTab('duplicate')} 
-  className={`flex items-center gap-2 px-6 py-3 rounded-2xl font-black text-xs uppercase transition-all ${
-    currentTab === 'duplicate' 
-    ? 'bg-purple-600 text-white shadow-lg shadow-purple-200 scale-105' 
-    : 'text-slate-500 hover:bg-slate-100'
-  }`}
->
-  <i className="fa-solid fa-clone"></i> Tìm câu trùng
-</button>
 
-{/* Nút Xóa câu hỏi */}
-<button 
-  onClick={() => setCurrentTab('delete')} 
-  className={`flex items-center gap-2 px-6 py-3 rounded-2xl font-black text-xs uppercase transition-all ${
-    currentTab === 'delete' 
-    ? 'bg-red-600 text-white shadow-lg shadow-red-200 scale-105' 
-    : 'text-slate-500 hover:bg-slate-100'
-  }`}
->
-  <i className="fa-solid fa-trash-can"></i> Xóa câu hỏi
-</button>
   {/* Vạch ngăn cách tinh tế */}
   <div className="w-[1px] h-6 bg-slate-300 mx-2"></div>
 
@@ -524,77 +402,6 @@ const handleDeepScan = () => {
         {loiGiaiTraCuu && (
   <div className="p-3 bg-yellow-50 border-l-4 border-yellow-400 my-2 whitespace-pre-wrap">
     <strong>Lời giải:</strong> {loiGiaiTraCuu}
-  </div>
-)}
-        {/* TAB 4: XÓA CÂU HỎI */}
-        {currentTab === 'delete' && (
-  <div className="p-8 bg-white rounded-[2.5rem] border-2 border-red-50 shadow-xl animate-fade-in">
-    <div className="flex items-center gap-4 mb-6">
-      <div className="w-12 h-12 bg-red-100 text-red-600 rounded-2xl flex items-center justify-center">
-        <i className="fa-solid fa-eraser text-xl"></i>
-      </div>
-      <div>
-        <h3 className="text-xl font-black text-slate-800 uppercase">Xóa câu hỏi hàng loạt</h3>
-        <p className="text-xs text-slate-400 font-bold">Nhập các ID cách nhau bởi dấu phẩy</p>
-      </div>
-    </div>
-
-    <textarea 
-      id="batchDeleteInput"
-      placeholder="Ví dụ: 601.1, 1002.4, 1205.2" 
-      className="w-full p-5 bg-slate-50 rounded-3xl border-2 border-slate-100 outline-none font-black text-red-600 focus:border-red-200 transition-all mb-4 h-32"
-    />
-
-    <button 
-      onClick={async () => {
-        const input = document.getElementById('batchDeleteInput').value;
-        if(!input) return alert("Vui lòng nhập ít nhất một ID!");
-        
-        if(confirm(`Bạn có chắc chắn muốn xóa các câu: ${input}?`)) {
-          const url = `${DANHGIA_URL}?action=deleteMultiple&ids=${encodeURIComponent(input)}`;
-          const resp = await fetch(url);
-          const res = await resp.json();
-          if(res.status === "success") {
-            alert(`Thành công! Đã xóa ${res.deletedCount} câu hỏi.`);
-            document.getElementById('batchDeleteInput').value = '';
-          }
-        }
-      }}
-      className="w-full py-5 bg-red-600 text-white rounded-2xl font-black uppercase shadow-lg shadow-red-200 hover:bg-red-700 active:scale-95 transition-all flex items-center justify-center gap-3"
-    >
-      <i className="fa-solid fa-trash-arrow-up"></i> Xác nhận xóa vĩnh viễn
-    </button>
-  </div>
-)}
-
-       {currentTab === 'duplicate' && (
-  <div className="p-8 bg-white rounded-[2.5rem] border-2 border-purple-50 shadow-xl animate-fade-in">
-    <div className="flex items-center justify-between mb-6">
-      <div className="flex items-center gap-4">
-        <div className="w-12 h-12 bg-purple-100 text-purple-600 rounded-2xl flex items-center justify-center">
-          <i className="fa-solid fa-magnifying-glass-chart text-xl"></i>
-        </div>
-        <div>
-          <h3 className="text-xl font-black text-slate-800 uppercase">Phân tích câu trùng</h3>
-          <p className="text-xs text-slate-400 font-bold">Dựa trên nội dung và đáp án</p>
-        </div>
-      </div>
-      <button 
-        onClick={() => {
-          // Hàm này thầy gọi logic tìm trùng em viết ở dưới
-          const result = handleDeepScan(); 
-          alert(`Tìm thấy ${result.length} nhóm nghi ngờ trùng!`);
-        }}
-        className="px-6 py-3 bg-purple-600 text-white rounded-xl font-black text-xs uppercase hover:bg-purple-700 transition-all"
-      >
-        Bắt đầu quét ngân hàng
-      </button>
-    </div>
-
-    {/* Nơi hiện kết quả tìm trùng */}
-    <div id="duplicateResult" className="space-y-4 max-h-[400px] overflow-y-auto pr-2">
-       <p className="text-center text-slate-400 italic text-sm">Nhấn nút quét để bắt đầu phân tích dữ liệu...</p>
-    </div>
   </div>
 )}
       </div>
