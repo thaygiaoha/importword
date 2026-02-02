@@ -22,12 +22,20 @@ const TeacherWordTask: React.FC<TeacherWordTaskProps> = ({ onBack }) => {
     SA: 6, scoresa: 0.5, 
     IDimglink: ''
   });
+  const [userApiKey, setUserApiKey] = useState(localStorage.getItem('gemini_key') || '');
+const [showKeyInput, setShowKeyInput] = useState(false);
+
+// Hàm lưu Key vào máy để lần sau không phải nhập lại
+const saveKey = (key: string) => {
+  setUserApiKey(key);
+  localStorage.setItem('gemini_key', key);
+};
 
   const [questions, setQuestions] = useState<any[]>([]);
   const [previewOpen, setPreviewOpen] = useState(false);
   // ====== Ghi exam tương tự ma trận ======
   
- // ====== 1. Xác minh GV Word =======
+ // ====== 1. Xác minh GV Word ======================================================================================
 const handleVerifyW = async () => {
   setLoading(true);
   try {
@@ -92,16 +100,30 @@ const handleSaveConfig = async () => {
 };
 // ========== xử lý file Word =====
   const processWordFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setLoading(true);
-    try {
-      const arrayBuffer = await file.arrayBuffer();
-      // mammoth chuyển word sang HTML, giữ nguyên thẻ <u> (gạch chân) cho đáp án
-      const result = await mammoth.convertToHtml({ arrayBuffer }, { styleMap: ["u => u"] });
-      const html = result.value;
-      const ai = new GoogleGenAI("AIzaSyAWO0_1fIWVgJUzKEmancVflP7akTol-LM");
-      const prompt = `Bạn là chuyên gia số hóa đề thi. Hãy bóc tách HTML này thành mảng JSON.
+  const file = e.target.files?.[0];
+  if (!file) return;
+
+  // 1. Kiểm tra Key từ ô nhập liệu của thầy
+  if (!userApiKey) {
+    setShowKeyInput(true);
+    alert("Thầy ơi, hãy dán API Key vào ô cấu hình phía trên trước nhé! Kaka.");
+    return;
+  }
+
+  setLoading(true);
+  try {
+    const arrayBuffer = await file.arrayBuffer();
+    // Chuyển Word sang HTML, giữ thẻ <u> cho đáp án
+    const result = await mammoth.convertToHtml({ arrayBuffer }, { styleMap: ["u => u"] });
+    const html = result.value;
+
+    // 2. Khởi tạo AI bằng Key thầy vừa nhập ở giao diện (userApiKey)
+    const genAI = new GoogleGenAI(userApiKey.trim());
+    const model = genAI.getGenerativeModel({ 
+      model: "gemini-1.5-flash", // Dùng bản flash cho tốc độ bàn thờ
+    });
+
+    const prompt = `Bạn là chuyên gia số hóa đề thi. Hãy bóc tách HTML này thành mảng JSON.
       QUY TẮC BÓC TÁCH:
       1. Phân loại "type": 
        - "mcq": Nếu nằm sau tiêu đề "Phần I" hoặc có 4 lựa chọn A,B,C,D.
@@ -119,57 +141,31 @@ const handleSaveConfig = async () => {
       8. TRẢ VỀ JSON THUẦN MẢNG, KHÔNG CÓ MARKDOWN HAY CHỮ GIẢI THÍCH.
 
 DỮ LIỆU HTML: ${html}`;
-      const response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
-        contents: prompt,
-        config: { 
-          responseMimeType: "application/json",
-          responseSchema: {
-            type: Type.ARRAY,
-            items: {
-              type: Type.OBJECT,
-              properties: {
-                classTag: { type: Type.STRING },
-                type: { type: Type.STRING },
-                question: { type: Type.STRING },
-                o: { type: Type.ARRAY, items: { type: Type.STRING } },
-                a: { type: Type.STRING },
-                s: { type: Type.ARRAY, items: { 
-                  type: Type.OBJECT, 
-                  properties: { text: {type:Type.STRING}, a: {type:Type.BOOLEAN} } 
-                } },
-                loigiai: { type: Type.STRING }
-              },
-              required: ["type", "question"]
-            }
-          }
-        }
-      });
 
-      let rawText = response.text.trim();
+    // 3. Gọi Gemini xử lý
+    const aiResult = await model.generateContent(prompt);
+    const response = await aiResult.response;
+    let rawText = response.text().trim();
+    
+    // Làm sạch JSON nếu AI trả về kèm Markdown
+    if (rawText.includes("```json")) {
+      rawText = rawText.split("```json")[1].split("```")[0].trim();
+    } else if (rawText.includes("```")) {
+      rawText = rawText.split("```")[1].trim();
+    }
+    
+    const parsedQuestions = JSON.parse(rawText);
+    setQuestions(parsedQuestions);
+    setPreviewOpen(true);
       
-      // LOGIC MẠNH MẼ ĐỂ BÓC TÁCH JSON SẠCH TỪ AI
-      if (rawText.includes("```json")) {
-        rawText = rawText.split("```json")[1].split("```")[0].trim();
-      } else if (rawText.includes("```")) {
-        rawText = rawText.split("```")[1].trim();
-      }
-      
-      try {
-        const parsedQuestions = JSON.parse(rawText);
-        setQuestions(parsedQuestions);
-        setPreviewOpen(true);
-      } catch (parseError) {
-        console.error("Lỗi parse JSON:", rawText);
-        throw new Error("Dữ liệu Gemini trả về không phải JSON hợp lệ.");
-      }
-      
-    } catch (err: any) {
-      console.error(err);
-      alert(`Lỗi xử lý file: ${err.message || 'AI không phản hồi đúng định dạng'}. Vui lòng thử lại hoặc dùng file Word gạch chân chuẩn.`);
-    } finally { setLoading(false); }
-  };
-
+  } catch (err: any) {
+    console.error(err);
+    alert(`Lỗi: ${err.message}. Thầy kiểm tra lại API Key hoặc file Word nhé!`);
+  } finally {
+    setLoading(false);
+  }
+};
+  
   const handleFinalUpload = async () => {
   if (questions.length === 0) return alert("Chưa có câu hỏi!");
   
@@ -177,7 +173,6 @@ DỮ LIỆU HTML: ${html}`;
   const finalTargetUrl = customLink || gvData.link || DANHGIA_URL;
 
   if (!finalTargetUrl) return alert("Vui lòng nhập Link Script (WebApp) của bạn!");
-
   setLoading(true);
   try {
     const payload = { 
@@ -235,6 +230,37 @@ DỮ LIỆU HTML: ${html}`;
                </p>
             </div>
           )}
+         <div className="mb-6 flex items-center justify-between bg-slate-100 p-4 rounded-2xl">
+  <div className="flex items-center gap-3">
+    <div className={`w-3 h-3 rounded-full ${userApiKey ? 'bg-green-500' : 'bg-red-500 animate-pulse'}`}></div>
+    <span className="text-sm font-bold text-slate-700">
+      {userApiKey ? 'Gemini AI: Sẵn sàng' : 'Gemini AI: Chưa kết nối'}
+    </span>
+  </div>
+  <button 
+    onClick={() => setShowKeyInput(!showKeyInput)}
+    className="text-xs font-black text-indigo-600 underline"
+  >
+    {showKeyInput ? 'Đóng' : 'Cấu hình API Key'}
+  </button>
+</div>
+
+{showKeyInput && (
+  <div className="mb-6 p-6 bg-white border-2 border-indigo-500 rounded-[2.5rem] shadow-xl">
+    <h4 className="text-sm font-black text-indigo-900 uppercase mb-3">Google Gemini API Key</h4>
+    <input 
+      type="password"
+      className="w-full p-4 rounded-2xl bg-indigo-50 border-none focus:ring-2 focus:ring-indigo-500 font-mono"
+      placeholder="Dán AIzaSy... vào đây"
+      value={userApiKey}
+      onChange={(e) => saveKey(e.target.value)}
+    />
+    <p className="text-[10px] text-slate-500 mt-2 italic">
+      * Key được lưu an toàn trên trình duyệt của riêng thầy/cô. 
+      <a href="https://aistudio.google.com/app/apikey" target="_blank" className="text-blue-600 underline ml-1">Lấy key tại đây</a>
+    </p>
+  </div>
+)}
           {/* CẤU HÌNH ĐỀ THI - HÀNG 1 ĐẦY ĐỦ MCQ, TF, SA */}
           <div className="bg-indigo-50 p-8 rounded-[3rem] border border-indigo-100 shadow-sm">
             <h3 className="text-xl font-black text-indigo-900 uppercase mb-6 flex items-center gap-2">
