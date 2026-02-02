@@ -32,6 +32,7 @@ const handleVerifyW = async () => {
   setLoading(true);
   try {
     // Check cấu hình hệ thống tại Admin
+   // Thầy sửa lại dòng fetch này cho chắc ăn nhé:
     const res = await fetch(`${DANHGIA_URL}?action=checkTeacher&idgv=${gvId}`);
     const data = await res.json();
     
