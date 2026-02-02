@@ -13,6 +13,7 @@ const TeacherWordTask: React.FC<TeacherWordTaskProps> = ({ onBack }) => {
   const [loading, setLoading] = useState(false);
   const [gvId, setGvId] = useState('');
   const [gvData, setGvData] = useState<any>(null); 
+  const [customLink, setCustomLink] = useState(''); // Link Spreadsheet riêng GV tự nhập
 
   const [examForm, setExamForm] = useState({
     exams: '', fulltime: 90, mintime: 30, tab: 3, dateclose: '',
@@ -25,77 +26,37 @@ const TeacherWordTask: React.FC<TeacherWordTaskProps> = ({ onBack }) => {
   const [questions, setQuestions] = useState<any[]>([]);
   const [previewOpen, setPreviewOpen] = useState(false);
   // ====== Ghi exam tương tự ma trận ======
-  const handleSaveMatrix = async () => {
-  if (!idgv) {
-    alert("❌ Lỗi: Không xác định được ID Giáo viên!");
-    return;
-  }
-
-  // Tự động chọn Link Script dựa trên mã IDGV (8888 hoặc 9999)
-  const targetURL = API_ROUTING[idgv] || DEFAULT_API_URL;
-
-  const payload = {
-    gvId: idgv,
-    makiemtra: maTranForm.makiemtra,
-    name: maTranForm.name,
-    duration: maTranForm.duration,
-    topics: maTranForm.topics,
-    numMC: maTranForm.numMC,
-    scoreMC: maTranForm.scoreMC,
-    mcL3: maTranForm.mcL3,
-    mcL4: maTranForm.mcL4,
-    numTF: maTranForm.numTF,
-    scoreTF: maTranForm.scoreTF,
-    tfL3: maTranForm.tfL3,
-    tfL4: maTranForm.tfL4,
-    numSA: maTranForm.numSA,
-    scoreSA: maTranForm.scoreSA,
-    saL3: maTranForm.saL3,
-    saL4: maTranForm.saL4
-  };
-
-  try {
-    // ⚠️ QUAN TRỌNG: Phải có ?action=saveMatrix trên URL
-    const response = await fetch(`${targetURL}?action=saveMatrix`, {
-      method: "POST",
-      mode: "cors", // Chuyển về cors để nhận dữ liệu trả về
-      headers: { "Content-Type": "text/plain" },
-      body: JSON.stringify(payload)
-    });
-
-    const result = await response.json(); // Đợi Script trả về kết quả JSON
-
-    if (result.status === "success") {
-      alert(result.message); // Hiện thông báo xanh từ Script
-    } else {
-      alert("⚠️ Lỗi Script: " + result.message);
-    }
-  } catch (e) {
-    console.error(e);
-    alert("❌ Lỗi kết nối! Dữ liệu có thể đã ghi nhưng không nhận được phản hồi.");
-  }
-};
+  
  // ====== 1. Xác minh GV Word =======
 const handleVerifyW = async () => {
-  if (!gvId) return alert("Vui lòng nhập ID!");
   setLoading(true);
   try {
-    // Gọi đến Script Master để check xem GV này là ai, file ở đâu
+    // Check cấu hình hệ thống tại Admin
     const res = await fetch(`${DANHGIA_URL}?action=checkTeacher&idgv=${gvId}`);
     const data = await res.json();
     
-    if (data.status === 'success') {
-      // data.data bao gồm: { name: "Tên GV", link: "Link Spreadsheet riêng" }
-      setGvData(data.data); 
-      setStep('work'); // Chuyển sang bước làm việc
-    } else { 
-      alert(data.message); 
+    const isAuthRequired = data.data.isAuthRequired; // Lấy từ ô F2 sheet idgv
+
+    if (isAuthRequired === false) {
+      // TRƯỜNG HỢP F2 = 0: Cho phép vào luôn
+      setGvData({ 
+        name: data.status === 'success' ? data.data.name : "GV Tự do",
+        link: API_ROUTING[gvId] || data.data.link || "" // Có link thì dùng, không thì để trống để nhập sau
+      });
+      setStep('work');
+    } else if (data.status === 'success') {
+      // TRƯỜNG HỢP F2 = 1: Phải có ID đúng
+      setGvData({
+        ...data.data,
+        link: API_ROUTING[gvId] || data.data.link
+      });
+      setStep('work');
+    } else {
+      alert("Hệ thống yêu cầu xác minh ID chính xác!");
     }
-  } catch (e) { 
-    alert("Lỗi xác minh hệ thống!"); 
-  } finally { 
-    setLoading(false); 
-  }
+  } catch (e) {
+    alert("Lỗi kết nối!");
+  } finally { setLoading(false); }
 };
 
 // ======= 2. Ghi cấu hình vào file riêng của GV =======
@@ -203,23 +164,34 @@ const handleSaveConfig = async () => {
   };
 
   const handleFinalUpload = async () => {
-    if (questions.length === 0) return alert("Không có dữ hiệu!");
-    
-    // CẢNH BÁO TRÙM MÃ ĐỀ
-    const confirmUpload = window.confirm(`Bạn chuẩn bị GHI DỮ LIỆU CÂU HỎI vào mã đề [${examForm.exams}].\n\nDữ liệu sẽ được chèn thêm vào Sheets tương ứng.\n\nBấm [OK] để Tiếp tục hoặc [Cancel] để xem lại.`);
-    if (!confirmUpload) return;
+  if (questions.length === 0) return alert("Chưa có câu hỏi!");
+  
+  // Xác định link đích để ghi
+  const finalTargetUrl = customLink || gvData.link || DANHGIA_URL;
 
-    setLoading(true);
-    try {
-      const payload = { action: 'uploadExamData', idgv: gvId, examCode: examForm.exams, questions };
-      const targetUrl = API_ROUTING[gvId] || DANHGIA_URL;
-      const res = await fetch(`${targetUrl}?action=uploadExamData`, { method: 'POST', body: JSON.stringify(payload) });
-      const result = await res.json();
-      alert(result.message);
-      setPreviewOpen(false);
-    } catch (e) { alert("Lỗi tải lên máy chủ!"); }
-    finally { setLoading(false); }
-  };
+  if (!finalTargetUrl) return alert("Vui lòng nhập Link Script (WebApp) của bạn!");
+
+  setLoading(true);
+  try {
+    const payload = { 
+      action: 'uploadExamData', 
+      idgv: gvId || "GUEST", 
+      examCode: examForm.exams, 
+      questions 
+    };
+
+    const res = await fetch(`${finalTargetUrl}?action=uploadExamData`, {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+
+    const result = await res.json();
+    alert(result.message);
+    setPreviewOpen(false);
+  } catch (e) {
+    alert("Lỗi khi ghi dữ liệu. Hãy kiểm tra lại Link Script!");
+  } finally { setLoading(false); }
+};
 
   return (
     <div className="p-4 md:p-10 max-w-6xl mx-auto font-sans bg-white rounded-[3rem] shadow-2xl my-10 border border-slate-50">
@@ -238,7 +210,24 @@ const handleSaveConfig = async () => {
           </button>
         </div>
       ) : (
-        <div className="space-y-10 animate-fade-in">
+       <div className="space-y-10 animate-fade-in"> 
+          {/* === CHÈN Ô NHẬP LINK VÀO ĐÂY (Nếu GV tự do) === */}
+          {!gvData?.link && (
+            <div className="bg-amber-50 p-6 rounded-[2.5rem] border-2 border-dashed border-amber-200 shadow-sm mb-6">
+               <h4 className="text-sm font-black text-amber-800 uppercase mb-2">
+                 <i className="fas fa-link mr-2"></i> Kết nối WebApp riêng (Dành cho GV tự do)
+               </h4>
+               <input 
+                 className="w-full p-4 rounded-2xl border-none shadow-inner font-bold text-blue-700" 
+                 placeholder="Dán link App Script (exec) của thầy/cô vào đây..."
+                 value={customLink}
+                 onChange={e => setCustomLink(e.target.value)}
+               />
+               <p className="text-[10px] text-amber-600 mt-2 italic px-2">
+                 * Lưu ý: Nếu thầy/cô đã có ID trong hệ thống, link sẽ tự động được nhận diện.
+               </p>
+            </div>
+          )}
           {/* CẤU HÌNH ĐỀ THI - HÀNG 1 ĐẦY ĐỦ MCQ, TF, SA */}
           <div className="bg-indigo-50 p-8 rounded-[3rem] border border-indigo-100 shadow-sm">
             <h3 className="text-xl font-black text-indigo-900 uppercase mb-6 flex items-center gap-2">
