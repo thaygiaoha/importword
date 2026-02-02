@@ -1,12 +1,8 @@
 /**
  * CẤU HÌNH HỆ THỐNG
  */
-const SPREADSHEET_ID = "16w4EzHhTyS1CnTfJOWE7QQNM0o2mMQIqePpPK8TEYrg";
+const SPREADSHEET_ID = "1LlFAI1J0b7YQ84BL674r2kr3wSoW9shgsXSIXVPDypM";
 const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-/*************************************************
- * HÀM TIỆN ÍCH: TẠO RESPONSE JSON
- *************************************************/
-
 function createResponse(status, message, data) {
   const output = { status: status, message: message };
   if (data) output.data = data;
@@ -39,26 +35,67 @@ function doGet(e) {
   const type = params.type;
   const action = params.action;
 
+ // Thêm vào trong function doGet(e)
+if (action === 'getQuestionsByCode') {
+  const examCode = params.examCode;
+  const sheet = ss.getSheetByName("exam_data");
+  if (!sheet) return createResponse("error", "Chưa có dữ liệu exam_data");
+  
+  const data = sheet.getDataRange().getValues();
+  const results = [];
+  
+  for (let i = 1; i < data.length; i++) {
+    // Cột A là mã đề
+    if (data[i][0].toString() === examCode.toString()) {
+      try {
+        // Cột C chứa JSON câu hỏi
+        results.push(JSON.parse(data[i][2])); 
+      } catch(err) {
+        results.push(data[i][2]);
+      }
+    }
+  }
+  return createResponse("success", "OK", results);
+}
+
+  // Xác minh giáo viên
+
   if (action === 'checkTeacher') {
     try {
       const idInput = (params.idgv || "").toString().trim();
-      if (!idInput) return createResponse("error", "Chưa nhập ID giáo viên");
-
       const sheet = ss.getSheetByName("idgv");
+      if (!sheet) return createResponse("error", "Không tìm thấy sheet idgv");
+
+      // SỬA LỖI: Dùng đúng biến sheet đã khai báo
+      const authSetting = sheet.getRange("F2").getValue(); 
       const data = sheet.getDataRange().getValues();
 
+      let found = null;
       for (let i = 1; i < data.length; i++) {
-        // Ép cả 2 về String để so sánh cho chuẩn
-        let idInSheet = data[i][0].toString().trim();
-        
-        if (idInSheet === idInput) {
-          return createResponse("success", "OK", { 
-            name: data[i][1], 
-            link: data[i][2] 
-          });
+        if (data[i][0].toString().trim() === idInput) {
+          found = { name: data[i][1], link: data[i][2] };
+          break;
         }
       }
-      return createResponse("error", "Không tìm thấy ID: " + idInput);
+
+      // Nếu tìm thấy GV
+      if (found) {
+        return createResponse("success", "OK", { 
+          name: found.name, 
+          link: found.link,
+          isAuthRequired: authSetting == 1 
+        });
+      } else {
+        // Nếu KHÔNG tìm thấy nhưng F2 = 0 thì vẫn cho qua với tư cách Khách
+        if (authSetting != 1) {
+          return createResponse("success", "Chế độ tự do", { 
+            name: "Khách trải nghiệm", 
+            link: "",
+            isAuthRequired: false 
+          });
+        }
+        return createResponse("error", "ID không tồn tại: " + idInput);
+      }
     } catch (err) {
       return createResponse("error", "Lỗi Script: " + err.toString());
     }
@@ -286,6 +323,34 @@ if (action === "getRouting") {
    
     const sheetNH = ss.getSheetByName("nganhang");  
 
+    // Thêm vào trong function doPost(e)
+if (action === 'uploadExamData') {
+  const data = JSON.parse(e.postData.contents);
+  const examCode = data.examCode;
+  const questions = data.questions; // Mảng các câu hỏi
+  const sheet = ss.getSheetByName("exam_data") || ss.insertSheet("exam_data");
+
+  // Tạo tiêu đề nếu sheet mới
+  if (sheet.getLastRow() === 0) {
+    sheet.appendRow(["Mã đề", "ID GV", "Nội dung JSON"]);
+  }
+
+  // Xóa dữ liệu cũ của mã đề này nếu có (để ghi đè bản mới nhất)
+  const rows = sheet.getDataRange().getValues();
+  for (let i = rows.length - 1; i >= 1; i--) {
+    if (rows[i][0].toString() === examCode.toString()) {
+      sheet.deleteRow(i + 1);
+    }
+  }
+
+  // Ghi mảng câu hỏi mới
+  questions.forEach(q => {
+    sheet.appendRow([examCode, idgv, JSON.stringify(q)]);
+  });
+
+  return createResponse("success", "✅ Đã nạp " + questions.length + " câu vào mã đề " + examCode);
+}
+
    // 1. NHÁNH LƯU CẤU HÌNH (Ổn định theo kiểu saveMatrix)
     if (action === 'saveExamConfig') {
       // BƯỚC 1: Xác định file đích (Master hay Hàng xóm)
@@ -304,25 +369,33 @@ if (action === "getRouting") {
         data.TF, data.scoretf, data.SA, data.scoresa, data.IDimglink
       ];
 
-      // BƯỚC 2: Kiểm tra xem mã đề đã tồn tại chưa để ghi đè (Giống logic Ma trận)
-      const vals = sheet.getDataRange().getValues();
-      let rowIndex = -1;
-      for (let i = 1; i < vals.length; i++) {
-        // Nếu trùng mã đề (cột A) và trùng ID GV (cột B)
-        if (vals[i][0].toString() === data.exams.toString() && vals[i][1].toString() === idgv.toString()) {
-          rowIndex = i + 1; 
-          break;
-        }
-      }
+      // BƯỚC 2: Kiểm tra để ghi đè (Chỉ dựa vào Mã đề ở Cột A)
+const vals = sheet.getDataRange().getValues();
+let rowIndex = -1;
 
-      // BƯỚC 3: Ghi dữ liệu
-      if (rowIndex > 0) {
-        sheet.getRange(rowIndex, 1, 1, rowData.length).setValues([rowData]);
-      } else {
-        sheet.appendRow(rowData);
-      }
+// Làm sạch mã đề trước khi so sánh (xóa khoảng trắng, đưa về chữ in hoa)
+const searchExams = data.exams.toString().trim().toUpperCase();
 
-      return createResponse("success", "✅ Đã lưu cấu hình đề [" + data.exams + "] vào file: " + targetSS.getName());
+for (let i = 1; i < vals.length; i++) {
+  // vals[i][0] là dữ liệu Cột A (Mã đề)
+  const cellExams = vals[i][0].toString().trim().toUpperCase();
+  
+  if (cellExams === searchExams) {
+    rowIndex = i + 1; // Tìm thấy hàng chứa mã đề này
+    break;
+  }
+}
+
+// BƯỚC 3: Thực hiện ghi
+if (rowIndex > 0) {
+  // Nếu đã tồn tại mã đề này -> Ghi đè toàn bộ hàng đó
+  sheet.getRange(rowIndex, 1, 1, rowData.length).setValues([rowData]);
+} else {
+  // Nếu mã đề mới hoàn toàn -> Thêm hàng mới ở cuối
+  sheet.appendRow(rowData);
+}
+
+return createResponse("success", "✅ Đã cập nhật cấu hình mã đề: " + data.exams);
     }
     // 5. UPLOAD DỮ LIỆU ĐỀ THI TỪ WORD (Teacher)
     if (action === 'uploadExamData') {
