@@ -102,17 +102,24 @@ const handleSaveConfig = async () => {
       const html = result.value;
 
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-      const prompt = `Phân tích HTML từ file Word này và chuyển sang định dạng JSON mảng các câu hỏi.
-      Yêu cầu cực kỳ quan trọng:
-      1. PHẦN I (mcq): Đáp án đúng nằm trong thẻ <u>...</u> (ví dụ: <u>A</u>).
-      2. PHẦN II (true-false): Mỗi câu có 4 ý a,b,c,d. Ý nằm trong <u>...</u> là ĐÚNG (true), ngược lại SAI (false). Output mảng 's' chứa {text: string, a: boolean}.
-      3. PHẦN III (short-answer): Đáp án đúng nằm trong thẻ <u>...</u> hoặc <key=...>.
-      4. LaTeX: Chuyển công thức về dạng MathJax LaTeX ($...$).
-      5. Hình ảnh: Giữ nguyên thẻ <img> nếu có.
-      6. TRẢ VỀ JSON THUẦN MẢNG, KHÔNG CÓ MARKDOWN HAY CHỮ GIẢI THÍCH.
-      
-      Dữ liệu HTML: ${html}`;
+      const prompt = `Bạn là chuyên gia số hóa đề thi. Hãy bóc tách HTML này thành mảng JSON.
+      QUY TẮC BÓC TÁCH:
+      1. Phân loại "type": 
+       - "mcq": Nếu nằm sau tiêu đề "Phần I" hoặc có 4 lựa chọn A,B,C,D.
+       - "true-false": Nếu nằm sau tiêu đề "Phần II" hoặc có các ý a,b,c,d Đúng/Sai.
+       - "short-answer": Nếu nằm sau tiêu đề "Phần III" hoặc yêu cầu điền số/chữ.
+      2. Nhận diện đáp án ("a" hoặc "s"):
+       - mcq: Tìm chữ cái (A,B,C,D) có gạch chân (thẻ <u>).
+       - true-false: Với mỗi ý a,b,c,d, nếu ý nào gạch chân thì "a": true, ngược lại "a": false.
+       - short-answer: Lấy nội dung sau từ "Đáp án:".
+      3. "loigiai": Lấy nội dung sau "Hướng dẫn giải" hoặc "Lời giải". Nếu không thấy, ghi "Đang cập nhật".
+      4. "question": Nội dung câu hỏi, giữ nguyên thẻ <img> nếu có và chuyển công thức về dạng MathJax LaTeX ($...$).
+      5. "classTag": Tự nhận diện từ nội dung (ví dụ: 10.1.1).
+      6. LaTeX: Chuyển công thức về dạng MathJax LaTeX ($...$).
+      7. Hình ảnh: Giữ nguyên thẻ <img> nếu có.
+      8. TRẢ VỀ JSON THUẦN MẢNG, KHÔNG CÓ MARKDOWN HAY CHỮ GIẢI THÍCH.
 
+DỮ LIỆU HTML: ${html}`;
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
         contents: prompt,
