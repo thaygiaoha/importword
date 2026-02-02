@@ -61,7 +61,7 @@ const handleVerifyW = async () => {
       });
       setStep('work');
     } else {
-      alert("Hệ thống yêu cầu xác minh ID chính xác!");
+      alert("Hệ thống yêu cầu xác minh ID chính xác! Hãy liên hệ Admin: 0988.948.882");
     }
   } catch (e) {
     alert("Lỗi kết nối!");
@@ -198,7 +198,7 @@ DỮ LIỆU HTML: ${html}`;
   return (
     <div className="p-4 md:p-10 max-w-6xl mx-auto font-sans bg-white rounded-[3rem] shadow-2xl my-10 border border-slate-50">
       <div className="flex justify-between items-center mb-10">
-        <h2 className="text-3xl font-black text-indigo-700 uppercase">Quản lý Giáo Viên & Word</h2>
+        <h2 className="text-3xl font-black text-indigo-700 uppercase">Nhập bất kỳ hoặc liên hệ Admin nhé</h2>
         <button onClick={onBack} className="bg-slate-100 hover:bg-red-50 text-slate-500 hover:text-red-500 px-6 py-2 rounded-full font-black">THOÁT</button>
       </div>
 
@@ -208,7 +208,7 @@ DỮ LIỆU HTML: ${html}`;
           <input type="text" placeholder="NHẬP ID GIÁO VIÊN..." className="w-full max-w-md p-5 bg-white border-4 border-slate-100 rounded-2xl text-center font-black text-2xl uppercase" value={gvId} onChange={e => setGvId(e.target.value)} />
           <button onClick={handleVerifyW} 
             disabled={loading} className="mt-6 px-12 py-4 bg-indigo-600 text-white rounded-2xl font-black shadow-xl uppercase">
-            {loading ? 'ĐANG XÁC MINH...' : 'VÀO HỆ THỐNG'}
+            {loading ? 'ĐANG XÁC MINH...' : 'VÀO HỆ THỐNG VÀ NHẬP API_KEY'}
           </button>
         </div>
       ) : (
