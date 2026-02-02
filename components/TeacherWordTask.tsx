@@ -100,8 +100,7 @@ const handleSaveConfig = async () => {
       // mammoth chuyển word sang HTML, giữ nguyên thẻ <u> (gạch chân) cho đáp án
       const result = await mammoth.convertToHtml({ arrayBuffer }, { styleMap: ["u => u"] });
       const html = result.value;
-
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      const ai = new GoogleGenAI("AIzaSyAWO0_1fIWVgJUzKEmancVflP7akTol-LM");
       const prompt = `Bạn là chuyên gia số hóa đề thi. Hãy bóc tách HTML này thành mảng JSON.
       QUY TẮC BÓC TÁCH:
       1. Phân loại "type": 
