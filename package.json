@@ -14,8 +14,8 @@
     "lucide-react": "^0.344.0",
     "clsx": "^2.1.0",
     "tailwind-merge": "^2.2.1",
-    "mammoth": "^1.8.0",       
-    "framer-motion": "^11.0.8" 
+    "@google/genai": "^1.39.0",
+    "mammoth": "^1.11.0"
   },
   "devDependencies": {
     "@types/react": "^18.2.66",

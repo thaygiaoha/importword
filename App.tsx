@@ -1,24 +1,27 @@
-
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Student, ExamResult, Question, AppUser } from './types';
-import { API_ROUTING, DEFAULT_API_URL, DANHGIA_URL, fetchApiRouting, fetchQuestionsBank, fetchAdminConfig } from './config';
-import LandingPage from './components/LandingPage';
-import ExamPortal from './components/ExamPortal';
-import QuizInterface from './components/QuizInterface';
-import ResultView from './components/ResultView';
-import Footer from './components/Footer'; // Đã thêm import Footer
-import { getRandomQuizQuestion } from './questionquiz';
-import { AppProvider } from './contexts/AppContext';
-import AdminPanel from './components/AdminManager';
-import { fetchQuestionsBank } from './questions';
-import ExamCreator_gv from './components/ExamCreator_gv'; // Thầy nhớ check đúng tên file nhé
-
+import { API_ROUTING, DEFAULT_API_URL, DANHGIA_URL, fetchApiRouting, fetchAdminConfig } from './config';
+// Sửa lại đoạn này trong App.tsx của thầy:
+import LandingPage from '@/components/LandingPage';
+import ExamPortal from '@/components/ExamPortal';
+import QuizInterface from '@/components/QuizInterface';
+import ResultView from '@/components/ResultView';
+import Footer from '@/components/Footer';
+import { getRandomQuizQuestion } from '@/questionquiz'; // Giả sử file này ở src/questionquiz
+import { AppProvider } from '@/contexts/AppContext';
+import AdminPanel from '@/components/AdminManager';
+import TeacherWordTask from '@/components/TeacherWordTask';
+// Thêm dấu ngoặc nhọn bao quanh tên hàm
+import { fetchQuestionsBank } from '@/questions';
+import { fetchQuestionsBankW } from '@/questionsWord';
 const App: React.FC = () => {
-  // Thêm 'admin' vào danh sách các View
-const [currentView, setCurrentView] = useState<'landing' | 'portal' | 'quiz' | 'result' | 'admin'>('landing');
-// Thêm state để biết đang mở Ma trận hay Nhập câu hỏi
-const [adminMode, setAdminMode] = useState<'matran' | 'cauhoi' | 'word'>('matran'); 
-const [selectedGrade, setSelectedGrade] = useState<string | null>(null);
+  // 1. Quản lý các màn hình (Views)
+  const [currentView, setCurrentView] = useState<'landing' | 'portal' | 'quiz' | 'result' | 'admin' | 'teacher_task'>('landing');
+  
+  // 2. Quản lý chế độ (Mode) cho Admin hoặc Giáo viên
+  const [adminMode, setAdminMode] = useState<'matran' | 'cauhoi' | 'word'>('matran'); 
+  
+  const [selectedGrade, setSelectedGrade] = useState<string | null>(null);
   const [activeExam, setActiveExam] = useState<any>(null);
   const [activeStudent, setActiveStudent] = useState<Student | null>(null);
   const [examResult, setExamResult] = useState<ExamResult | null>(null);
@@ -27,30 +30,34 @@ const [selectedGrade, setSelectedGrade] = useState<string | null>(null);
   const [showAuth, setShowAuth] = useState(false);
   const [showVipModal, setShowVipModal] = useState(false);
 
-  // Trong useEffect của App.tsx
-useEffect(() => {
-  const initApp = async () => {
-    try {
-      console.log("🚀 Hệ thống bắt đầu khởi tạo...");
-      await Promise.all([
-        fetchAdminConfig(),
-        fetchApiRouting(),
-        fetchQuestionsBank()
-      ]);
-      console.log("✅ Tất cả dữ liệu đã nạp xong!");
-    } catch (e) {
-      console.error("❌ Lỗi khởi tạo:", e);
-    }
-  };
-  initApp();
-}, []);
-   const handleStartExam = (config: any, student: Student, selectedQuestions: Question[]) => {
+  // Khởi tạo dữ liệu hệ thống
+  useEffect(() => {
+    const initApp = async () => {
+      try {
+        console.log("🚀 Hệ thống bắt đầu khởi tạo...");
+        await Promise.all([
+          fetchAdminConfig(),
+          fetchApiRouting(),
+          fetchQuestionsBank(),
+          fetchQuestionsBankW()
+        ]);
+        console.log("✅ Tất cả dữ liệu đã nạp xong!");
+      } catch (e) {
+        console.error("❌ Lỗi khởi tạo:", e);
+      }
+    };
+    initApp();
+  }, []);
+
+  // Xử lý bắt đầu thi (Portal)
+  const handleStartExam = (config: any, student: Student, selectedQuestions: Question[]) => {
     setActiveExam(config);
     setActiveStudent(student);
     setQuestions(selectedQuestions);
     setCurrentView('quiz');
   };
 
+  // Xử lý bắt đầu Quiz nhanh (Landing)
   const handleStartQuizMode = (num: number, pts: number, quizStudent: any) => {
     const quizQuestions: Question[] = [];
     const usedIds = new Set<string | number>();
@@ -77,26 +84,17 @@ useEffect(() => {
     setCurrentView('quiz');
   };
 
+  // Kết thúc bài thi và gửi dữ liệu
   const handleFinishExam = async (result: ExamResult) => {
     setExamResult(result);
     setCurrentView('result');
-    
     let targetUrl = DEFAULT_API_URL;
-    if (result.type === 'quiz') {
-      targetUrl = DANHGIA_URL;
-    } else if (activeStudent && API_ROUTING[activeStudent.idnumber]) {
-      targetUrl = API_ROUTING[activeStudent.idnumber];
-    }
+    if (result.type === 'quiz') targetUrl = DANHGIA_URL;
+    else if (activeStudent && API_ROUTING[activeStudent.idnumber]) targetUrl = API_ROUTING[activeStudent.idnumber];
 
     try {
-      await fetch(targetUrl, { 
-        method: 'POST', 
-        mode: 'no-cors', 
-        body: JSON.stringify(result) 
-      });
-    } catch (e) { 
-      console.error("Lỗi gửi kết quả:", e); 
-    }
+      await fetch(targetUrl, { method: 'POST', mode: 'no-cors', body: JSON.stringify(result) });
+    } catch (e) { console.error("Lỗi gửi kết quả:", e); }
   };
 
   const goHome = () => {
@@ -108,12 +106,12 @@ useEffect(() => {
 
   return (
     <AppProvider>
-      <div className="min-h-screen flex flex-col font-sans selection:bg-blue-100 bg-slate-50">
+      <div className="min-h-screen flex flex-col font-sans selection:bg-blue-100 bg-slate-50 text-slate-900">
         <header className="bg-blue-800 text-white py-8 md:py-12 shadow-2xl text-center relative overflow-hidden border-b-8 border-blue-900 px-4">
           <div className="absolute top-0 left-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
           <div className="relative z-10">
             <h1 className="text-2xl md:text-5xl font-black uppercase tracking-tighter mb-2 drop-shadow-lg leading-tight">
-              HỆ THỐNG HỌC TẬP VÀ KIỂM TRA ONLINE <br className="md:hidden" /> MÔN TOÁN
+              HỆ THỐNG HỌC TẬP VÀ KIỂM TRA ONLINE <br className="md:hidden" /> MÔN TOÁN THPT
             </h1>
             <p className="text-sm md:text-lg opacity-90 font-black tracking-wide max-w-2xl mx-auto uppercase">
               Học tập chuyên nghiệp - Kết quả bứt phá
@@ -123,63 +121,71 @@ useEffect(() => {
 
         <main className="flex-grow max-w-[1400px] mx-auto w-full p-4 md:p-10">
           <div className="flex flex-col gap-6">
-             {currentView === 'landing' && (
-  <LandingPage 
-    user={user} 
-    onOpenAuth={() => setShowAuth(true)} 
-    onOpenVip={() => user ? setShowVipModal(true) : setShowAuth(true)}
-    onSelectGrade={(grade) => { setSelectedGrade(grade); setCurrentView('portal'); }} 
-    onSelectQuiz={handleStartQuizMode}
-    // SỬA DÒNG NÀY: Đảm bảo set đúng mode được truyền từ LandingPage sang
-    setView={(mode: any) => { 
-      setAdminMode(mode); 
-      setCurrentView('admin'); 
-    }}
-  />
-)}
-             {currentView === 'admin' && (
-      adminMode === 'word' ? (
-        <ExamCreator_gv 
-          onBack_gv={goHome} 
-          // Truyền danh sách GV nếu thầy đã fetch ở App, 
-          // hoặc để ExamCreator_gv tự fetch như em hướng dẫn lúc nãy
-        />
-      ) : (
-        <AdminPanel 
-          mode={adminMode} 
-          onBack={goHome} 
-        />
-      )
-    )}
-              {currentView === 'portal' && selectedGrade && (
-                <ExamPortal grade={selectedGrade.toString()} onBack={goHome} onStart={handleStartExam} />
-              )}
-              {currentView === 'quiz' && activeExam && activeStudent && (
-                <QuizInterface 
-                  config={activeExam} 
-                  student={activeStudent} 
-                  questions={questions} 
-                  onFinish={handleFinishExam} 
-                  isQuizMode={activeExam.id === 'QUIZ'}
-                />
-              )}
-              {currentView === 'result' && examResult && (
-                <ResultView result={examResult} questions={questions} onBack={goHome} />
-              )}
+            
+            {/* 1. Trang chủ */}
+            {currentView === 'landing' && (
+              <LandingPage 
+                user={user} 
+                onOpenAuth={() => setShowAuth(true)} 
+                onOpenVip={() => user ? setShowVipModal(true) : setShowAuth(true)}
+                onSelectGrade={(grade) => { setSelectedGrade(grade.toString()); setCurrentView('portal'); }} 
+                onSelectQuiz={handleStartQuizMode}
+                setView={(mode: any) => {
+                  if (mode === 'word' || mode === 'matran') {
+                    setCurrentView('teacher_task'); 
+                    setAdminMode(mode);
+                  } else {
+                    setAdminMode(mode);
+                    setCurrentView('admin');
+                  }
+                }} 
+              />
+            )}
+
+            {/* 2. Quản lý Admin */}
+            {currentView === 'admin' && (
+              <AdminPanel mode={adminMode} onBack={goHome} />
+            )}
+
+            {/* 3. Nhiệm vụ Giáo viên (Từ App1) */}
+            {currentView === 'teacher_task' && (
+              <TeacherWordTask mode={adminMode} onBack={goHome} />
+            )}
+
+            {/* 4. Cổng chọn đề thi */}
+            {currentView === 'portal' && selectedGrade && (
+              <ExamPortal grade={selectedGrade} onBack={goHome} onStart={handleStartExam} />
+            )}
+
+            {/* 5. Giao diện làm bài */}
+            {currentView === 'quiz' && activeExam && activeStudent && (
+              <QuizInterface 
+                config={activeExam} 
+                student={activeStudent} 
+                questions={questions} 
+                onFinish={handleFinishExam} 
+                isQuizMode={activeExam.id === 'QUIZ'} 
+              />
+            )}
+
+            {/* 6. Kết quả bài thi */}
+            {currentView === 'result' && examResult && (
+              <ResultView result={examResult} questions={questions} onBack={goHome} />
+            )}
           </div>
         </main>
 
+        {/* Các Modal hỗ trợ */}
         {showAuth && <AuthModal onClose={() => setShowAuth(false)} onSuccess={(u) => { setUser(u); setShowAuth(false); }} />}
-        {showVipModal && <VipModal user={user!} onClose={() => setShowVipModal(false)} onSuccess={() => { setUser(prev => prev ? {...prev, isVip: true} : null); setShowVipModal(false); }} />}
+        {showVipModal && user && <VipModal user={user} onClose={() => setShowVipModal(false)} onSuccess={() => { setUser(prev => prev ? {...prev, isVip: true} : null); setShowVipModal(false); }} />}
 
-        {/* Footer quan trọng được đặt ở đây để dùng được AppProvider */}
         <Footer />
       </div>
     </AppProvider>
   );
 };
 
-// --- Các Component phụ hỗ trợ ---
+// --- COMPONENT CON: ĐĂNG NHẬP ---
 const AuthModal = ({ onClose, onSuccess }: { onClose: () => void, onSuccess: (u: AppUser) => void }) => {
   const [isLogin, setIsLogin] = useState(true);
   const [phone, setPhone] = useState('');
@@ -222,6 +228,7 @@ const AuthModal = ({ onClose, onSuccess }: { onClose: () => void, onSuccess: (u:
   );
 };
 
+// --- COMPONENT CON: VIP ---
 const VipModal = ({ user, onClose, onSuccess }: { user: AppUser, onClose: () => void, onSuccess: () => void }) => {
   const [loading, setLoading] = useState(false);
   const handleVipRegister = async () => {
