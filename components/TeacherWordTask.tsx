@@ -111,7 +111,7 @@ const handleSaveConfig = async () => {
       2. Nhận diện đáp án ("a" hoặc "s"):
        - mcq: Tìm chữ cái (A,B,C,D) có gạch chân (thẻ <u>).
        - true-false: Với mỗi ý a,b,c,d, nếu ý nào gạch chân thì "a": true, ngược lại "a": false.
-       - short-answer: Lấy nội dung sau từ "Đáp án:".
+       - short-answer: Lấy nội dung sau chữ key= trong cụm <key=...>, ví dụ <key=21.2> nghĩa là kết quả bài toán là 21.2
       3. "loigiai": Lấy nội dung sau "Hướng dẫn giải" hoặc "Lời giải". Nếu không thấy, ghi "Đang cập nhật".
       4. "question": Nội dung câu hỏi, giữ nguyên thẻ <img> nếu có và chuyển công thức về dạng MathJax LaTeX ($...$).
       5. "classTag": Tự nhận diện từ nội dung (ví dụ: 10.1.1).
