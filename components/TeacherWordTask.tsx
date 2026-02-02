@@ -71,27 +71,28 @@ const handleVerifyW = async () => {
 // ======= 2. Ghi cấu hình vào file riêng của GV =======
 const handleSaveConfig = async () => {
   if (!examForm.exams) return alert("Vui lòng nhập mã đề!");
-  const confirmSave = window.confirm(`Lưu cấu hình mã đề [${examForm.exams}]?`);
+  
+  // Ưu tiên Link GV tự nhập, nếu không có mới dùng link hệ thống
+  const targetUrl = customLink || gvData?.link || DANHGIA_URL;
+
+  if (!targetUrl) {
+    return alert("Thầy ơi, GV tự do thì phải dán link App Script vào đã nhé! Kaka.");
+  }
+
+  const confirmSave = window.confirm(`Lưu cấu hình mã đề [${examForm.exams}] vào hệ thống?`);
   if (!confirmSave) return;
 
   setLoading(true);
   try {
-    const targetUrl = gvData.link || DANHGIA_URL; 
-    
-    // Đẩy idgv và action lên URL để Script dễ bắt
-    const finalUrl = `${targetUrl}?action=saveExamConfig&idgv=${gvId}`;
+    // Truyền idgv và action để Script biết đường mà xử lý
+    const finalUrl = `${targetUrl}?action=saveExamConfig&idgv=${gvId || "GUEST"}`;
 
     const res = await fetch(finalUrl, {
       method: 'POST',
-      // BỎ no-cors đi thầy nhé
       body: JSON.stringify(examForm) 
     });
 
-    // Nếu không dùng no-cors, ta có thể thử đọc phản hồi
-    // Nếu vẫn lỗi CORS ở đây thì chỉ cần hiện thông báo "Đã gửi" 
-    // nhưng mã GGGG chắc chắn sẽ vào Sheet vì URL đã rõ ràng.
-    alert("Đã thực hiện lệnh lưu mã đề: " + examForm.exams);
-    
+    alert("✅ Đã gửi lệnh lưu mã đề: " + examForm.exams);
   } catch (e) { 
     alert("Lỗi kết nối: " + e.toString()); 
   } finally { 
