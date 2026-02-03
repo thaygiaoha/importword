@@ -104,56 +104,32 @@ const AdminPanel = ({ mode, onBack }) => {
   }
 };  
 const handleWordParser = (text) => {
-  if (!text.trim()) {
-    setJsonInput('');
-    return;
-  }
+  if (!text.trim()) return;
 
-  const blocks = [];
-  let current = '';
-  let depth = 0;
+  // 1. Tách theo dấu # (Vì thầy luôn để dấu # ở cuối mỗi câu)
+  const blocks = text.split('#').map(b => b.trim()).filter(b => b.length > 10);
 
-  for (let i = 0; i < text.length; i++) {
-    const ch = text[i];
-    if (ch === '{') {
-      if (depth === 0) current = '';
-      depth++;
-    }
-    if (depth > 0) current += ch;
-    if (ch === '}') {
-      depth--;
-      if (depth === 0) blocks.push(current.trim());
-    }
-  }
-
-  const baseId = Date.now();
   const results = blocks.map((block, index) => {
+    // Dọn dẹp các ký tự trắng "ma quái" (Non-breaking space)
+    let cleanBlock = block.replace(/\xA0/g, ' '); 
+    
+    // Thêm dấu phẩy vào sau các thuộc tính nếu thiếu (Sửa lỗi cho thầy)
+    cleanBlock = cleanBlock.replace(/"\s+([a-z]+):/g, '", "$1":');
+    cleanBlock = cleanBlock.replace(/]\s+([a-z]+):/g, '], "$1":');
+    
     try {
-      // Dùng hàm Function để "nuốt" được cái block của thầy 
-      // mà không bị lỗi dấu gạch chéo (vì đây là Object ảo)
-      const dynamicObj = new Function(`return ${block}`)();
-      
-      return {
-        ...dynamicObj,
-        id: dynamicObj.id || (baseId + index)
-      };
+      // Dùng eval hoặc new Function để ép chuỗi thành Object
+      // Em dùng eval ở đây cho nó "máu", chấp nhận cả cú pháp lỗi nhẹ của thầy
+      const obj = eval("(" + cleanBlock + ")");
+      return obj;
     } catch (e) {
-      // Nếu block quá nát, ta mới dùng Regex để cứu
-      console.error("Lỗi tại câu số " + (index + 1), e);
-      return { 
-        id: baseId + index, 
-        error: "Câu này định dạng sai cấu trúc JSON",
-        raw: block 
-      };
+      console.error("Câu " + (index + 1) + " vẫn lỗi cấu trúc!", e);
+      return null;
     }
-  });
+  }).filter(item => item !== null);
 
-  // Khi stringify ở đây, React sẽ TỰ ĐỘNG thêm các dấu \ cần thiết 
-  // để bảo vệ công thức MathJax của thầy.
   setJsonInput(JSON.stringify(results, null, 2));
 };
-
-
   const handleSaveQuestions = async () => {
   if (!jsonInput) return alert("Chưa có dữ liệu!");
   setLoading(true);
