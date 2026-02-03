@@ -64,32 +64,51 @@ const TeacherWordTask: React.FC<TeacherWordTaskProps> = ({ onBack }) => {
 
   // ======= 3. Ghi dữ liệu câu hỏi (JSON Mode) =======
   const handleUploadJsonData = async () => {
-    if (!examForm.exams) return alert("Thầy phải nhập Mã đề ở trên trước!");
-    if (!jsonInput.trim()) return alert("Thầy dán nội dung JSON vào đã!");
+  if (!examForm.exams) return alert("Nhập Mã đề trước thầy ơi!");
+  if (!jsonInput.trim()) return alert("Dán dữ liệu vào đã!");
 
-    const targetUrl = customLink || gvData?.link || DANHGIA_URL;
-    setLoading(true);
-    try {
-      // Lọc lấy các cụm {...} đề phòng dán lẫn rác văn bản
-      const blocks = jsonInput.match(/\{[\s\S]*?\}/g);
-      if (!blocks) throw new Error("Không tìm thấy JSON hợp lệ!");
-      const questions = blocks.map(b => JSON.parse(b.replace(/[\u201C\u201D]/g, '"').replace(/'/g, '"')));
+  const targetUrl = customLink || gvData?.link || DANHGIA_URL;
+  setLoading(true);
+  try {
+    let rawData = jsonInput.trim();
 
-      const payload = {
-        action: 'uploadExamData',
-        idgv: gvId || "GUEST",
-        examCode: examForm.exams,
-        questions: questions
-      };
+    // 1. Xử lý trường hợp lồng mảng [[...]] do copy thừa
+    if (rawData.startsWith('[[')) {
+      rawData = rawData.replace(/^\[\s*\[/, '[').replace(/\]\s*\]$/, ']');
+    }
 
-      const res = await fetch(`${targetUrl}?action=uploadExamData`, {
-        method: 'POST',
-        body: JSON.stringify(payload)
-      });
-      const result = await res.json();
-      alert(result.status === "success" ? "✅ Ghi câu hỏi thành công!" : "❌ Lỗi: " + result.message);
-    } catch (e: any) { alert("Lỗi: " + e.message); } finally { setLoading(false); }
-  };
+    // 2. PHÙ PHÉP: Biến Object Javascript thành JSON chuẩn
+    // Tự động thêm dấu ngoặc kép cho key: id, classTag, part, type, question, o, a, s...
+    const fixedJson = rawData
+      .replace(/([{,]\s*)([a-zA-Z0-9_]+)\s*:/g, '$1"$2":') 
+      .replace(/[\u201C\u201D]/g, '"') // Sửa ngoặc kép "thông minh" từ Word
+      .replace(/[\u2018\u2019]/g, "'") // Sửa ngoặc đơn "thông minh"
+      .replace(/ /g, ' '); // Xóa khoảng trắng lạ (non-breaking space) thường gặp ở Word
+
+    const questions = JSON.parse(fixedJson);
+    const questionArray = Array.isArray(questions) ? questions : [questions];
+
+    const payload = {
+      action: 'uploadExamData',
+      idgv: gvId || "GUEST",
+      examCode: examForm.exams,
+      questions: questionArray
+    };
+
+    const res = await fetch(`${targetUrl}?action=uploadExamData`, {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+    
+    const result = await res.json();
+    alert(result.status === "success" ? "✅ " + result.message : "❌ Lỗi: " + result.message);
+    if(result.status === "success") setJsonInput('');
+
+  } catch (e: any) { 
+    console.error("Lỗi nội dung:", e);
+    alert("❌ Lỗi định dạng! Thầy kiểm tra xem có quên dấu phẩy giữa các câu không nhé."); 
+  } finally { setLoading(false); }
+};
 
   return (
     <div className="p-4 md:p-10 max-w-6xl mx-auto bg-white rounded-[3rem] shadow-2xl my-10 border border-slate-50">
