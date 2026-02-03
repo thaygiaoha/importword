@@ -63,7 +63,7 @@ const TeacherWordTask: React.FC<TeacherWordTaskProps> = ({ onBack }) => {
   };
 
   // ======= 3. Ghi dữ liệu câu hỏi (JSON Mode) =======
-  const handleUploadExamData = async () => {
+  const handleUploadJsonData = async () => {
   if (!examForm.exams) return alert("Thầy nhập Mã đề đã!");
   let input = jsonInput.trim();
   
