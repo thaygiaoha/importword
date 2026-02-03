@@ -100,80 +100,66 @@ const handleSaveConfig = async () => {
   }
 };
 // ========== xử lý file Word =====
-  const processWordFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+ const processWordFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
   const file = e.target.files?.[0];
   if (!file) return;
 
-  // 1. Kiểm tra Key từ ô nhập liệu của thầy
+  // 1. Kiểm tra Key ngay và luôn
   if (!userApiKey) {
     setShowKeyInput(true);
-    alert("Thầy ơi, hãy dán API Key vào ô cấu hình phía trên trước nhé! Kaka.");
+    alert("Thầy chưa nhập API Key kìa! Kaka.");
     return;
   }
 
   setLoading(true);
   try {
     const arrayBuffer = await file.arrayBuffer();
-    // Chuyển Word sang HTML, giữ thẻ <u> cho đáp án
+    // Chuyển Word sang HTML, giữ thẻ <u> (gạch chân)
     const result = await mammoth.convertToHtml({ arrayBuffer }, { styleMap: ["u => u"] });
     const html = result.value;
 
-    // 2. Khởi tạo AI bằng Key thầy vừa nhập ở giao diện (userApiKey)
+    // 2. Khởi tạo AI (Cấu hình chuẩn 2026)
     const genAI = new GoogleGenAI(userApiKey.trim());
     const model = genAI.getGenerativeModel({ 
-      model: "gemini-1.5-flash", // Dùng bản flash cho tốc độ bàn thờ
+      model: "gemini-1.5-flash",
+      generationConfig: { responseMimeType: "application/json" } // Ép AI trả về JSON
     });
 
-    const prompt = `Bạn là chuyên gia số hóa đề thi. Hãy bóc tách HTML này thành mảng JSON.
-      QUY TẮC BÓC TÁCH:
-      1. Phân loại "type": 
-       - "mcq": Nếu nằm sau tiêu đề "Phần I" hoặc có 4 lựa chọn A.,B.,C.,D. và có gạch chân 1 lựa chọn.
-       - "true-false": Nếu nằm sau tiêu đề "Phần II" hoặc có các ý a),b),c),d) và có thể có gạch chân.
-       - "short-answer": Nếu nằm sau tiêu đề "Phần III" hoặc yêu cầu điền số/chữ.
-      2. Nhận diện đáp án ("a" hoặc "s"):
-       - mcq: Tìm chữ cái (A,B,C,D) có gạch chân (thẻ <u>).
-       - true-false: Với mỗi ý a,b,c,d, nếu ý nào gạch chân thì "a": true, ngược lại "a": false.
-       - short-answer: Lấy nội dung sau chữ key= trong cụm <key=...>, ví dụ <key=21.2> nghĩa là kết quả bài toán là 21.2
-      3. "loigiai": Lấy nội dung sau "Hướng dẫn giải" hoặc "Lời giải". Nếu không thấy, ghi "Đang cập nhật".
-      4. "question": Nội dung câu hỏi, giữ nguyên thẻ <img> nếu có và chuyển công thức về dạng MathJax LaTeX ($...$).
-      5. "classTag": Tự nhận diện từ nội dung trong thẻ [](ví dụ: [1001.a] ghi là 1001.a), phần này có thể để trống
-      6. LaTeX: Chuyển công thức Mathtype về dạng MathJax LaTeX ($...$).
-      7. Hình ảnh: Giữ nguyên thẻ <img> nếu có.
-      8. TRẢ VỀ JSON THUẦN MẢNG, KHÔNG CÓ MARKDOWN HAY CHỮ GIẢI THÍCH.
+    const prompt = `Bạn là chuyên gia bóc tách đề thi. Hãy chuyển HTML sau thành mảng JSON.
+      QUY TẮC:
+      1. Loại "mcq": Đáp án đúng là chữ cái (A,B,C,D) nằm trong thẻ <u>.
+      2. Loại "true-false": Từng ý a,b,c,d nếu nằm trong <u> thì "a": true, ngược lại false.
+      3. Loại "short-answer": Lấy nội dung sau "Đáp án:".
+      4. "question": Giữ nguyên thẻ <img> và công thức LaTeX ($...$).
+      5. "loigiai": Lấy sau "Hướng dẫn giải" hoặc "Lời giải".
+      HTML: ${html}`;
 
-DỮ LIỆU HTML: ${html}`;
-
-    // 3. Gọi Gemini xử lý
+    // 3. Gọi AI thái thịt
     const aiResult = await model.generateContent(prompt);
     const response = await aiResult.response;
-    let rawText = response.text().trim();
+    const text = response.text();
     
-    // Làm sạch JSON nếu AI trả về kèm Markdown
-    if (rawText.includes("```json")) {
-      rawText = rawText.split("```json")[1].split("```")[0].trim();
-    } else if (rawText.includes("```")) {
-      rawText = rawText.split("```")[1].trim();
-    }
-    
-    const parsedQuestions = JSON.parse(rawText);
-    setQuestions(parsedQuestions);
-    setPreviewOpen(true);
-      
+    // Làm sạch JSON
+    const cleanJson = text.replace(/```json|```/g, "").trim();
+    const parsed = JSON.parse(cleanJson);
+
+    setQuestions(parsed);
+    setPreviewOpen(true); // Hiện cửa sổ xem trước
   } catch (err: any) {
-    console.error(err);
-    alert(`Lỗi: ${err.message}. Thầy kiểm tra lại API Key hoặc file Word nhé!`);
+    console.error("Lỗi bóc tách:", err);
+    alert("Lỗi: " + (err.message.includes("API_KEY_INVALID") ? "API Key sai rồi thầy ơi!" : err.message));
   } finally {
     setLoading(false);
   }
 };
-  
   const handleFinalUpload = async () => {
-  if (questions.length === 0) return alert("Chưa có câu hỏi!");
+  if (questions.length === 0) return alert("Chưa có câu hỏi để lưu!");
   
-  // Xác định link đích để ghi
-  const finalTargetUrl = customLink || gvData.link || DANHGIA_URL;
+  // Ưu tiên link riêng của GV, nếu không có mới dùng link Master
+  const finalTargetUrl = customLink || gvData?.link || DANHGIA_URL;
 
-  if (!finalTargetUrl) return alert("Vui lòng nhập Link Script (WebApp) của bạn!");
+  if (!finalTargetUrl) return alert("Thiếu link kết nối hệ thống!");
+
   setLoading(true);
   try {
     const payload = { 
@@ -189,18 +175,26 @@ DỮ LIỆU HTML: ${html}`;
     });
 
     const result = await res.json();
-    alert(result.message);
+    alert(result.status === "success" ? "✅ " + result.message : "❌ " + result.message);
     setPreviewOpen(false);
   } catch (e) {
-    alert("Lỗi khi ghi dữ liệu. Hãy kiểm tra lại Link Script!");
-  } finally { setLoading(false); }
+    alert("Lỗi ghi dữ liệu! Thầy kiểm tra lại Link Script nhé.");
+  } finally {
+    setLoading(false);
+  }
 };
 
   return (
     <div className="p-4 md:p-10 max-w-6xl mx-auto font-sans bg-white rounded-[3rem] shadow-2xl my-10 border border-slate-50">
       <div className="flex justify-between items-center mb-10">
-        <h2 className="text-3xl font-black text-indigo-700 uppercase">Nhập bất kỳ hoặc liên hệ Admin nhé</h2>
-        <button onClick={onBack} className="bg-slate-100 hover:bg-red-50 text-slate-500 hover:text-red-500 px-6 py-2 rounded-full font-black">THOÁT</button>
+        <h2 className="text-3xl font-black text-indigo-700 uppercase">Nhập bất kỳ hoặc liên hệ Admin nhé   </h2>
+        <button 
+        onClick={onBack} 
+        className="bg-red-50 hover:bg-red-600 text-red-600 hover:text-white px-8 py-2 rounded-full font-black border border-red-100 transition-all shadow-sm active:scale-95"
+>
+  <i className="fas fa-sign-out-alt mr-2"></i>
+  THOÁT
+</button>
       </div>
 
       {step === 'verify' ? (
