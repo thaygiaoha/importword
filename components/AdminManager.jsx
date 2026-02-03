@@ -109,7 +109,8 @@ const handleWordParser = (text) => {
   // 1. Dùng Regex để "quét" mọi khối bắt đầu từ {id: đến }#
   // s: cho phép dấu . khớp với cả xuống dòng
   // g: tìm tất cả các khối
-  const regex = /\{id:[\s\S]*?\}#/g;
+  // Thay dòng regex cũ bằng dòng này:
+  const regex = /\{\s*id[\s\S]*?\}#/g;
   const matches = text.match(regex);
 
   if (!matches) {
