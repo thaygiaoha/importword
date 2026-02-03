@@ -94,7 +94,7 @@ const TeacherWordTask: React.FC<TeacherWordTaskProps> = ({ onBack }) => {
   return (
     <div className="p-4 md:p-10 max-w-6xl mx-auto bg-white rounded-[3rem] shadow-2xl my-10 border border-slate-50">
       <div className="flex justify-between items-center mb-10">
-        <h2 className="text-3xl font-black text-indigo-700 uppercase italic">Nhập Đề Thi (JSON)</h2>
+        <h2 className="text-3xl font-black text-indigo-700 uppercase">Nhập Đề Thi (JSON)</h2>
         <button onClick={onBack} className="bg-red-50 text-red-600 px-8 py-2 rounded-full font-black hover:bg-red-600 hover:text-white transition-all">THOÁT</button>
       </div>
 
@@ -110,14 +110,14 @@ const TeacherWordTask: React.FC<TeacherWordTaskProps> = ({ onBack }) => {
           {/* Ô NHẬP LINK RIÊNG (Nếu GV tự do) */}
           {!gvData?.link && (
             <div className="bg-amber-50 p-6 rounded-[2.5rem] border-2 border-dashed border-amber-200">
-              <h4 className="text-sm font-black text-amber-800 uppercase mb-2">Link App Script riêng (F2=0)</h4>
+              <h4 className="text-sm font-black text-amber-800 uppercase mb-2">Link App Script riêng (GV tự do)</h4>
               <input className="w-full p-4 rounded-2xl font-bold text-blue-700 outline-none" placeholder="Dán link exec..." value={customLink} onChange={e => setCustomLink(e.target.value)} />
             </div>
           )}
 
           {/* CẤU HÌNH ĐỀ THI */}
           <div className="bg-indigo-50 p-8 rounded-[3rem] border border-indigo-100 shadow-sm">
-            <h3 className="text-xl font-black text-indigo-900 uppercase mb-6 italic italic text-center">--- Cấu hình thông số đề ---</h3>
+            <h3 className="text-xl font-black text-indigo-900 uppercase mb-6 text-center">--- Cấu hình thông số đề kiểm tra/thi ---</h3>
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-6">
               <div className="col-span-2">
                 <label className="text-[10px] font-black text-indigo-400 uppercase ml-2">Mã đề (exams)</label>
@@ -131,24 +131,24 @@ const TeacherWordTask: React.FC<TeacherWordTaskProps> = ({ onBack }) => {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="bg-blue-100/50 p-4 rounded-2xl">
-                <label className="text-[10px] font-black text-blue-600 uppercase">MCQ: Số câu / Điểm</label>
+                <label className="text-[10px] font-black text-blue-600 uppercase">MCQ: Số câu / Điểm mỗi câu</label>
                 <div className="flex gap-2"><input type="number" className="w-full p-2 rounded-lg font-bold" value={examForm.MCQ} onChange={e=>setExamForm({...examForm, MCQ: parseInt(e.target.value)})} /><input type="number" step="0.01" className="w-full p-2 rounded-lg font-bold" value={examForm.scoremcq} onChange={e=>setExamForm({...examForm, scoremcq: parseFloat(e.target.value)})} /></div>
               </div>
               <div className="bg-orange-100/50 p-4 rounded-2xl">
-                <label className="text-[10px] font-black text-orange-600 uppercase">TF: Số câu / Điểm</label>
+                <label className="text-[10px] font-black text-orange-600 uppercase">TF: Số câu / Điểm mỗi câu</label>
                 <div className="flex gap-2"><input type="number" className="w-full p-2 rounded-lg font-bold" value={examForm.TF} onChange={e=>setExamForm({...examForm, TF: parseInt(e.target.value)})} /><input type="number" step="0.01" className="w-full p-2 rounded-lg font-bold" value={examForm.scoretf} onChange={e=>setExamForm({...examForm, scoretf: parseFloat(e.target.value)})} /></div>
               </div>
               <div className="bg-purple-100/50 p-4 rounded-2xl">
-                <label className="text-[10px] font-black text-purple-600 uppercase">SA: Số câu / Điểm</label>
+                <label className="text-[10px] font-black text-purple-600 uppercase">SA: Số câu / Điểm mỗi câu</label>
                 <div className="flex gap-2"><input type="number" className="w-full p-2 rounded-lg font-bold" value={examForm.SA} onChange={e=>setExamForm({...examForm, SA: parseInt(e.target.value)})} /><input type="number" step="0.01" className="w-full p-2 rounded-lg font-bold" value={examForm.scoresa} onChange={e=>setExamForm({...examForm, scoresa: parseFloat(e.target.value)})} /></div>
               </div>
             </div>
-            <button onClick={handleSaveConfig} className="mt-6 w-full py-4 bg-indigo-600 text-white rounded-2xl font-black uppercase shadow-lg hover:brightness-110 active:scale-95 transition-all">Lưu Cấu Hình (Sheet Exams)</button>
+            <button onClick={handleSaveConfig} className="mt-6 w-full py-4 bg-indigo-600 text-white rounded-2xl font-black uppercase shadow-lg hover:brightness-110 active:scale-95 transition-all">Lưu Cấu Hình Đề</button>
           </div>
 
           {/* NHẬP JSON CÂU HỎI */}
           <div className="bg-emerald-50 p-8 rounded-[3rem] border border-emerald-100 shadow-sm">
-            <h3 className="text-xl font-black text-emerald-900 uppercase mb-6 italic text-center">--- Nội dung câu hỏi (JSON) ---</h3>
+            <h3 className="text-xl font-black text-emerald-900 uppercase mb-6 text-center">--- Nội dung câu hỏi (JSON) ---</h3>
             <textarea 
               className="w-full h-80 p-6 bg-white rounded-[2rem] border-2 border-emerald-200 shadow-inner font-mono text-xs focus:ring-4 ring-emerald-100 outline-none"
               placeholder='Dán JSON bóc từ Word vào đây...'
@@ -158,7 +158,18 @@ const TeacherWordTask: React.FC<TeacherWordTaskProps> = ({ onBack }) => {
             <button onClick={handleUploadJsonData} disabled={loading} className="mt-6 w-full py-5 bg-emerald-600 text-white rounded-[2rem] font-black uppercase shadow-xl hover:bg-emerald-700 active:scale-95 transition-all">
               {loading ? "ĐANG LƯU DỮ LIỆU..." : "Ghi Câu Hỏi (Sheet Exam_Data)"}
             </button>
+            <button 
+      onClick={handleSaveConfig} // Tận dụng lại hàm lưu config có sẵn của thầy
+      disabled={loading || !examForm.exams} 
+      className="py-5 bg-indigo-600 text-white rounded-[2rem] font-black uppercase shadow-xl hover:bg-indigo-700 active:scale-95 transition-all flex items-center justify-center gap-2"
+    >
+      <i className="fas fa-rocket"></i>
+      {loading ? "ĐANG TẠO..." : "2. Kích Hoạt Đề Thi"}
+    </button>
           </div>
+          <p className="text-[10px] text-center text-slate-400 mt-4 italic">
+    * Bước 1 để lưu nội dung câu hỏi, Bước 2 để thiết lập thời gian và mở đề cho học sinh.
+  </p>
         </div>
       )}
     </div>
