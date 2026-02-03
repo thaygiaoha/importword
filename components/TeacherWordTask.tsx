@@ -105,13 +105,13 @@ const TeacherWordTask: React.FC<TeacherWordTaskProps> = ({ onBack }) => {
   return (
     <div className="p-4 md:p-10 max-w-6xl mx-auto bg-white rounded-[3rem] shadow-2xl my-10 border border-slate-50">
       <div className="flex justify-between items-center mb-10">
-        <h2 className="text-3xl font-black text-indigo-700 uppercase">Nhập Đề Thi (JSON)</h2>
+        <h2 className="text-3xl font-black text-indigo-700 uppercase">Nhập thông tin GV và cấu hình đề kiểm tra/thi</h2>
         <button onClick={onBack} className="bg-red-50 text-red-600 px-8 py-2 rounded-full font-black hover:bg-red-600 hover:text-white transition-all">THOÁT</button>
       </div>
 
       {step === 'verify' ? (
         <div className="flex flex-col items-center py-20 bg-slate-50 rounded-[3rem] border-2 border-dashed border-slate-200">
-          <input type="text" placeholder="ID GIÁO VIÊN..." className="w-full max-w-md p-5 rounded-2xl text-center font-black text-2xl uppercase border-4 border-white shadow-sm" value={gvId} onChange={e => setGvId(e.target.value)} />
+          <input type="text" placeholder="ID GIÁO VIÊN BẤT KÌ..." className="w-full max-w-md p-5 rounded-2xl text-center font-black text-2xl uppercase border-4 border-white shadow-sm" value={gvId} onChange={e => setGvId(e.target.value)} />
           <button onClick={handleVerifyW} disabled={loading} className="mt-6 px-12 py-4 bg-indigo-600 text-white rounded-2xl font-black shadow-xl uppercase">
             {loading ? 'ĐANG XÁC MINH...' : 'VÀO HỆ THỐNG'}
           </button>
@@ -142,15 +142,15 @@ const TeacherWordTask: React.FC<TeacherWordTaskProps> = ({ onBack }) => {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="bg-blue-100/50 p-4 rounded-2xl">
-                <label className="text-[10px] font-black text-blue-600 uppercase">MCQ:        Số câu /         Điểm mỗi câu</label>
+                <label className="text-[10px] font-black text-blue-600 uppercase">MCQ:======Số câu /======Điểm mỗi câu</label>
                 <div className="flex gap-2"><input type="number" className="w-full p-2 rounded-lg font-bold" value={examForm.MCQ} onChange={e=>setExamForm({...examForm, MCQ: parseInt(e.target.value)})} /><input type="number" step="0.01" className="w-full p-2 rounded-lg font-bold" value={examForm.scoremcq} onChange={e=>setExamForm({...examForm, scoremcq: parseFloat(e.target.value)})} /></div>
               </div>
               <div className="bg-orange-100/50 p-4 rounded-2xl">
-                <label className="text-[10px] font-black text-orange-600 uppercase">TF:       Số câu /          Điểm mỗi câu</label>
+                <label className="text-[10px] font-black text-orange-600 uppercase">TF:======Số câu /======Điểm mỗi câu</label>
                 <div className="flex gap-2"><input type="number" className="w-full p-2 rounded-lg font-bold" value={examForm.TF} onChange={e=>setExamForm({...examForm, TF: parseInt(e.target.value)})} /><input type="number" step="0.01" className="w-full p-2 rounded-lg font-bold" value={examForm.scoretf} onChange={e=>setExamForm({...examForm, scoretf: parseFloat(e.target.value)})} /></div>
               </div>
               <div className="bg-purple-100/50 p-4 rounded-2xl">
-                <label className="text-[10px] font-black text-purple-600 uppercase">SA:        Số câu /         Điểm mỗi câu</label>
+                <label className="text-[10px] font-black text-purple-600 uppercase">SA:======Số câu /======Điểm mỗi câu</label>
                 <div className="flex gap-2"><input type="number" className="w-full p-2 rounded-lg font-bold" value={examForm.SA} onChange={e=>setExamForm({...examForm, SA: parseInt(e.target.value)})} /><input type="number" step="0.01" className="w-full p-2 rounded-lg font-bold" value={examForm.scoresa} onChange={e=>setExamForm({...examForm, scoresa: parseFloat(e.target.value)})} /></div>
               </div>
             </div>
@@ -159,7 +159,7 @@ const TeacherWordTask: React.FC<TeacherWordTaskProps> = ({ onBack }) => {
 
           {/* NHẬP JSON CÂU HỎI */}
           <div className="bg-emerald-50 p-8 rounded-[3rem] border border-emerald-100 shadow-sm">
-            <h3 className="text-xl font-black text-emerald-900 uppercase mb-6 text-center">--- Nội dung câu hỏi (JSON) ---</h3>
+            <h3 className="text-xl font-black text-emerald-900 uppercase mb-6 text-center">--- Nội dung câu hỏi (Cần đúng mẫu) ---</h3>
             <textarea 
               className="w-full h-80 p-6 bg-white rounded-[2rem] border-2 border-emerald-200 shadow-inner font-mono text-xs focus:ring-4 ring-emerald-100 outline-none"
               placeholder='Dán JSON bóc từ Word vào đây...'
