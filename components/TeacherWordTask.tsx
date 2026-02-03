@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
 import { DANHGIA_URL, API_ROUTING } from '../config';
+import React, { useState, useMemo } from 'react';
 
 interface TeacherWordTaskProps {
   onBack: () => void;
@@ -63,49 +63,44 @@ const TeacherWordTask: React.FC<TeacherWordTaskProps> = ({ onBack }) => {
   };
 
   // ======= 3. Ghi dữ liệu câu hỏi (JSON Mode) =======
-  const handleUploadJsonData = async () => {
-  if (!examForm.exams) return alert("Nhập Mã đề đã thầy ơi!");
-  if (!jsonInput.trim()) return alert("Dán dữ liệu vào đã!");
+  const handleUploadExamData = async () => {
+  if (!examForm.exams) return alert("Thầy nhập Mã đề đã!");
+  let input = jsonInput.trim();
+  
+  // 1. CHẶT THEO DẤU # (Điểm neo duy nhất của thầy)
+  let blocks = input.split("#"); 
+
+  const finalQuestions = blocks
+    .map(item => {
+      let s = item.trim();
+      // Xử lý thông minh: Xóa dấu phẩy dư ở đầu hoặc cuối khối sau khi split
+      // Điều này giúp thầy dùng }# hay }#, đều chạy ngon 100%
+      return s.replace(/^,/, "").replace(/,$/, "").trim();
+    })
+    .filter(item => item.length > 20); // Loại bỏ những đoạn text rác
+
+  if (finalQuestions.length === 0) return alert("Không tìm thấy dấu # để cắt thầy ơi!");
 
   setLoading(true);
   try {
-    const rawData = jsonInput.trim();
-    
-    // CHIÊU MỚI: Tách mảng dựa trên cụm "}, {" hoặc "}," để lấy từng cục Object thô
-    // Chúng ta tìm các khối nằm giữa dấu { và } 
-    const blocks = rawData.split(/\}\s*,\s*\{/);
-    
-    const formattedData = blocks.map((block, index) => {
-      let content = block.trim();
-      // Thêm lại ngoặc nhọn nếu bị mất do split
-      if (!content.startsWith('{')) content = '{' + content;
-      if (!content.endsWith('}')) content = content + '}';
-      
-      return {
-        examCode: examForm.exams,
-        rawObject: content // Giữ nguyên xi cái đống {...} thầy dán vào
-      };
-    });
-
-    // Bắn thẳng cái mảng các chuỗi thô này lên App Script
-    const res = await fetch(`${customLink || gvData?.link}?action=uploadRawData`, {
+    const res = await fetch(`${customLink || gvData?.link}?action=uploadExamData`, {
       method: 'POST',
       body: JSON.stringify({
-        action: 'uploadRawData',
+        action: 'uploadExamData',
         idgv: gvId,
-        data: formattedData
+        examCode: examForm.exams,
+        questions: finalQuestions 
       })
     });
-    
-    const result = await res.json();
-    alert("✅ " + result.message);
-    setJsonInput('');
 
+    const result = await res.json();
+    alert(`✅ Kaka! Đã "hốt" gọn ${finalQuestions.length} câu. Hệ thống chạy bon bon!`);
+    setJsonInput('');
   } catch (e) {
-    console.error(e);
-    alert("❌ Lỗi xử lý chuỗi! Thầy kiểm tra dấu phẩy giữa các câu nhé.");
+    alert("❌ Lỗi nạp: " + e.message);
   } finally { setLoading(false); }
 };
+  
 
   return (
     <div className="p-4 md:p-10 max-w-6xl mx-auto bg-white rounded-[3rem] shadow-2xl my-10 border border-slate-50">
