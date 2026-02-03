@@ -109,7 +109,6 @@ const handleWordParser = (text) => {
     return;
   }
 
-  // Tách từng block { ... }
   const blocks = [];
   let current = '';
   let depth = 0;
@@ -127,17 +126,30 @@ const handleWordParser = (text) => {
     }
   }
 
-  const baseId = Date.now(); // mốc an toàn
+  const baseId = Date.now();
   const results = blocks.map((block, index) => {
-    const classTagMatch = block.match(/classTag\s*:\s*["']([^"']+)["']/);
-
-    return {
-      id: baseId + index,
-      classTag: classTagMatch ? classTagMatch[1] : "1001.1",
-      question: block
-    };
+    try {
+      // Dùng hàm Function để "nuốt" được cái block của thầy 
+      // mà không bị lỗi dấu gạch chéo (vì đây là Object ảo)
+      const dynamicObj = new Function(`return ${block}`)();
+      
+      return {
+        ...dynamicObj,
+        id: dynamicObj.id || (baseId + index)
+      };
+    } catch (e) {
+      // Nếu block quá nát, ta mới dùng Regex để cứu
+      console.error("Lỗi tại câu số " + (index + 1), e);
+      return { 
+        id: baseId + index, 
+        error: "Câu này định dạng sai cấu trúc JSON",
+        raw: block 
+      };
+    }
   });
 
+  // Khi stringify ở đây, React sẽ TỰ ĐỘNG thêm các dấu \ cần thiết 
+  // để bảo vệ công thức MathJax của thầy.
   setJsonInput(JSON.stringify(results, null, 2));
 };
 
