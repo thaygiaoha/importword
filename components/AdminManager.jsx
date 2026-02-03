@@ -106,30 +106,44 @@ const AdminPanel = ({ mode, onBack }) => {
 const handleWordParser = (text) => {
   if (!text.trim()) return;
 
-  // 1. Tách theo dấu # (Vì thầy luôn để dấu # ở cuối mỗi câu)
-  const blocks = text.split('#').map(b => b.trim()).filter(b => b.length > 10);
+  // 1. Dùng Regex để "quét" mọi khối bắt đầu từ {id: đến }#
+  // s: cho phép dấu . khớp với cả xuống dòng
+  // g: tìm tất cả các khối
+  const regex = /\{id:[\s\S]*?\}#/g;
+  const matches = text.match(regex);
 
-  const results = blocks.map((block, index) => {
-    // Dọn dẹp các ký tự trắng "ma quái" (Non-breaking space)
-    let cleanBlock = block.replace(/\xA0/g, ' '); 
-    
-    // Thêm dấu phẩy vào sau các thuộc tính nếu thiếu (Sửa lỗi cho thầy)
+  if (!matches) {
+    alert("Không tìm thấy khối dữ liệu chuẩn {id: ... }#");
+    return;
+  }
+
+  const results = matches.map((block, index) => {
+    // 2. Loại bỏ dấu # ở cuối để còn lại chuỗi Object
+    let cleanBlock = block.replace(/}#$/, '}').trim();
+
+    // 3. Dọn dẹp ký tự trắng lạ (Non-breaking space)
+    cleanBlock = cleanBlock.replace(/\xA0/g, ' '); 
+
+    // 4. Tự động thêm dấu phẩy thiếu giữa các thuộc tính để JSON chuẩn hơn
+    // (Fix cho các dòng a: "..." loigiai: "...")
     cleanBlock = cleanBlock.replace(/"\s+([a-z]+):/g, '", "$1":');
     cleanBlock = cleanBlock.replace(/]\s+([a-z]+):/g, '], "$1":');
-    
+
     try {
-      // Dùng eval hoặc new Function để ép chuỗi thành Object
-      // Em dùng eval ở đây cho nó "máu", chấp nhận cả cú pháp lỗi nhẹ của thầy
-      const obj = eval("(" + cleanBlock + ")");
+      // Dùng Function để biến chuỗi thành Object Javascript
+      const obj = new Function(`return ${cleanBlock}`)();
       return obj;
     } catch (e) {
-      console.error("Câu " + (index + 1) + " vẫn lỗi cấu trúc!", e);
+      console.error(`Câu ${index + 1} vẫn lỗi cấu trúc nội bộ:`, e.message);
       return null;
     }
   }).filter(item => item !== null);
 
+  // Hiển thị kết quả lên ô JsonInput
   setJsonInput(JSON.stringify(results, null, 2));
 };
+
+  
   const handleSaveQuestions = async () => {
   if (!jsonInput) return alert("Chưa có dữ liệu!");
   setLoading(true);
