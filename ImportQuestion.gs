@@ -1,6 +1,5 @@
-import {SPREADSHEET_ID_ADMIN} from 
-export const SPREADSHEET_ID_ADMIN = "16w4EzHhTyS1CnTfJOWE7QQNM0o2mMQIqePpPK8TEYrg";
-const SPREADSHEET_ID = "16w4EzHhTyS1CnTfJOWE7QQNM0o2mMQIqePpPK8TEYrg";
+import {SPREADSHEET_ID_ADMIN} from './ config;
+const SPREADSHEET_ID = SPREADSHEET_ID_ADMIN;
 
 /**
  * Import câu hỏi từ Google Docs (Word đã convert)
