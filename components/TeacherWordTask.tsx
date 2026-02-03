@@ -100,11 +100,10 @@ const handleSaveConfig = async () => {
   }
 };
 // ========== xử lý file Word =====
- const processWordFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+const processWordFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
   const file = e.target.files?.[0];
   if (!file) return;
 
-  // 1. Kiểm tra Key ngay và luôn
   if (!userApiKey) {
     setShowKeyInput(true);
     alert("Thầy chưa nhập API Key kìa! Kaka.");
@@ -114,54 +113,73 @@ const handleSaveConfig = async () => {
   setLoading(true);
   try {
     const arrayBuffer = await file.arrayBuffer();
-    // Chuyển Word sang HTML, giữ thẻ <u> (gạch chân)
-    const result = await mammoth.convertToHtml({ arrayBuffer }, { styleMap: ["u => u"] });
-    const html = result.value;
+    // 1. Chuyển Word sang HTML, giữ thẻ <u> (Underline) để AI nhận biết đáp án
+    const resultHtml = await mammoth.convertToHtml({ arrayBuffer }, { 
+  styleMap: ["u => u"],
+  // Đoạn này cực quan trọng để AI thấy được ảnh
+  convertImage: mammoth.images.inline((element) => {
+    return element.read("base64").then((imageBuffer) => {
+      return {
+        src: `data:${element.contentType};base64,${imageBuffer.toString("base64")}`
+      };
+    });
+  })
+});
+const html = resultHtml.value;
 
-    // 2. Khởi tạo AI (Cấu hình chuẩn 2026)
+    // 2. Chuẩn bị tiền tố ID (10 + Năm + Tháng + Ngày + Giây)
+    const now = new Date();
+    const timePrefix = `10${now.getFullYear().toString().slice(-2)}${(now.getMonth() + 1).toString().padStart(2, '0')}${now.getDate().toString().padStart(2, '0')}${now.getSeconds().toString().padStart(2, '0')}`;
+
+    // 3. Khởi tạo Gemini
     const genAI = new GoogleGenAI(userApiKey.trim());
     const model = genAI.getGenerativeModel({ 
       model: "gemini-1.5-flash",
-      generationConfig: { responseMimeType: "application/json" } // Ép AI trả về JSON
+      generationConfig: { responseMimeType: "application/json" } 
     });
 
-    const prompt = `Bạn là chuyên gia số hóa đề thi. Hãy bóc tách HTML này thành mảng JSON.
-QUY TẮC BÓC TÁCH:
-1. "type": 
-   - "mcq": Phần I hoặc có 4 đáp án A,B,C,D.
-   - "true-false": Phần II hoặc có các ý a,b,c,d hoặc có cả hai từ đúng sai trong lời dẫn câu hỏi.
-   - "short-answer": Phần III hoặc có chứa thẻ <key=...>.
+    const prompt = `Bạn là chuyên gia số hóa đề thi Toán. Hãy bóc tách HTML sau thành mảng JSON.
 
-2. Nhận diện đáp án ("a" hoặc "s"):
-   - mcq: Lấy chữ cái (A, B, C hoặc D) nằm trong thẻ <u> (gạch chân).
-   - true-false: Với mỗi ý a,b,c,d, ý nào nằm trong thẻ <u> thì "a": true, còn lại là false.
-   - short-answer: Trích xuất nội dung nằm giữa cụm <key= và >. 
-     Ví dụ: "<key=21.5>" thì đáp án "a" là "21.5".
-3. "question": Nội dung câu hỏi, giữ nguyên thẻ <img> và chuyển công thức về $...$. 
-   Lưu ý: Loại bỏ thẻ <key=...> ra khỏi nội dung câu hỏi để học sinh không thấy đáp án.
-4. "loigiai": Lấy nội dung sau "Hướng dẫn giải" hoặc "Lời giải".
+QUY TẮC CẤU TRÚC JSON:
+1. "id": Tạo số 11 chữ số bắt đầu bằng "${timePrefix}" + số thứ tự (ví dụ: ${timePrefix}1, ${timePrefix}2...).
+2. "classTag": Tự nhận diện lớp (10, 11, 12) + dạng toán (01, 02...). Ví dụ: "1001.1".
+3. "part": Phân loại "PHẦN I. Câu trắc nghiệm nhiều phương án...", "PHẦN II. Câu trắc nghiệm đúng sai", hoặc "PHẦN III. Câu trắc nghiệm trả lời ngắn".
+4. "type": "mcq", "true-false", hoặc "short-answer".
 
-TRẢ VỀ JSON THUẦN MẢNG, KHÔNG GIẢI THÍCH THEO ĐỊNH DẠNG SAU
+QUY TẮC NỘI DUNG:
+- MCQ: Đáp án đúng nằm trong thẻ <u>. "a" là nội dung đáp án đó, "o" là mảng 4 phương án.
+- TRUE-FALSE: Các ý a,b,c,d nếu nằm trong thẻ <u> thì đánh dấu là đúng. Trả về mảng "s": [{text: "...", a: true/false}].
+- SHORT-ANSWER: Lấy giá trị trong <key=...> gán vào "a". Xóa thẻ <key=...> khỏi "question".
+- "question": Giữ nguyên thẻ <img>, chuyển công thức toán về dạng $...$.
+- "loigiai": Trích xuất phần sau chữ "Lời giải" hoặc "Hướng dẫn giải".
+
+TRẢ VỀ MỘT MẢNG JSON DUY NHẤT. KHÔNG GIẢI THÍCH DẪN GIẢI.
 DỮ LIỆU HTML: ${html}`;
 
-    // 3. Gọi AI thái thịt
+    // 4. Gọi AI
     const aiResult = await model.generateContent(prompt);
-    const response = await aiResult.response;
-    const text = response.text();
+    const text = await aiResult.response.text();
     
-    // Làm sạch JSON
+    // 5. Làm sạch và Parse JSON
     const cleanJson = text.replace(/```json|```/g, "").trim();
     const parsed = JSON.parse(cleanJson);
 
-    setQuestions(parsed);
-    setPreviewOpen(true); // Hiện cửa sổ xem trước
+    if (Array.isArray(parsed)) {
+      setQuestions(parsed);
+      setPreviewOpen(true);
+    } else {
+      throw new Error("Dữ liệu AI trả về không phải là mảng câu hỏi.");
+    }
+
   } catch (err: any) {
-    console.error("Lỗi bóc tách:", err);
-    alert("Lỗi: " + (err.message.includes("API_KEY_INVALID") ? "API Key sai rồi thầy ơi!" : err.message));
+    console.error("Lỗi bóc tách Word:", err);
+    alert("❌ Lỗi: " + (err.message.includes("API_KEY_INVALID") ? "API Key sai hoặc hết hạn!" : err.message));
   } finally {
     setLoading(false);
   }
 };
+
+   // ======================================================================================================================================================================================
   const handleFinalUpload = async () => {
   if (questions.length === 0) return alert("Chưa có câu hỏi để lưu!");
   
