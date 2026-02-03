@@ -149,24 +149,31 @@ const handleWordParser = (text) => {
   if (!jsonInput) return alert("Chưa có dữ liệu!");
   setLoading(true);
   try {
-    const dataArray = JSON.parse(jsonInput); // Đây là mảng các câu hỏi [{id, tag, q}, ...]
+    const dataArray = JSON.parse(jsonInput); 
     
-    // Gửi yêu cầu POST với nội dung là mảng phẳng
+    // Gửi yêu cầu POST
     const resp = await fetch(`${DANHGIA_URL}?action=saveQuestions`, {
       method: 'POST',
+      // Quan trọng: Dùng text/plain để tránh các vấn đề về CORS và Preflight phức tạp
       headers: { 'Content-Type': 'text/plain' }, 
-      body: JSON.stringify(dataArray) // Gửi THẲNG cái mảng này đi
+      // Ép kiểu chuỗi thật chặt chẽ
+      body: JSON.stringify(dataArray) 
     });
     
     const res = await resp.json();
     if (res.status === 'success') { 
       alert(`🚀 Thành công! Đã chèn ${dataArray.length} dòng.`); 
       setJsonInput(''); 
+    } else {
+      alert("Lỗi server: " + res.message);
     }
-  } catch (e) { alert("Lỗi gửi dữ liệu!"); }
-  finally { setLoading(false); }
+  } catch (e) { 
+    console.error(e);
+    alert("Lỗi gửi dữ liệu! Thầy kiểm tra Console (F12) xem lỗi gì nhé."); 
+  } finally { 
+    setLoading(false); 
+  }
 };
- 
 // Up lG
 const handleUploadLG = async () => {
   if (!jsonInput.trim()) return alert("Dán nội dung vào đã thầy ơi!");
