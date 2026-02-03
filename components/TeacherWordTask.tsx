@@ -131,15 +131,15 @@ const TeacherWordTask: React.FC<TeacherWordTaskProps> = ({ onBack }) => {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="bg-blue-100/50 p-4 rounded-2xl">
-                <label className="text-[10px] font-black text-blue-600 uppercase">MCQ: Số câu / Điểm mỗi câu</label>
+                <label className="text-[10px] font-black text-blue-600 uppercase">MCQ:        Số câu /         Điểm mỗi câu</label>
                 <div className="flex gap-2"><input type="number" className="w-full p-2 rounded-lg font-bold" value={examForm.MCQ} onChange={e=>setExamForm({...examForm, MCQ: parseInt(e.target.value)})} /><input type="number" step="0.01" className="w-full p-2 rounded-lg font-bold" value={examForm.scoremcq} onChange={e=>setExamForm({...examForm, scoremcq: parseFloat(e.target.value)})} /></div>
               </div>
               <div className="bg-orange-100/50 p-4 rounded-2xl">
-                <label className="text-[10px] font-black text-orange-600 uppercase">TF: Số câu / Điểm mỗi câu</label>
+                <label className="text-[10px] font-black text-orange-600 uppercase">TF:       Số câu /          Điểm mỗi câu</label>
                 <div className="flex gap-2"><input type="number" className="w-full p-2 rounded-lg font-bold" value={examForm.TF} onChange={e=>setExamForm({...examForm, TF: parseInt(e.target.value)})} /><input type="number" step="0.01" className="w-full p-2 rounded-lg font-bold" value={examForm.scoretf} onChange={e=>setExamForm({...examForm, scoretf: parseFloat(e.target.value)})} /></div>
               </div>
               <div className="bg-purple-100/50 p-4 rounded-2xl">
-                <label className="text-[10px] font-black text-purple-600 uppercase">SA: Số câu / Điểm mỗi câu</label>
+                <label className="text-[10px] font-black text-purple-600 uppercase">SA:        Số câu /         Điểm mỗi câu</label>
                 <div className="flex gap-2"><input type="number" className="w-full p-2 rounded-lg font-bold" value={examForm.SA} onChange={e=>setExamForm({...examForm, SA: parseInt(e.target.value)})} /><input type="number" step="0.01" className="w-full p-2 rounded-lg font-bold" value={examForm.scoresa} onChange={e=>setExamForm({...examForm, scoresa: parseFloat(e.target.value)})} /></div>
               </div>
             </div>
