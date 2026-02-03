@@ -64,49 +64,43 @@ const TeacherWordTask: React.FC<TeacherWordTaskProps> = ({ onBack }) => {
 
   // ======= 3. Ghi dữ liệu câu hỏi (JSON Mode) =======
   const handleUploadJsonData = async () => {
-  if (!examForm.exams) return alert("Nhập Mã đề trước thầy ơi!");
-  if (!jsonInput.trim()) return alert("Dán dữ liệu vào đã!");
-
-  const targetUrl = customLink || gvData?.link || DANHGIA_URL;
+  if (!examForm.exams) return alert("Thầy nhập Mã đề đã nhé!");
   setLoading(true);
   try {
     let rawData = jsonInput.trim();
 
-    // 1. Xử lý trường hợp lồng mảng [[...]] do copy thừa
-    if (rawData.startsWith('[[')) {
-      rawData = rawData.replace(/^\[\s*\[/, '[').replace(/\]\s*\]$/, ']');
-    }
-
-    // 2. PHÙ PHÉP: Biến Object Javascript thành JSON chuẩn
-    // Tự động thêm dấu ngoặc kép cho key: id, classTag, part, type, question, o, a, s...
+    // 1. Phù phép biến "Object kiểu thầy" thành JSON chuẩn
     const fixedJson = rawData
+      .replace(/\n/g, " ") // Khử xuống dòng để tránh gãy chuỗi
       .replace(/([{,]\s*)([a-zA-Z0-9_]+)\s*:/g, '$1"$2":') 
-      .replace(/[\u201C\u201D]/g, '"') // Sửa ngoặc kép "thông minh" từ Word
-      .replace(/[\u2018\u2019]/g, "'") // Sửa ngoặc đơn "thông minh"
-      .replace(/ /g, ' '); // Xóa khoảng trắng lạ (non-breaking space) thường gặp ở Word
+      .replace(/[\u201C\u201D]/g, '"') 
+      .replace(/'/g, '"');
 
     const questions = JSON.parse(fixedJson);
     const questionArray = Array.isArray(questions) ? questions : [questions];
 
-    const payload = {
-      action: 'uploadExamData',
-      idgv: gvId || "GUEST",
-      examCode: examForm.exams,
-      questions: questionArray
-    };
+    // 2. Chế biến lại mảng để gửi lên Script (giữ đúng thứ tự cột thầy muốn)
+    const formattedQuestions = questionArray.map(q => ({
+      ...q,
+      displayContent: q.question ? q.question.substring(0, 200) + "..." : "Cấu phần JSON", // Để hiện ở cột cho đẹp
+      pureQuestion: q.question || "" // Nội dung sạch để thầy nhìn trực tiếp
+    }));
 
-    const res = await fetch(`${targetUrl}?action=uploadExamData`, {
+    const res = await fetch(`${customLink || gvData?.link}?action=uploadExamData`, {
       method: 'POST',
-      body: JSON.stringify(payload)
+      body: JSON.stringify({
+        action: 'uploadExamData',
+        idgv: gvId,
+        examCode: examForm.exams,
+        questions: formattedQuestions
+      })
     });
     
     const result = await res.json();
-    alert(result.status === "success" ? "✅ " + result.message : "❌ Lỗi: " + result.message);
-    if(result.status === "success") setJsonInput('');
-
-  } catch (e: any) { 
-    console.error("Lỗi nội dung:", e);
-    alert("❌ Lỗi định dạng! Thầy kiểm tra xem có quên dấu phẩy giữa các câu không nhé."); 
+    alert("✅ Đã ghi xong " + questionArray.length + " câu!");
+    setJsonInput('');
+  } catch (e) {
+    alert("❌ Lỗi định dạng JSON! Thầy xem lại dấu ngoặc hoặc bảo Gemini 'viết trên 1 dòng' nhé.");
   } finally { setLoading(false); }
 };
 
