@@ -309,7 +309,7 @@ DỮ LIỆU HTML: ${html}`;
               <div className="bg-orange-100/50 p-2 rounded-xl">
                 <label className="text-[10px] font-black text-orange-600 uppercase ml-2">TF (Số câu)</label>
                 <input type="number" className="w-full p-2 rounded-lg font-bold" value={examForm.TF} onChange={e=>setExamForm({...examForm, TF: parseInt(e.target.value)})} />
-                <label className="text-[9px] font-black text-orange-400 uppercase ml-2">Điểm tối đa</label>
+                <label className="text-[9px] font-black text-orange-400 uppercase ml-2">Điểm/câu</label>
                 <input type="number" step="0.01" className="w-full p-2 rounded-lg font-bold" value={examForm.scoretf} onChange={e=>setExamForm({...examForm, scoretf: parseFloat(e.target.value)})} />
               </div>
 
