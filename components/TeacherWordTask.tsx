@@ -103,15 +103,18 @@ const handleSaveConfig = async () => {
 const processWordFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
   const file = e.target.files?.[0];
   if (!file) return;
+  console.log("Key hiện tại:", userApiKey); 
 
-  if (!userApiKey) {
+  if (!userApiKey || userApiKey.trim() === "") {
     setShowKeyInput(true);
-    alert("Thầy chưa nhập API Key kìa! Kaka.");
+    alert("Thầy ơi, dán cái API Key mới tạo vào ô cấu hình đã nhé! Kaka.");
     return;
   }
 
   setLoading(true);
   try {
+    // Thêm trim() để xóa khoảng trắng thừa nếu thầy lỡ tay copy dính dấu cách
+    const genAI = new GoogleGenAI(userApiKey.trim());
     const arrayBuffer = await file.arrayBuffer();
     // 1. Chuyển Word sang HTML, giữ thẻ <u> (Underline) để AI nhận biết đáp án
     const resultHtml = await mammoth.convertToHtml({ arrayBuffer }, { 
