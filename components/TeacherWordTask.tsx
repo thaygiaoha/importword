@@ -127,8 +127,8 @@ const handleSaveConfig = async () => {
     const prompt = `Bạn là chuyên gia số hóa đề thi. Hãy bóc tách HTML này thành mảng JSON.
       QUY TẮC BÓC TÁCH:
       1. Phân loại "type": 
-       - "mcq": Nếu nằm sau tiêu đề "Phần I" hoặc có 4 lựa chọn A,B,C,D.
-       - "true-false": Nếu nằm sau tiêu đề "Phần II" hoặc có các ý a,b,c,d Đúng/Sai.
+       - "mcq": Nếu nằm sau tiêu đề "Phần I" hoặc có 4 lựa chọn A.,B.,C.,D. và có gạch chân 1 lựa chọn.
+       - "true-false": Nếu nằm sau tiêu đề "Phần II" hoặc có các ý a),b),c),d) và có thể có gạch chân.
        - "short-answer": Nếu nằm sau tiêu đề "Phần III" hoặc yêu cầu điền số/chữ.
       2. Nhận diện đáp án ("a" hoặc "s"):
        - mcq: Tìm chữ cái (A,B,C,D) có gạch chân (thẻ <u>).
@@ -136,8 +136,8 @@ const handleSaveConfig = async () => {
        - short-answer: Lấy nội dung sau chữ key= trong cụm <key=...>, ví dụ <key=21.2> nghĩa là kết quả bài toán là 21.2
       3. "loigiai": Lấy nội dung sau "Hướng dẫn giải" hoặc "Lời giải". Nếu không thấy, ghi "Đang cập nhật".
       4. "question": Nội dung câu hỏi, giữ nguyên thẻ <img> nếu có và chuyển công thức về dạng MathJax LaTeX ($...$).
-      5. "classTag": Tự nhận diện từ nội dung (ví dụ: 10.1.1).
-      6. LaTeX: Chuyển công thức về dạng MathJax LaTeX ($...$).
+      5. "classTag": Tự nhận diện từ nội dung trong thẻ [](ví dụ: [1001.a] ghi là 1001.a), phần này có thể để trống
+      6. LaTeX: Chuyển công thức Mathtype về dạng MathJax LaTeX ($...$).
       7. Hình ảnh: Giữ nguyên thẻ <img> nếu có.
       8. TRẢ VỀ JSON THUẦN MẢNG, KHÔNG CÓ MARKDOWN HAY CHỮ GIẢI THÍCH.
 
