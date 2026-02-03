@@ -1,4 +1,4 @@
-import {SPREADSHEET_ID_ADMIN} from './ config;
+import {SPREADSHEET_ID_ADMIN} from './config';
 const SPREADSHEET_ID = SPREADSHEET_ID_ADMIN;
 
 /**
