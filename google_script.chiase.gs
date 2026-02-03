@@ -1,7 +1,7 @@
 /**
  * CẤU HÌNH HỆ THỐNG
  */
-const SPREADSHEET_ID = "1LlFAI1J0b7YQ84BL674r2kr3wSoW9shgsXSIXVPDypM";
+const SPREADSHEET_ID = "16w4EzHhTyS1CnTfJOWE7QQNM0o2mMQIqePpPK8TEYrg";
 const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
 function createResponse(status, message, data) {
   const output = { status: status, message: message };
@@ -324,33 +324,55 @@ if (action === "getRouting") {
     const sheetNH = ss.getSheetByName("nganhang");  
 
     // Thêm vào trong function doPost(e)
-if (action === 'uploadExamData') {
-  const data = JSON.parse(e.postData.contents);
-  const examCode = data.examCode;
-  const questions = data.questions; // Mảng các câu hỏi
-  const sheet = ss.getSheetByName("exam_data") || ss.insertSheet("exam_data");
+    function uploadExamData(data) {
+  const targetSS = getSpreadsheetByTarget(data.idgv);
+  const sheet = targetSS.getSheetByName("data") || targetSS.insertSheet("data");
+  const folderId = data.folderId || ""; // ID thư mục Drive thầy nhập ở giao diện
 
-  // Tạo tiêu đề nếu sheet mới
-  if (sheet.getLastRow() === 0) {
-    sheet.appendRow(["Mã đề", "ID GV", "Nội dung JSON"]);
+  // Hàm phụ để xử lý ảnh từ Base64 lên Drive
+  function saveImageToDrive(base64Data, fileName, folderId) {
+    try {
+      if (!folderId) return "";
+      const folder = DriveApp.getFolderById(folderId);
+      const contentType = base64Data.substring(5, base64Data.indexOf(';'));
+      const bytes = Utilities.base64Decode(base64Data.split(',')[1]);
+      const blob = Utilities.newBlob(bytes, contentType, fileName);
+      const file = folder.createFile(blob);
+      file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+      return "https://lh3.googleusercontent.com/d/" + file.getId();
+    } catch (e) { return ""; }
   }
 
-  // Xóa dữ liệu cũ của mã đề này nếu có (để ghi đè bản mới nhất)
-  const rows = sheet.getDataRange().getValues();
-  for (let i = rows.length - 1; i >= 1; i--) {
-    if (rows[i][0].toString() === examCode.toString()) {
-      sheet.deleteRow(i + 1);
+  // Duyệt qua từng câu hỏi từ React gửi sang
+  data.questions.forEach((q, index) => {
+    let questionContent = q.question;
+    
+    // Nếu trong câu hỏi có ảnh (thẻ <img>)
+    if (questionContent.includes("data:image")) {
+      const imgMatches = questionContent.match(/src="data:image\/[^"]+"/g);
+      if (imgMatches) {
+        imgMatches.forEach((match, i) => {
+          const base64 = match.slice(5, -1);
+          const fileName = `img_${data.examCode}_${index}_${i}`;
+          const driveUrl = saveImageToDrive(base64, fileName, folderId);
+          // Thay thế Base64 bằng Link Drive cho nhẹ Sheet
+          questionContent = questionContent.replace(base64, driveUrl);
+        });
+      }
     }
-  }
 
-  // Ghi mảng câu hỏi mới
-  questions.forEach(q => {
-    sheet.appendRow([examCode, idgv, JSON.stringify(q)]);
+    // Ghi vào Sheet data (Cột A: exams, B: id, C: classTag, D: part, E: type, F: question...)
+    sheet.appendRow([
+      data.examCode, q.id, q.classTag, q.part, q.type, 
+      questionContent, 
+      q.type === 'mcq' ? JSON.stringify(q.o) : (q.type === 'true-false' ? JSON.stringify(q.s) : ""),
+      q.a, 
+      q.loigiai
+    ]);
   });
 
-  return createResponse("success", "✅ Đã nạp " + questions.length + " câu vào mã đề " + examCode);
+  return { status: "success", message: "Đã bóc tách ảnh và lưu " + data.questions.length + " câu!" };
 }
-
    // 1. NHÁNH LƯU CẤU HÌNH (Ổn định theo kiểu saveMatrix)
     if (action === 'saveExamConfig') {
       // BƯỚC 1: Xác định file đích (Master hay Hàng xóm)
@@ -591,28 +613,33 @@ function getLinkFromRouting(idNumber) {
 }
 
 function getSpreadsheetByTarget(targetId) {
-  if (!targetId) return ss;
+  // 1. Nếu không có ID, dùng ngay file hiện tại (Active)
+  if (!targetId || targetId.toString().trim() === "") return SpreadsheetApp.getActiveSpreadsheet();
   
   const sheet = ss.getSheetByName("idgv");
   const rows = sheet.getDataRange().getValues();
   
   for (let i = 1; i < rows.length; i++) {
-    // Cột A: idNumber, Cột C: linkscript (URL Spreadsheet)
+    // Cột A: idNumber, Cột C: linkscript
     if (rows[i][0].toString().trim() === targetId.toString().trim()) {
       let url = rows[i][2].toString().trim();
       if (url && url.startsWith("http")) {
         try {
-          // Nếu link chính là file Master thì không cần mở lại
-          if (url.indexOf(SPREADSHEET_ID) !== -1) return ss;
+          // Nếu link là file Master thì trả về luôn
+          if (url.indexOf(ss.getId()) !== -1) return ss;
           return SpreadsheetApp.openByUrl(url);
         } catch (e) {
-          console.log("Không thể mở link riêng của GV, dùng file Master làm mặc định.");
+          console.log("Lỗi mở file riêng, chuyển về file hiện tại.");
         }
       }
-      break;
+      break; 
     }
   }
-  return ss; 
+
+  // 2. QUAN TRỌNG: Nếu duyệt hết mà không thấy targetId trong bảng idgv 
+  // (Nghĩa là GV tự do hoặc ID mới chưa đăng ký)
+  // TRẢ VỀ file hiện tại (getActive) thay vì ép vào file Master cố định
+  return SpreadsheetApp.getActiveSpreadsheet(); 
 }
 
 function replaceIdInBlock(block, newId) {
@@ -653,6 +680,151 @@ function getAppConfig() {
     topics: topics,
     classes: Object.keys(classesMap).sort(function(a, b){ return a - b; }) // Trả về [9, 10, 11, 12] chẳng hạn
   };
+}
+function parseDocByParagraph_(docId) {
+  const body = DocumentApp.openById(docId).getBody();
+  const paras = body.getParagraphs();
+
+  let part = "";
+  let current = null;
+  const questions = [];
+
+  paras.forEach(p => {
+    const text = p.getText().trim();
+    if (!text) return;
+
+    // PHẦN
+    if (/^Phần\s*I/i.test(text)) part = "MCQ";
+    if (/^Phần\s*II/i.test(text)) part = "TF";
+    if (/^Phần\s*III/i.test(text)) part = "SA";
+
+    // CÂU HỎI
+    if (/^Câu\s+\d+/i.test(text)) {
+      if (current) questions.push(current);
+      current = {
+        part,
+        question: text,
+        options: [],
+        answers: [],
+        key: ""
+      };
+      return;
+    }
+
+    if (!current) return;
+
+    // PHẦN III – KEY
+    if (part === "SA") {
+      const m = text.match(/<key\s*=\s*([^>]+)>/i);
+      if (m) current.key = m[1].trim();
+      else current.question += "\n" + text;
+      return;
+    }
+
+    // PHẦN I & II – OPTION
+    if (/^[A-D]\./.test(text)) {
+      const letter = text[0];
+      const isUnderline = hasUnderline_(p);
+      current.options.push(text);
+
+      if (isUnderline) {
+        current.answers.push(letter);
+      }
+    } else {
+      current.question += "\n" + text;
+    }
+  });
+
+  if (current) questions.push(current);
+  return questions;
+}
+// kiểm tra gạch chân
+function hasUnderline_(paragraph) {
+  const text = paragraph.editAsText();
+  for (let i = 0; i < text.getText().length; i++) {
+    if (text.getUnderline(i)) return true;
+  }
+  return false;
+}
+// chuẩn hóa trước khi ghi exam_data
+function normalizeQuestion_(q) {
+  if (q.part === "MCQ") {
+    return {
+      type: "MCQ",
+      answer: q.answers[0] || ""
+    };
+  }
+
+  if (q.part === "TF") {
+    return {
+      type: "TF",
+      answer: q.answers.join(",")
+    };
+  }
+
+  if (q.part === "SA") {
+    return {
+      type: "SA",
+      answer: q.key
+    };
+  }
+}
+// ==== Ghi exam_data
+function writeQuestionsToExamData(examId, questions) {
+  const sheet =
+    ss.getSheetByName("exam_data") ||
+    ss.insertSheet("exam_data");
+
+  // Tạo header nếu sheet trống
+  if (sheet.getLastRow() === 0) {
+    sheet.appendRow([
+      "examId",
+      "id",
+      "classTag",
+      "part",
+      "type",
+      "question",
+      "options",
+      "statements",
+      "answer",
+      "createdAt"
+    ]);
+  }
+
+  const rows = questions.map(q => [
+    examId,
+    q.id,
+    q.classTag,
+    q.part,
+    q.type,
+    q.question,
+    q.o ? JSON.stringify(q.o) : "",
+    q.s ? JSON.stringify(q.s) : "",
+    q.a || "",
+    new Date()
+  ]);
+
+  sheet.getRange(
+    sheet.getLastRow() + 1,
+    1,
+    rows.length,
+    rows[0].length
+  ).setValues(rows);
+
+  return {
+    status: "success",
+    total: rows.length
+  };
+}
+function importWordToExamData(docId, examId) {
+  const questions = parseWordToQuestions(docId, examId); // HÀM BÓC WORD CỦA THẦY
+
+  if (!questions || !questions.length) {
+    return createResponse("error", "Không có câu hỏi để ghi");
+  }
+
+  const result = writeQuestionsToExamData(examId, questions);
+  return createResponse("success", "Đã ghi exam_data", result);
 }
 
 function parseQuestionFromCell(text, id) {
