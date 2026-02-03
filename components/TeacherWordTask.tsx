@@ -125,14 +125,24 @@ const handleSaveConfig = async () => {
       generationConfig: { responseMimeType: "application/json" } // Ép AI trả về JSON
     });
 
-    const prompt = `Bạn là chuyên gia bóc tách đề thi. Hãy chuyển HTML sau thành mảng JSON.
-      QUY TẮC:
-      1. Loại "mcq": Đáp án đúng là chữ cái (A,B,C,D) nằm trong thẻ <u>.
-      2. Loại "true-false": Từng ý a,b,c,d nếu nằm trong <u> thì "a": true, ngược lại false.
-      3. Loại "short-answer": Lấy nội dung sau "Đáp án:".
-      4. "question": Giữ nguyên thẻ <img> và công thức LaTeX ($...$).
-      5. "loigiai": Lấy sau "Hướng dẫn giải" hoặc "Lời giải".
-      HTML: ${html}`;
+    const prompt = `Bạn là chuyên gia số hóa đề thi. Hãy bóc tách HTML này thành mảng JSON.
+QUY TẮC BÓC TÁCH:
+1. "type": 
+   - "mcq": Phần I hoặc có 4 đáp án A,B,C,D.
+   - "true-false": Phần II hoặc có các ý a,b,c,d hoặc có cả hai từ đúng sai trong lời dẫn câu hỏi.
+   - "short-answer": Phần III hoặc có chứa thẻ <key=...>.
+
+2. Nhận diện đáp án ("a" hoặc "s"):
+   - mcq: Lấy chữ cái (A, B, C hoặc D) nằm trong thẻ <u> (gạch chân).
+   - true-false: Với mỗi ý a,b,c,d, ý nào nằm trong thẻ <u> thì "a": true, còn lại là false.
+   - short-answer: Trích xuất nội dung nằm giữa cụm <key= và >. 
+     Ví dụ: "<key=21.5>" thì đáp án "a" là "21.5".
+3. "question": Nội dung câu hỏi, giữ nguyên thẻ <img> và chuyển công thức về $...$. 
+   Lưu ý: Loại bỏ thẻ <key=...> ra khỏi nội dung câu hỏi để học sinh không thấy đáp án.
+4. "loigiai": Lấy nội dung sau "Hướng dẫn giải" hoặc "Lời giải".
+
+TRẢ VỀ JSON THUẦN MẢNG, KHÔNG GIẢI THÍCH THEO ĐỊNH DẠNG SAU
+DỮ LIỆU HTML: ${html}`;
 
     // 3. Gọi AI thái thịt
     const aiResult = await model.generateContent(prompt);
