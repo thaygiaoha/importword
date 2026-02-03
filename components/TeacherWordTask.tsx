@@ -135,7 +135,7 @@ const html = resultHtml.value;
     const timePrefix = `10${now.getFullYear().toString().slice(-2)}${(now.getMonth() + 1).toString().padStart(2, '0')}${now.getDate().toString().padStart(2, '0')}${now.getSeconds().toString().padStart(2, '0')}`;
 
     // 3. Khởi tạo Gemini
-    const genAI = new GoogleGenAI(userApiKey.trim());
+    
     const model = genAI.getGenerativeModel({ 
       model: "gemini-1.5-flash",
       generationConfig: { responseMimeType: "application/json" } 
