@@ -62,7 +62,64 @@ const TeacherWordTask: React.FC<TeacherWordTaskProps> = ({ onBack }) => {
     } catch (e) { alert("Lỗi kết nối!"); } finally { setLoading(false); }
   };
 
-  // ======= 3. Ghi dữ liệu câu hỏi (JSON Mode) =======
+
+  // ===========================================================================================================================================tách dữ liệu câu hỏi
+  const handleWordParser = (text) => {
+  if (!text.trim()) return;
+  const results = [];
+  let input = text;
+
+  while (input.indexOf('{') !== -1 && input.indexOf('}#') !== -1) {
+    let start = input.indexOf('{');
+    let end = input.indexOf('}#') + 2;
+    let block = input.substring(start, end).trim();
+
+    // CHIÊU CUỐI: Nén mọi dấu xuống dòng và khoảng trắng thừa trong block
+    // Biến toàn bộ cục { ... }# thành 1 dòng duy nhất trước khi nạp
+    let cleanBlock = block.replace(/[\n\r]+/g, " ").replace(/\s+/g, " ");
+    
+    if (cleanBlock) results.push(cleanBlock);
+    input = input.substring(end);
+  }
+  setJsonInput(JSON.stringify(results, null, 2));
+};
+// ===================================================================LỜI GIẢI=======
+const handleUploadLG = async () => {
+  if (!jsonInput.trim()) return alert("Dán nội dung vào đã thầy ơi!");
+  setLoading(true);
+  try {
+    const blocks = [];
+    let current = '';
+    let depth = 0;
+    for (let i = 0; i < jsonInput.length; i++) {
+      const ch = jsonInput[i];
+      if (ch === '{') { if (depth === 0) current = ''; depth++; }
+      if (depth > 0) current += ch;
+      if (ch === '}') { depth--; if (depth === 0) blocks.push(current.trim()); }
+    }
+
+    const itemsToUpload = blocks.map(block => {
+      const idMatch = block.match(/id\s*:\s*(\d+|["'][^"']+["'])/);
+      const id = idMatch ? idMatch[1].replace(/["']/g, '') : null;
+      return { id: id, loigiai: block };
+    }).filter(item => item.id !== null);
+
+    // Cách thầy đề xuất: Đưa action lên URL cho chắc chắn
+    const resp = await fetch(`${DANHGIA_URL}?action=saveLG`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify(itemsToUpload) // Chỉ gửi mảng phẳng thôi
+    });
+    
+    const result = await resp.text();
+    alert(result);
+    setJsonInput('');
+  } catch (e) { alert("Lỗi gửi dữ liệu thầy ạ!"); }
+  finally { setLoading(false); }
+};
+
+
+  // ======= 3. Ghi dữ liệu câu hỏi (JSON Mode) ===============================================================
   const handleUploadJsonData = async () => {
   if (!examForm.exams) return alert("Thầy nhập Mã đề đã!");
   let input = jsonInput.trim();
