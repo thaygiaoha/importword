@@ -41,7 +41,7 @@ const TeacherWordTask = ({ onBack }) => {
     try {
       // 1. Xác định link gửi (Theo logic F2 thầy dặn)
       // Giả sử ta gọi hàm check F2 ở đây hoặc truyền idgv để Backend tự xử lý
-      const targetUrl = customLink || API_ROUTING[idgv] || DANHGIA_URL;
+      const targetUrl = customLink || API_ROUTING[idgv];
 
       const payload = {
         idgv,
@@ -70,10 +70,10 @@ const TeacherWordTask = ({ onBack }) => {
         {/* Khu vực Routing & Config */}
         <div className="space-y-2">
            <input className="w-full p-3 rounded-xl bg-slate-800 text-white font-bold" placeholder="ID GIÁO VIÊN..." value={idgv} onChange={e => setIdgv(e.target.value)} />
-           <input className="w-full p-3 rounded-xl bg-slate-800 text-white" placeholder="Link Script (nếu F2=0)..." value={customLink} onChange={e => setCustomLink(e.target.value)} />
+           <input className="w-full p-3 rounded-xl bg-slate-800 text-white" placeholder="Link Script GV tự do (nếu F2=0)..." value={customLink} onChange={e => setCustomLink(e.target.value)} />
         </div>
         <div className="space-y-2">
-           <input className="w-full p-7 rounded-xl bg-blue-500 text-white font-black" placeholder="MÃ ĐỀ KT (EXAMS)..." value={examCode} onChange={e => setExamCode(e.target.value)} />
+           <input className="w-full p-7 rounded-xl bg-slate-500 text-white font-black" placeholder="MÃ ĐỀ KT (EXAMS)..." value={examCode} onChange={e => setExamCode(e.target.value)} />
            <div className="grid grid-cols-2 gap-2 text-[10px] text-white">
               <div>Số câu MCQ: <input type="number" className="w-full bg-slate-800 p-1" value={config.numMCQ} onChange={e => setConfig({...config, numMCQ: e.target.value})}/></div>
               <div>Điểm/câu: <input type="number" className="w-full bg-slate-800 p-1" value={config.scoreMCQ} onChange={e => setConfig({...config, scoreMCQ: e.target.value})}/></div>
