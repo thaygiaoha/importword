@@ -103,47 +103,41 @@ const AdminPanel = ({ mode, onBack }) => {
     setLoading(false);
   }
 };  
-const handleWordParser = (text) => {
+// ===========================================================================================================================================tách dữ liệu câu hỏi
+  const handleWordParser = (text) => {
   if (!text.trim()) return;
 
-  // 1. Dùng Regex để "quét" mọi khối bắt đầu từ {id: đến }#
-  // s: cho phép dấu . khớp với cả xuống dòng
-  // g: tìm tất cả các khối
-  // Thay dòng regex cũ bằng dòng này:
-  const regex = /\{\s*id[\s\S]*?\}#/g;
+  // 1. Dùng Regex cực mạnh để hốt trọn khối từ { đến }#
+  // [\s\S]*? giúp lấy toàn bộ nội dung kể cả xuống dòng
+  const regex = /\{[\s\S]*?\}#/g;
   const matches = text.match(regex);
 
   if (!matches) {
-    alert("Không tìm thấy khối dữ liệu chuẩn {id: ... }#");
+    alert("Không tìm thấy dữ liệu dạng { ... }#");
+    setJsonInput("[]");
     return;
   }
 
+  // 2. Chuyển đổi các chuỗi thô thành mảng Object
   const results = matches.map((block, index) => {
-    // 2. Loại bỏ dấu # ở cuối để còn lại chuỗi Object
-    let cleanBlock = block.replace(/}#$/, '}').trim();
-
-    // 3. Dọn dẹp ký tự trắng lạ (Non-breaking space)
-    cleanBlock = cleanBlock.replace(/\xA0/g, ' '); 
-
-    // 4. Tự động thêm dấu phẩy thiếu giữa các thuộc tính để JSON chuẩn hơn
-    // (Fix cho các dòng a: "..." loigiai: "...")
-    cleanBlock = cleanBlock.replace(/"\s+([a-z]+):/g, '", "$1":');
-    cleanBlock = cleanBlock.replace(/]\s+([a-z]+):/g, '], "$1":');
-
     try {
-      // Dùng Function để biến chuỗi thành Object Javascript
+      // Xóa dấu # ở cuối để còn lại chuỗi Object thuần túy
+      let cleanBlock = block.trim().replace(/\}#$/, '}');
+
+      // Dùng new Function để "nuốt" được các key không có dấu nháy "" (như id:, type:)
+      // Đây là cách an toàn nhất cho cấu trúc dữ liệu của thầy
       const obj = new Function(`return ${cleanBlock}`)();
       return obj;
     } catch (e) {
-      console.error(`Câu ${index + 1} vẫn lỗi cấu trúc nội bộ:`, e.message);
+      console.error(`Lỗi ở khối thứ ${index + 1}:`, e);
       return null;
     }
   }).filter(item => item !== null);
 
-  // Hiển thị kết quả lên ô JsonInput
+  // 3. Cập nhật vào ô bên phải (JsonInput)
   setJsonInput(JSON.stringify(results, null, 2));
 };
-// ====================================================
+// ======================================================================================Ghi câu hoi ngân hàng=========
   
  const handleSaveQuestions = async () => {
   if (!jsonInput) return alert("Chưa có dữ liệu!");
