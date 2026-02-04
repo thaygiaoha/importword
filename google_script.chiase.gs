@@ -1,7 +1,4 @@
-/**
- * CẤU HÌNH HỆ THỐNG
- */
-const SPREADSHEET_ID = "16w4EzHhTyS1CnTfJOWE7QQNM0o2mMQIqePpPK8TEYrg";
+const SPREADSHEET_ID = "1LlFAI1J0b7YQ84BL674r2kr3wSoW9shgsXSIXVPDypM";
 const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
 function createResponse(status, message, data) {
   const output = { status: status, message: message };
@@ -324,55 +321,7 @@ if (action === "getRouting") {
     const sheetNH = ss.getSheetByName("nganhang");  
 
     // Thêm vào trong function doPost(e)
-    function uploadExamData(data) {
-  const targetSS = getSpreadsheetByTarget(data.idgv);
-  const sheet = targetSS.getSheetByName("data") || targetSS.insertSheet("data");
-  const folderId = data.folderId || ""; // ID thư mục Drive thầy nhập ở giao diện
-
-  // Hàm phụ để xử lý ảnh từ Base64 lên Drive
-  function saveImageToDrive(base64Data, fileName, folderId) {
-    try {
-      if (!folderId) return "";
-      const folder = DriveApp.getFolderById(folderId);
-      const contentType = base64Data.substring(5, base64Data.indexOf(';'));
-      const bytes = Utilities.base64Decode(base64Data.split(',')[1]);
-      const blob = Utilities.newBlob(bytes, contentType, fileName);
-      const file = folder.createFile(blob);
-      file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-      return "https://lh3.googleusercontent.com/d/" + file.getId();
-    } catch (e) { return ""; }
-  }
-
-  // Duyệt qua từng câu hỏi từ React gửi sang
-  data.questions.forEach((q, index) => {
-    let questionContent = q.question;
     
-    // Nếu trong câu hỏi có ảnh (thẻ <img>)
-    if (questionContent.includes("data:image")) {
-      const imgMatches = questionContent.match(/src="data:image\/[^"]+"/g);
-      if (imgMatches) {
-        imgMatches.forEach((match, i) => {
-          const base64 = match.slice(5, -1);
-          const fileName = `img_${data.examCode}_${index}_${i}`;
-          const driveUrl = saveImageToDrive(base64, fileName, folderId);
-          // Thay thế Base64 bằng Link Drive cho nhẹ Sheet
-          questionContent = questionContent.replace(base64, driveUrl);
-        });
-      }
-    }
-
-    // Ghi vào Sheet data (Cột A: exams, B: id, C: classTag, D: part, E: type, F: question...)
-    sheet.appendRow([
-      data.examCode, q.id, q.classTag, q.part, q.type, 
-      questionContent, 
-      q.type === 'mcq' ? JSON.stringify(q.o) : (q.type === 'true-false' ? JSON.stringify(q.s) : ""),
-      q.a, 
-      q.loigiai
-    ]);
-  });
-
-  return { status: "success", message: "Đã bóc tách ảnh và lưu " + data.questions.length + " câu!" };
-}
    // 1. NHÁNH LƯU CẤU HÌNH (Ổn định theo kiểu saveMatrix)
     if (action === 'saveExamConfig') {
       // BƯỚC 1: Xác định file đích (Master hay Hàng xóm)
@@ -421,19 +370,60 @@ return createResponse("success", "✅ Đã cập nhật cấu hình mã đề: "
     }
     // 5. UPLOAD DỮ LIỆU ĐỀ THI TỪ WORD (Teacher)
     if (action === 'uploadExamData') {
-      const gvSS = getSpreadsheetByTarget(data.idgv);
-      const sheet = gvSS.getSheetByName("exam_data") || gvSS.insertSheet("exam_data");
-      const now = Utilities.formatDate(new Date(), "GMT+7", "dd/MM/yy");
-      data.questions.forEach(q => {
-        sheet.appendRow([
-          data.examCode, q.classTag || "", q.type, 
-          JSON.stringify(q), now, q.loigiai || ""
-        ]);
-      });
-      return createResponse("success", "Đã tải lên " + data.questions.length + " câu!");
-    }
+  const gvSS = getSpreadsheetByTarget(data.idgv);
+  // Nếu chưa có sheet exam_data thì nó tự tạo mới
+  const sheet = gvSS.getSheetByName("exam_data") || gvSS.insertSheet("exam_data");
+  
+  const nowObj = new Date();
+  const dateStr = Utilities.formatDate(nowObj, "GMT+7", "dd/MM/yyyy HH:mm:ss");
+  const yymmdd = Utilities.formatDate(nowObj, "GMT+7", "yyMMdd"); 
+  
+  // 1. Tính toán ID nối tiếp (ttt) dựa trên dữ liệu đang có trong sheet exam_data
+  let tttStart = 1;
+  const lastRow = sheet.getLastRow();
+  if (lastRow > 0) {
+    try {
+      const lastId = sheet.getRange(lastRow, 1).getValue().toString();
+      // ID: xy + yymmdd + ttt (Lấy 3 số cuối)
+      const lastNum = parseInt(lastId.slice(-3), 10); 
+      if (!isNaN(lastNum)) tttStart = lastNum + 1;
+    } catch(e) { tttStart = 1; }
+  }
 
+  // 2. Chuẩn bị mảng để ghi siêu tốc (7 cột cho đầy đủ thông tin thầy cần)
+  const rowsToInsert = data.questions.map((qStr, i) => {
+    if (!qStr || qStr.length < 20) return null;
+    try {
+      const q = JSON.parse(qStr);
+      
+      // Logic ID: Mã tỉnh (2 số đầu classTag) + ngày tháng + STT
+      const xy = (q.classTag || "10").toString().slice(0, 2);
+      const newId = xy + yymmdd + (tttStart + i).toString().padStart(3, '0');
+      
+      // Cập nhật ID vào object
+      q.id = newId;
 
+      // Cấu trúc hàng: ID | ClassTag | JSON | Ngày nạp | Lời giải | Mã đề | Loại
+      return [
+        newId, 
+        q.classTag || "", 
+        JSON.stringify(q), 
+        dateStr, 
+        q.loigiai || "", 
+        data.examCode || "", // Thêm mã đề để thầy lọc theo đề
+        q.type || ""
+      ];
+    } catch (e) { return null; }
+  }).filter(row => row !== null);
+
+  // 3. Thực hiện ghi
+  if (rowsToInsert.length > 0) {
+    sheet.getRange(sheet.getLastRow() + 1, 1, rowsToInsert.length, 7).setValues(rowsToInsert);
+    return createResponse("success", "Đã nạp " + rowsToInsert.length + " câu vào sheet exam_data thành công!");
+  } else {
+    return createResponse("error", "Dữ liệu không hợp lệ thầy ơi!");
+  }
+}
     // 1. NHÁNH LỜI GIẢI (saveLG)
    if (action === 'saveLG') {
       var lastRow = sheetNH.getLastRow();
@@ -504,25 +494,67 @@ return createResponse("success", "✅ Đã cập nhật cấu hình mã đề: "
 
     // 3. NHÁNH LƯU CÂU HỎI MỚI (saveQuestions)
     if (action === 'saveQuestions') {
-      var now = new Date();
-      var yymmdd = now.getFullYear().toString().slice(-2) + ("0" + (now.getMonth() + 1)).slice(-2) + ("0" + now.getDate()).slice(-2);
-      var tttStart = 1;
-      if (sheetNH.getLastRow() > 1) {
-        var lastId = sheetNH.getRange(sheetNH.getLastRow(), 1).getValue().toString();
-        if (lastId.length >= 3) {
-          var lastNum = parseInt(lastId.slice(-3), 10);
-          if (!isNaN(lastNum)) tttStart = lastNum + 1;
-        }
-      }
-      for (var i = 0; i < data.length; i++) {
-        var item = data[i];
-        var xy = (item.classTag || "XX").toString().slice(0, 2);
-        var newId = xy + yymmdd + (tttStart + i).toString().padStart(3, '0');
-        var fixedQuestion = item.question ? item.question.replace(/id\s*:\s*\d+/, "id: " + newId) : "";
-        sheetNH.appendRow([newId, item.classTag, fixedQuestion, new Date(), item.lg || ""]);
-      }
-      return createResponse("success", "Đã lưu " + data.length + " câu hỏi thành công!");
+  var now = new Date();
+  // Định dạng ngày: 260203 (yymmdd)
+  var yymmdd = now.getFullYear().toString().slice(-2) + ("0" + (now.getMonth() + 1)).slice(-2) + ("0" + now.getDate()).slice(-2);
+  var dateStr = Utilities.formatDate(now, "GMT+7", "dd/MM/yyyy HH:mm:ss");
+
+  var tttStart = 1;
+  // Giả sử sheetNH là sheet "nganhang" của thầy
+  if (sheetNH.getLastRow() > 1) {
+    var lastId = sheetNH.getRange(sheetNH.getLastRow(), 1).getValue().toString();
+    if (lastId.length >= 3) {
+      var lastNum = parseInt(lastId.slice(-3), 10);
+      if (!isNaN(lastNum)) tttStart = lastNum + 1;
     }
+  }
+
+  // Mảng để ghi siêu tốc
+  var rowsToInsert = [];
+
+  for (var i = 0; i < data.length; i++) {
+    var qStr = data[i];
+    if (!qStr || qStr.length < 20) continue;
+
+    try {
+      // 1. "TẨY RỬA" CHUỖI: Sửa lỗi dấu \ trong TeX (\left, \right...)
+      // JSON cần \\ để hiểu dấu \, nên mình nhân đôi các dấu \ đơn lẻ
+      var cleanStr = qStr.trim();
+      if (cleanStr.startsWith(",")) cleanStr = cleanStr.substring(1).trim();
+      if (cleanStr.endsWith(",")) cleanStr = cleanStr.substring(0, cleanStr.length - 1).trim();
+      
+      // Fix lỗi Bad Escape (như \l, \r trong câu 13, 17 của thầy)
+      cleanStr = cleanStr.replace(/\\/g, "\\\\").replace(/\\\\\\\\/g, "\\\\");
+
+      var item = JSON.parse(cleanStr);
+
+      // 2. SINH ID THEO LOGIC CỦA THẦY
+      var xy = (item.classTag || "10").toString().slice(0, 2);
+      var newId = xy + yymmdd + (tttStart + rowsToInsert.length).toString().padStart(3, '0');
+
+      // 3. CHUẨN BỊ DÒNG GHI (Khớp 5 cột file của thầy)
+      // Cột A: ID | B: ClassTag | C: JSON | D: Ngày | E: Lời giải
+      rowsToInsert.push([
+        newId,
+        item.classTag || "",
+        JSON.stringify(item),
+        dateStr,
+        item.loigiai || item.lg || "" // Tự nhận diện cả loigiai hoặc lg
+      ]);
+
+    } catch (e) {
+      console.log("Lỗi parse câu số " + (i + 1) + ": " + e.message);
+    }
+  }
+
+  // 4. GHI MỘT NHÁT ĂN NGAY
+  if (rowsToInsert.length > 0) {
+    sheetNH.getRange(sheetNH.getLastRow() + 1, 1, rowsToInsert.length, 5).setValues(rowsToInsert);
+    return createResponse("success", "Đã nạp thành công " + rowsToInsert.length + " câu vào Ngân hàng!");
+  } else {
+    return createResponse("error", "Không có dữ liệu hợp lệ để nạp thầy ơi!");
+  }
+}
 
     // 4. XÁC MINH GIÁO VIÊN (verifyGV)
     if (action === "verifyGV") {
@@ -826,7 +858,39 @@ function importWordToExamData(docId, examId) {
   const result = writeQuestionsToExamData(examId, questions);
   return createResponse("success", "Đã ghi exam_data", result);
 }
+function saveToExamData(examCode, questions, ss) {
+  let sheetData = ss.getSheetByName("exam_data") || ss.insertSheet("exam_data");
+  
+  // 1. Tạo tiêu đề nếu sheet mới tinh
+  if (sheetData.getLastRow() === 0) {
+    sheetData.appendRow(["exams", "questionJSON"]);
+  }
+  
+  // 2. Xóa các câu cũ của mã đề này (để tránh ghi đè/trùng lặp)
+  const lastRow = sheetData.getLastRow();
+  if (lastRow > 1) {
+    const data = sheetData.getRange(2, 1, lastRow - 1, 1).getValues();
+    for (let i = data.length - 1; i >= 0; i--) {
+      if (data[i][0] == examCode) {
+        sheetData.deleteRow(i + 2); // +2 vì data bắt đầu từ hàng 2
+      }
+    }
+  }
 
+  // 3. CHUẨN HÓA DỮ LIỆU: Biến mảng Object thành mảng hàng để ghi vào Sheet
+  // Mỗi hàng gồm: [Mã đề, Nội dung câu hỏi dạng chữ]
+  const rowsToInsert = questions.map(function(q) {
+    return [
+      examCode.toString(), 
+      JSON.stringify(q) // Quan trọng: Phải stringify để lưu vào 1 ô duy nhất
+    ];
+  });
+
+  // 4. Ghi một phát ăn luôn (Batch Update)
+  if (rowsToInsert.length > 0) {
+    sheetData.getRange(sheetData.getLastRow() + 1, 1, rowsToInsert.length, 2).setValues(rowsToInsert);
+  }
+}
 function parseQuestionFromCell(text, id) {
   const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
   const qLine = lines.find(l => l.startsWith('?'));
@@ -835,4 +899,67 @@ function parseQuestionFromCell(text, id) {
   const ansLine = lines.find(l => l.startsWith('='));
   const ansIndex = ansLine ? ansLine.replace('=', '').trim().charCodeAt(0) - 65 : -1;
   return { id, type: 'mcq', question, o: options, a: options[ansIndex] || '' };
+}
+function uploadExamData(data) {
+  try {
+    const targetSS = getSpreadsheetByTarget(data.idgv);
+    const sheet = targetSS.getSheetByName("exam_data") || targetSS.insertSheet("exam_data");
+    
+    // --- PHẦN LOGIC SINH ID CỦA THẦY ---
+    var now = new Date();
+    // Lấy yymmdd (ví dụ: 260203)
+    var yymmdd = now.getFullYear().toString().slice(-2) + ("0" + (now.getMonth() + 1)).slice(-2) + ("0" + now.getDate()).slice(-2);
+    
+    var tttStart = 1;
+    if (sheet.getLastRow() > 1) {
+      var lastId = sheet.getRange(sheet.getLastRow(), 1).getValue().toString();
+      if (lastId.length >= 3) {
+        var lastNum = parseInt(lastId.slice(-3), 10);
+        if (!isNaN(lastNum)) tttStart = lastNum + 1;
+      }
+    }
+    // ----------------------------------
+
+    data.questions.forEach((qStr, i) => {
+      if (qStr.length < 20) return;
+      
+      try {
+        const q = JSON.parse(qStr);
+        
+        // Logic tạo ID mới: Lấy 2 số đầu ClassTag (mã tỉnh/lớp) + ngày tháng + số thứ tự
+        var xy = (q.classTag || "XX").toString().slice(0, 2);
+        var newId = xy + yymmdd + (tttStart + i).toString().padStart(3, '0');
+
+        // Ghi nội dung hiển thị (Câu hỏi + Đáp án)
+        var displayString = "❓ " + (q.question || "");
+        if (q.o) displayString += "\n🔹 " + q.o.join("\n🔹 ");
+        if (q.a) displayString += "\n✅ Đ/A: " + q.a;
+
+        // Cập nhật lại ID trong chuỗi JSON để máy đọc cho khớp
+        q.id = newId; 
+
+        // Ghi vào Sheet theo đúng thứ tự thầy muốn
+        sheet.appendRow([
+          newId,             // Cột A: ID tự sinh
+          q.classTag || "",  // Cột B: ClassTag
+          displayString,    // Cột C: Nội dung câu hỏi (đã gộp phương án)
+          now,               // Cột D: Ngày nạp
+          q.loigiai || "",   // Cột E: Lời giải tách riêng (Nạp riêng ở đây nè thầy!)
+          JSON.stringify(q), // Cột F: Toàn bộ JSON gốc (để sau này App lôi ra dùng)
+          data.examCode      // Cột G: Mã đề
+        ]);
+      } catch (e) {
+        console.log("Lỗi câu " + i + ": " + e.message);
+      }
+    });
+
+    return ContentService.createTextOutput(JSON.stringify({ 
+      status: "success", 
+      message: "Đã sinh ID và nạp " + data.questions.length + " câu thành công!" 
+    })).setMimeType(ContentService.MimeType.JSON);
+
+  } catch (error) {
+    return ContentService.createTextOutput(JSON.stringify({ status: "error", message: error.toString() }))
+                         .setMimeType(ContentService.MimeType.JSON);
+  }
 }
