@@ -73,10 +73,18 @@ const TeacherWordTask = ({ onBack }) => {
            <input className="w-full p-3 rounded-xl bg-slate-800 text-white" placeholder="Link Script (nếu F2=0)..." value={customLink} onChange={e => setCustomLink(e.target.value)} />
         </div>
         <div className="space-y-2">
-           <input className="w-full p-3 rounded-xl bg-orange-500 text-white font-black" placeholder="MÃ ĐỀ (EXAMS)..." value={examCode} onChange={e => setExamCode(e.target.value)} />
+           <input className="w-full p-7 rounded-xl bg-blue-500 text-white font-black" placeholder="MÃ ĐỀ KT (EXAMS)..." value={examCode} onChange={e => setExamCode(e.target.value)} />
            <div className="grid grid-cols-2 gap-2 text-[10px] text-white">
-              <div>Số MCQ: <input type="number" className="w-full bg-slate-800 p-1" value={config.numMCQ} onChange={e => setConfig({...config, numMCQ: e.target.value})}/></div>
-              <div>Điểm: <input type="number" className="w-full bg-slate-800 p-1" value={config.scoreMCQ} onChange={e => setConfig({...config, scoreMCQ: e.target.value})}/></div>
+              <div>Số câu MCQ: <input type="number" className="w-full bg-slate-800 p-1" value={config.numMCQ} onChange={e => setConfig({...config, numMCQ: e.target.value})}/></div>
+              <div>Điểm/câu: <input type="number" className="w-full bg-slate-800 p-1" value={config.scoreMCQ} onChange={e => setConfig({...config, scoreMCQ: e.target.value})}/></div>
+           </div>
+          <div className="grid grid-cols-2 gap-2 text-[10px] text-white">
+              <div>Số câu TF: <input type="number" className="w-full bg-slate-800 p-1" value={config.numTF} onChange={e => setConfig({...config, numTF: e.target.value})}/></div>
+              <div>Điểm/câu: <input type="number" className="w-full bg-slate-800 p-1" value={config.scoreTF} onChange={e => setConfig({...config, scoreTF: e.target.value})}/></div>
+           </div>
+           <div className="grid grid-cols-2 gap-2 text-[10px] text-white">
+              <div>Số câu SA: <input type="number" className="w-full bg-slate-800 p-1" value={config.numSA} onChange={e => setConfig({...config, numSA: e.target.value})}/></div>
+              <div>Điểm/câu: <input type="number" className="w-full bg-slate-800 p-1" value={config.scoreSA} onChange={e => setConfig({...config, scoreSA: e.target.value})}/></div>
            </div>
         </div>
         <div className="flex flex-col gap-2">
