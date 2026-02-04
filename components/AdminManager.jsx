@@ -107,28 +107,21 @@ const AdminPanel = ({ mode, onBack }) => {
 // ===========================================================================================================================================tách dữ liệu câu hỏi
   const handleWordParser = (text) => {
   if (!text.trim()) return;
-
   const results = [];
   let input = text;
 
-  // Vòng lặp: Tìm { đầu tiên và }# đầu tiên, cắt lấy đoạn ở giữa
   while (input.indexOf('{') !== -1 && input.indexOf('}#') !== -1) {
     let start = input.indexOf('{');
-    let end = input.indexOf('}#') + 2; // +2 để lấy luôn cả dấu }#
-    
+    let end = input.indexOf('}#') + 2;
     let block = input.substring(start, end).trim();
-    if (block) results.push(block);
+
+    // CHIÊU CUỐI: Nén mọi dấu xuống dòng và khoảng trắng thừa trong block
+    // Biến toàn bộ cục { ... }# thành 1 dòng duy nhất trước khi nạp
+    let cleanBlock = block.replace(/[\n\r]+/g, " ").replace(/\s+/g, " ");
     
-    // Cắt bỏ phần đã xử lý để tìm tiếp
+    if (cleanBlock) results.push(cleanBlock);
     input = input.substring(end);
   }
-
-  if (results.length === 0) {
-    alert("Không tìm thấy khối dữ liệu nào dạng { ... }#");
-    return;
-  }
-
-  // Đẩy nguyên mảng chuỗi thô vào để chuẩn bị lưu
   setJsonInput(JSON.stringify(results, null, 2));
 };
 // ======================================================================================Ghi câu hoi ngân hàng=========
