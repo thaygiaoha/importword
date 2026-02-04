@@ -108,19 +108,28 @@ const AdminPanel = ({ mode, onBack }) => {
   const handleWordParser = (text) => {
   if (!text.trim()) return;
 
-  // 1. Regex cực thoáng để bắt trọn khối từ { đến }#
-  const regex = /\{[\s\S]*?\}#/g;
-  const matches = text.match(regex);
+  const results = [];
+  let input = text;
 
-  if (!matches) {
-    setJsonInput("[]"); // Nếu không tìm thấy thì để mảng rỗng
+  // Vòng lặp: Tìm { đầu tiên và }# đầu tiên, cắt lấy đoạn ở giữa
+  while (input.indexOf('{') !== -1 && input.indexOf('}#') !== -1) {
+    let start = input.indexOf('{');
+    let end = input.indexOf('}#') + 2; // +2 để lấy luôn cả dấu }#
+    
+    let block = input.substring(start, end).trim();
+    if (block) results.push(block);
+    
+    // Cắt bỏ phần đã xử lý để tìm tiếp
+    input = input.substring(end);
+  }
+
+  if (results.length === 0) {
+    alert("Không tìm thấy khối dữ liệu nào dạng { ... }#");
     return;
   }
 
-  // 2. Không parse nữa! Cứ để nguyên mảng các chuỗi thô.
-  // Apps Script sẽ dùng eval() để biến các chuỗi này thành dữ liệu sau.
-  // Điều này giúp giữ nguyên các dấu \ và ký tự đặc biệt của MathJax.
-  setJsonInput(JSON.stringify(matches, null, 2));
+  // Đẩy nguyên mảng chuỗi thô vào để chuẩn bị lưu
+  setJsonInput(JSON.stringify(results, null, 2));
 };
 // ======================================================================================Ghi câu hoi ngân hàng=========
   
