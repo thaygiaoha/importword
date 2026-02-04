@@ -59,7 +59,7 @@ const AdminPanel = ({ mode, onBack }) => {
     if (mode) setCurrentTab(mode);
   }, [mode]);
 
-  // --- 1. XỬ LÝ WORD ---
+  // --- 1. XỬ LÝ WORD ---===========================================================================================================================================================================
   const findQuestion = async () => {
     setLoading(true);
     try {
@@ -69,6 +69,7 @@ const AdminPanel = ({ mode, onBack }) => {
       else alert("Không tìm thấy!");
     } finally { setLoading(false); }
   };
+  // ==================================================================================================================================================================================================
   const handleUpdateQuestion = async () => {
   setLoading(true);
   try {
@@ -107,35 +108,19 @@ const AdminPanel = ({ mode, onBack }) => {
   const handleWordParser = (text) => {
   if (!text.trim()) return;
 
-  // 1. Dùng Regex cực mạnh để hốt trọn khối từ { đến }#
-  // [\s\S]*? giúp lấy toàn bộ nội dung kể cả xuống dòng
+  // 1. Regex cực thoáng để bắt trọn khối từ { đến }#
   const regex = /\{[\s\S]*?\}#/g;
   const matches = text.match(regex);
 
   if (!matches) {
-    alert("Không tìm thấy dữ liệu dạng { ... }#");
-    setJsonInput("[]");
+    setJsonInput("[]"); // Nếu không tìm thấy thì để mảng rỗng
     return;
   }
 
-  // 2. Chuyển đổi các chuỗi thô thành mảng Object
-  const results = matches.map((block, index) => {
-    try {
-      // Xóa dấu # ở cuối để còn lại chuỗi Object thuần túy
-      let cleanBlock = block.trim().replace(/\}#$/, '}');
-
-      // Dùng new Function để "nuốt" được các key không có dấu nháy "" (như id:, type:)
-      // Đây là cách an toàn nhất cho cấu trúc dữ liệu của thầy
-      const obj = new Function(`return ${cleanBlock}`)();
-      return obj;
-    } catch (e) {
-      console.error(`Lỗi ở khối thứ ${index + 1}:`, e);
-      return null;
-    }
-  }).filter(item => item !== null);
-
-  // 3. Cập nhật vào ô bên phải (JsonInput)
-  setJsonInput(JSON.stringify(results, null, 2));
+  // 2. Không parse nữa! Cứ để nguyên mảng các chuỗi thô.
+  // Apps Script sẽ dùng eval() để biến các chuỗi này thành dữ liệu sau.
+  // Điều này giúp giữ nguyên các dấu \ và ký tự đặc biệt của MathJax.
+  setJsonInput(JSON.stringify(matches, null, 2));
 };
 // ======================================================================================Ghi câu hoi ngân hàng=========
   
