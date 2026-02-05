@@ -22,19 +22,39 @@ const TeacherWordTask = ({ onBack }) => {
 
   // Tái sử dụng hàm bóc tách của thầy
   const handleWordParser = (text) => {
-    const results = [];
-    let input = text;
-    while (input.indexOf('{') !== -1 && input.indexOf('}#') !== -1) {
-      let start = input.indexOf('{');
-      let end = input.indexOf('}#') + 2;
-      let block = input.substring(start, end).trim();
-      let cleanBlock = block.replace(/[\n\r]+/g, " ").replace(/\s+/g, " ");
-      if (cleanBlock) results.push(cleanBlock);
-      input = input.substring(end);
-    }
-    setJsonInputWord(JSON.stringify(results));
-  };
+  const results = [];
+  let input = text;
+  while (input.indexOf('{') !== -1 && input.indexOf('}#') !== -1) {
+    let start = input.indexOf('{');
+    let end = input.indexOf('}#') + 2;
+    let block = input.substring(start, end).trim();
 
+    // 1. Dọn dẹp dấu ngoặc kỹ thuật của thầy
+    let cleanBlock = block
+      .replace(/^\{/, "")   // Xóa { ở đầu
+      .replace(/\}#$/, "")  // Xóa }# ở cuối
+      .trim();
+
+    // 2. NGẮT DÒNG CHO MCQ (A, B, C, D)
+    cleanBlock = cleanBlock
+      .replace(/\s*(\[A\]|A\.)/g, "\n[A]")
+      .replace(/\s*(\[B\]|B\.)/g, "\n[B]")
+      .replace(/\s*(\[C\]|C\.)/g, "\n[C]")
+      .replace(/\s*(\[D\]|D\.)/g, "\n[D]");
+
+    // 3. NGẮT DÒNG CHO TRUE-FALSE (a, b, c, d)
+    // Tìm các ký tự a), b), c), d) có khoảng trắng phía trước để ngắt dòng
+    cleanBlock = cleanBlock
+      .replace(/\s*(a\)|a\.)/g, "\na)")
+      .replace(/\s*(b\)|b\.)/g, "\nb)")
+      .replace(/\s*(c\)|c\.)/g, "\nc)")
+      .replace(/\s*(d\)|d\.)/g, "\nd)");
+
+    if (cleanBlock) results.push(cleanBlock);
+    input = input.substring(end);
+  }
+  setJsonInputWord(JSON.stringify(results));
+};
   // 1. LƯU CẤU HÌNH
   const handleSaveConfig = async (force = false) => {
     if (!idgv) return alert("❌ Thầy chưa nhập ID Giáo viên!");
