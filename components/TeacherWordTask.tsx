@@ -39,26 +39,44 @@ const TeacherWordTask = ({ onBack }) => {
   };
 
   const handleSaveConfig = async (force = false) => {
-  if (!examCode) return alert("Cần nhập Mã đề!");
+  if (!examCode) return alert("❌ Cần nhập Mã đề!");
   setLoading(true);
+  
   try {
+    // 1. Xác định đúng link của giáo viên đó
     const targetUrl = API_ROUTING[idgv];
+    
+    // 2. Gửi request kèm theo hành động saveExamConfig
     const resp = await fetch(`${targetUrl}?action=saveExamConfig&force=${force}`, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify({ idgv, examCode, config })
+      body: JSON.stringify({ 
+        idgv: idgv, 
+        examCode: examCode, 
+        config: config // Đảm bảo object config chứa đủ duration, numMCQ, scoreMCQ...
+      })
     });
+    
     const res = await resp.json();
     
+    // 3. Xử lý phản hồi từ Script
     if (res.status === 'exists') {
-      if (window.confirm("Mã đề này đã có cấu hình. Thầy có muốn GHI ĐÈ không?")) {
-        handleSaveConfig(true); // Gọi lại với quyền ghi đè
+      // Nếu mã đề đã có, hỏi thầy có muốn ghi đè (force) không
+      if (window.confirm("⚠️ Mã đề này đã có cấu hình trong file của thầy/cô. Thầy có muốn GHI ĐÈ không?")) {
+        handleSaveConfig(true); 
       }
+    } else if (res.status === 'success') {
+      alert(res.message); // Hiện thông báo: "✅ Đã lưu cấu hình thành công!"
     } else {
-      alert(res.message);
+      alert("⚠️ " + (res.message || "Lỗi không xác định"));
     }
-  } catch (e) { alert("Lỗi lưu cấu hình!"); }
-  finally { setLoading(false); }
+    
+  } catch (e) { 
+    console.error(e);
+    alert("❌ Lỗi kết nối đến Script giáo viên!"); 
+  } finally { 
+    setLoading(false); 
+  }
 };
   // =====================================================================================================================
   
