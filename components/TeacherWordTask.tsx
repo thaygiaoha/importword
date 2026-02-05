@@ -24,36 +24,44 @@ const TeacherWordTask = ({ onBack }) => {
   // =========================================================================================================================================
  const handleWordParser = (text) => {
   const results = [];
-  // 1. Chặt khúc theo dấu kết thúc }# của thầy
-  const segments = text.split('}#');
+  
+  // 1. Dùng Regex để bắt mọi thứ nằm giữa { và }# 
+  // gms: global, multiline, dotAll (để bắt được cả dấu xuống dòng bên trong câu hỏi)
+  const regex = /\{([\s\S]*?)\}#/gms;
+  let match;
 
-  segments.forEach(segment => {
-    const startIndex = segment.indexOf('{');
-    if (startIndex !== -1) {
-      // Lấy toàn bộ nội dung từ { đến hết segment
-      let jsonString = segment.substring(startIndex).trim();
+  while ((match = regex.exec(text)) !== null) {
+    let rawInside = match[1].trim(); // Nội dung bên trong { }
+    
+    try {
+      // 2. Chuyển chuỗi text thành Object thực thụ
+      // Dùng eval hoặc Function vì JSON thầy gửi là định dạng Object Literal (không nháy kép ở key)
+      const obj = eval(`({${rawInside}})`);
       
-      // 2. BIẾN CHUỖI THÀNH OBJECT (Dùng Function thay vì JSON.parse để tránh lỗi dấu nháy)
-      try {
-        // Kỹ thuật mượn hàm thực thi để biến chuỗi "như object" thành object thực thụ
-        const obj = new Function(`return ${jsonString}`)();
-        
-        if (obj) {
-          // Ghi nguyên si cái Object này vào Content để lưu trữ
-          // Cột C sẽ lấy từ obj.type, Cột D là toàn bộ Object bọc lại
-          results.push({ 
-            qType: obj.type.toUpperCase(), // Chuyển "mcq" thành "MCQ"
-            content: JSON.stringify(obj)     // Lưu nguyên cục để sau này trộn đề cho dễ
-          });
-        }
-      } catch (e) {
-        console.error("Lỗi dòng: ", jsonString);
-      }
-    }
-  });
+      if (obj) {
+        // Chuẩn hóa Type để ghi vào cột C
+        let typeDisplay = "SA";
+        if (obj.type === "mcq") typeDisplay = "MCQ";
+        if (obj.type === "true-false") typeDisplay = "TF";
+        if (obj.type === "short-answer") typeDisplay = "SA";
 
-  setJsonInputWord(JSON.stringify(results));
-  alert(`🎯 Đã "xơi tái" ${results.length} câu JSON chuẩn đét!`);
+        // 3. Đưa vào mảng (Cột C: Type, Cột D: Toàn bộ Object đã bọc lại)
+        results.push({ 
+          qType: typeDisplay, 
+          content: JSON.stringify(obj) // Lưu dạng JSON string để sau này dễ truy xuất
+        });
+      }
+    } catch (e) {
+      console.error("Lỗi parse câu: ", e);
+    }
+  }
+
+  if (results.length > 0) {
+    setJsonInputWord(JSON.stringify(results));
+    alert(`🎯 Đã bóc thành công ${results.length} câu! Thầy bấm "Nạp câu hỏi" đi.`);
+  } else {
+    alert("❌ Vẫn ra 0 câu! Thầy kiểm tra xem cuối mỗi câu đã có dấu }# chưa?");
+  }
 };
   // 1. LƯU CẤU HÌNH =====================================================================================================
   const handleSaveConfig = async (force = false) => {
