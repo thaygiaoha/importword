@@ -140,8 +140,7 @@ const handleSaveSolutions = async () => {
       </button>
       <button onClick={handleSaveSolutions} className="py-4 bg-purple-600 text-white rounded-2xl font-black shadow-lg hover:bg-purple-700 active:scale-95 transition-all text-sm border-b-4 border-purple-800">
         CẬP NHẬT LỜI GIẢI
-      </button>
-      <div className="text-[9px] text-slate-500 text-center font-medium mt-1">Hệ thống sẽ tự động kiểm tra trùng mã đề</div>
+      </button>     
       {/* Nút bấm quan trọng nhất đây thầy ơi */}
 <div className="mt-6">
   <button
@@ -165,7 +164,7 @@ const handleSaveSolutions = async () => {
   </button>
   
   <p className="text-[10px] text-gray-500 text-center mt-2 italic">
-    * Hệ thống sẽ tự lọc câu hỏi theo mã {examCode} và xào 4 mã đề.
+    * Hệ thống sẽ tự lọc câu hỏi theo mã exams và trộn 4 mã đề.
   </p>
 </div>
     </div>
