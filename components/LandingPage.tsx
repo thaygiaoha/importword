@@ -134,6 +134,36 @@ const [newsList, setNewsList] = useState<{t: string, l: string}[]>([]);
   };
   fetchContentData();
 }, []);
+  // =================================================================================================================
+  const handleStudentSubmit = async () => {
+  if (!studentInfo.idgv || !studentInfo.sbd || !studentInfo.examCode) {
+    return alert("Vui lòng nhập đủ ID GV, SBD và Mã Exams!");
+  }
+
+  setLoading(true);
+  try {
+    const resp = await fetch(`${DANHGIA_URL}?action=studentGetExam`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify(studentInfo)
+    });
+    
+    const res = await resp.json();
+    
+    if (res.status === 'success') {
+      // res.data.questions là mảng đã trộn MCQ, TF, SA
+      onStartExam(res.data); // Chuyển dữ liệu sang màn hình thi của thầy
+      setShowStudentLogin(false);
+    } else {
+      alert(res.message);
+    }
+  } catch (e) {
+    alert("Lỗi kết nối hệ thống đánh giá!");
+  } finally {
+    setLoading(false);
+  }
+};
+  // =================================================================================================================
 const handleSaveMatrix = async () => {
   if (!idgv) {
     alert("❌ Lỗi: Không xác định được ID Giáo viên!");
@@ -1276,6 +1306,31 @@ const handleRedirect = () => {
 
       <div className="bg-slate-50 p-4 text-center">
          <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest">Hỗ trợ MathJax & Render sạch nội dung</p>
+      </div>
+    </div>
+  </div>
+)}
+      {showStudentLogin && (
+  <div className="fixed inset-0 bg-slate-950/90 backdrop-blur-md flex items-center justify-center z-[100] p-4">
+    <div className="bg-slate-900 border-2 border-emerald-500/30 p-8 rounded-[2rem] w-full max-w-sm shadow-2xl">
+      <div className="text-emerald-400 font-black text-center mb-6 text-sm uppercase tracking-tighter">
+        <i className="fas fa-user-shield mr-2"></i> Hệ thống thi lẻ
+      </div>
+      
+      <div className="space-y-3">
+        <input className="w-full p-4 rounded-xl bg-slate-800 text-white border border-slate-700 font-bold text-xs" 
+               placeholder="MÃ GIÁO VIÊN (IDGV)..." value={studentInfo.idgv} onChange={e => setStudentInfo({...studentInfo, idgv: e.target.value})} />
+        
+        <input className="w-full p-4 rounded-xl bg-slate-800 text-white border border-slate-700 font-bold text-xs" 
+               placeholder="SỐ BÁO DANH (SBD)..." value={studentInfo.sbd} onChange={e => setStudentInfo({...studentInfo, sbd: e.target.value})} />
+        
+        <input className="w-full p-4 rounded-xl bg-slate-800 text-emerald-400 border border-slate-700 font-black text-xs" 
+               placeholder="MÃ ĐỀ THI (EXAMS)..." value={studentInfo.examCode} onChange={e => setStudentInfo({...studentInfo, examCode: e.target.value})} />
+        
+        <div className="grid grid-cols-2 gap-3 mt-6">
+          <button onClick={() => setShowStudentLogin(false)} className="py-3 bg-slate-800 text-slate-400 rounded-xl font-bold text-[10px]">HỦY</button>
+          <button onClick={handleStudentSubmit} className="py-3 bg-emerald-600 text-white rounded-xl font-black text-[10px] shadow-lg shadow-emerald-900/40">VÀO THI</button>
+        </div>
       </div>
     </div>
   </div>
