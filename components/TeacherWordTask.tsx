@@ -133,15 +133,41 @@ const handleSaveSolutions = async () => {
     {/* CỘT 3: HÀNH ĐỘNG */}
     <div className="flex flex-col gap-2 justify-center">
       <button onClick={() => handleSaveConfig(false)} className="py-4 bg-blue-600 text-white rounded-2xl font-black shadow-lg hover:bg-blue-700 active:scale-95 transition-all text-sm border-b-4 border-blue-800">
-        1. LƯU CẤU HÌNH ĐỀ
+        LƯU CẤU HÌNH ĐỀ
       </button>
       <button onClick={() => handleSaveQuestions(false)} className="py-4 bg-orange-600 text-white rounded-2xl font-black shadow-lg hover:bg-orange-700 active:scale-95 transition-all text-sm border-b-4 border-orange-800">
-        2. NẠP CÂU HỎI (WORD)
+        NẠP CÂU HỎI (WORD)
       </button>
       <button onClick={handleSaveSolutions} className="py-4 bg-purple-600 text-white rounded-2xl font-black shadow-lg hover:bg-purple-700 active:scale-95 transition-all text-sm border-b-4 border-purple-800">
-        3. CẬP NHẬT LỜI GIẢI
+        CẬP NHẬT LỜI GIẢI
       </button>
       <div className="text-[9px] text-slate-500 text-center font-medium mt-1">Hệ thống sẽ tự động kiểm tra trùng mã đề</div>
+      {/* Nút bấm quan trọng nhất đây thầy ơi */}
+<div className="mt-6">
+  <button
+    onClick={() => handleSaveConfig(false)} // Gọi hàm xử lý đã có của thầy
+    disabled={loading}
+    className={`w-full py-4 rounded-xl font-bold text-white shadow-2xl transition-all duration-200 
+      ${loading 
+        ? 'bg-gray-600 cursor-not-allowed' 
+        : 'bg-gradient-to-r from-green-600 to-emerald-500 hover:from-green-500 hover:to-emerald-400 active:scale-95'
+      }`}
+  >
+    {loading ? (
+      <span className="flex items-center justify-center gap-2">
+        <i className="fas fa-spinner animate-spin"></i> ĐANG KHỞI TẠO...
+      </span>
+    ) : (
+      <span className="flex items-center justify-center gap-2 text-lg">
+        <i className="fas fa-magic"></i> BẤM VÀO ĐÂY ĐỂ TẠO ĐỀ
+      </span>
+    )}
+  </button>
+  
+  <p className="text-[10px] text-gray-500 text-center mt-2 italic">
+    * Hệ thống sẽ tự lọc câu hỏi theo mã {examCode} và xào 4 mã đề.
+  </p>
+</div>
     </div>
   </div>
 
