@@ -42,7 +42,7 @@ const TeacherWordTask = ({ onBack }) => {
   if (!examCode) return alert("Cần nhập Mã đề!");
   setLoading(true);
   try {
-    const targetUrl = customLink || API_ROUTING[idgv];
+    const targetUrl = API_ROUTING[idgv];
     const resp = await fetch(`${targetUrl}?action=saveExamConfig&force=${force}`, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain' },
