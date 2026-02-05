@@ -24,54 +24,37 @@ const TeacherWordTask = ({ onBack }) => {
   // =========================================================================================================================================
  const handleWordParser = (text) => {
   const results = [];
-  
-  // 1. Chặt khúc theo "Câu [số]:" hoặc "Câu [số]."
-  const rawBlocks = text.split(/(?=Câu\s*\d+[:.])|(?=\{)/g);
+  // Chặt theo dấu đóng của thầy
+  const segments = text.split('}#');
 
-  rawBlocks.forEach(block => {
-    let cleanBlock = block.trim();
-    
-    // Dọn dẹp dấu bọc kỹ thuật (nếu có)
-    cleanBlock = cleanBlock.replace(/^\{/, "").replace(/\}#$/, "").trim();
-    if (cleanBlock.length < 5) return;
+  segments.forEach(segment => {
+    const startIndex = segment.indexOf('{');
+    if (startIndex !== -1) {
+      // Lấy đúng cái ruột, không thiếu một dấu phẩy
+      let content = segment.substring(startIndex + 1).trim();
+      
+      if (content) {
+        // Kiểm tra "hộ khẩu" để phân loại
+        let type = "SA";
+        
+        // MCQ: Phải đủ bộ tứ A. B. C. D.
+        const isMCQ = content.includes("A.") && content.includes("B.") && 
+                      content.includes("C.") && content.includes("D.");
+                      
+        // TF: Phải đủ bộ tứ a) b) c) d)
+        const isTF = content.includes("a)") && content.includes("b)") && 
+                     content.includes("c)") && content.includes("d)");
 
-    // 2. NGẮT DÒNG & CHUẨN HÓA DẤU CHẤM
-    // Chuyển hết về dạng [A], [B]... để dễ kiểm soát hoặc giữ nguyên A. B. C. D.
-    cleanBlock = cleanBlock
-      .replace(/\s*(A\.|\[A\])/g, "\nA.")
-      .replace(/\s*(B\.|\[B\])/g, "\nB.")
-      .replace(/\s*(C\.|\[C\])/g, "\nC.")
-      .replace(/\s*(D\.|\[D\])/g, "\nD.")
-      .replace(/\s*(a\)|a\.)/g, "\na)")
-      .replace(/\s*(b\)|b\.)/g, "\nb)")
-      .replace(/\s*(c\)|c\.)/g, "\nc)")
-      .replace(/\s*(d\)|d\.)/g, "\nd)");
+        if (isMCQ) type = "MCQ";
+        else if (isTF) type = "TF";
 
-    // 3. KIỂM TRẠ NGHIÊM NGẶT (Phải đủ bộ 4 dấu chấm/ngoặc)
-    let type = "SA"; 
-    
-    // Check MCQ: Tìm chính xác sự tồn tại của A. B. C. D. (đã được ngắt dòng ở trên)
-    const hasMCQ = cleanBlock.includes("\nA.") && 
-                   cleanBlock.includes("\nB.") && 
-                   cleanBlock.includes("\nC.") && 
-                   cleanBlock.includes("\nD.");
-                   
-    // Check TF: Tìm chính xác a) b) c) d)
-    const hasTF = cleanBlock.includes("\na)") && 
-                  cleanBlock.includes("\nb)") && 
-                  cleanBlock.includes("\nc)") && 
-                  cleanBlock.includes("\nd)");
-
-    if (hasMCQ) {
-      type = "MCQ";
-    } else if (hasTF) {
-      type = "TF";
+        results.push({ qType: type, content: content });
+      }
     }
-
-    if (cleanBlock) results.push({ qType: type, content: cleanBlock });
   });
 
   setJsonInputWord(JSON.stringify(results));
+  alert(`Xong! Tuyển được ${results.length} "em vào để tạo đề nhé". Thầy/cô kiểm tra hàng nhé!`);
 };
   // 1. LƯU CẤU HÌNH =====================================================================================================
   const handleSaveConfig = async (force = false) => {
