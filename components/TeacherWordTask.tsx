@@ -98,39 +98,51 @@ const handleSaveSolutions = async () => {
   return (
     <div className="p-6 bg-white rounded-[2rem] shadow-2xl max-w-6xl mx-auto border-4 border-slate-50">
   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 p-6 bg-slate-900 rounded-[2.5rem]">
-    {/* CỘT 1: THÔNG TIN GIÁO VIÊN */}
-    <div className="space-y-2">
-      <div className="text-[10px] text-emerald-400 font-bold uppercase ml-2">Xác thực hệ thống</div>
-      <input className="w-full p-3 rounded-xl bg-slate-800 text-white font-bold border border-slate-700" placeholder="ID GIÁO VIÊN..." value={idgv} onChange={e => setIdgv(e.target.value)} />
-      <input className="w-full p-3 rounded-xl bg-slate-800 text-white text-xs border border-slate-700" placeholder="Link Script GV tự do..." value={customLink} onChange={e => setCustomLink(e.target.value)} />
-      <button onClick={onBack} className="w-full py-2 bg-red-500/10 text-red-400 rounded-xl text-xs font-bold hover:bg-red-500/20 transition-all">THOÁT TRÌNH TẠO</button>
-    </div>
-
-    {/* CỘT 2: CẤU HÌNH ĐỀ & CHỐNG GIAN LẬN */}
-    <div className="space-y-2">
-      <input className="w-full p-4 rounded-xl bg-slate-500 text-white font-black text-center placeholder-slate-300 shadow-inner" placeholder="MÃ ĐỀ KT (EXAMS)..." value={examCode} onChange={e => setExamCode(e.target.value)} />
+    
+    {/* CỘT BÊN TRÁI: XÁC MINH & CẤU HÌNH (Gộp Cột 1 và Cột 2 cũ) */}
+    <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4 border-r border-slate-800 pr-4">
       
-      <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-[10px] text-white">
-        <div className="col-span-2 text-emerald-400 font-bold uppercase mt-1">Cấu hình câu hỏi:</div>
-        <div>MCQ: <input type="number" className="w-full bg-slate-800 p-1 rounded border border-slate-700" value={config.numMCQ} onChange={e => setConfig({...config, numMCQ: e.target.value})}/></div>
-        <div>Điểm/câu: <input type="number" className="w-full bg-slate-800 p-1 rounded border border-slate-700" value={config.scoreMCQ} onChange={e => setConfig({...config, scoreMCQ: e.target.value})}/></div>
-        
-        <div>TF: <input type="number" className="w-full bg-slate-800 p-1 rounded border border-slate-700" value={config.numTF} onChange={e => setConfig({...config, numTF: e.target.value})}/></div>
-        <div>Điểm/câu: <input type="number" className="w-full bg-slate-800 p-1 rounded border border-slate-700" value={config.scoreTF} onChange={e => setConfig({...config, scoreTF: e.target.value})}/></div>
-        
-        <div>SA: <input type="number" className="w-full bg-slate-800 p-1 rounded border border-slate-700" value={config.numSA} onChange={e => setConfig({...config, numSA: e.target.value})}/></div>
-        <div>Điểm/câu: <input type="number" className="w-full bg-slate-800 p-1 rounded border border-slate-700" value={config.scoreSA} onChange={e => setConfig({...config, scoreSA: e.target.value})}/></div>
+      {/* Khối Xác thực */}
+      <div className="space-y-3">
+        <div className="text-[10px] text-emerald-400 font-bold uppercase ml-2">Xác thực hệ thống</div>
+        <input 
+          className="w-full p-4 rounded-xl bg-slate-800 text-white font-bold border border-slate-700 shadow-inner focus:border-emerald-500 outline-none transition-all" 
+          placeholder="ID GIÁO VIÊN..." 
+          value={idgv} 
+          onChange={e => setIdgv(e.target.value)} 
+        />
+        <input 
+          className="w-full p-4 rounded-xl bg-slate-500 text-white font-black text-center placeholder-slate-300 shadow-inner" 
+          placeholder="MÃ ĐỀ KT (EXAMS)..." 
+          value={examCode} 
+          onChange={e => setExamCode(e.target.value)} 
+        />
+      </div>
 
-        <div className="col-span-2 text-orange-400 font-bold uppercase mt-2 border-t border-slate-800 pt-1">Thời gian & Chống quay cóp:</div>
-        <div>Phút thi: <input type="number" className="w-full bg-slate-800 p-1 rounded border border-slate-700 text-orange-300" value={config.duration} onChange={e => setConfig({...config, duration: e.target.value})}/></div>
-        <div>Nộp bài sau (phút): <input type="number" className="w-full bg-slate-800 p-1 rounded border border-slate-700 text-orange-300" value={config.mintime} onChange={e => setConfig({...config, mintime: e.target.value})}/></div>
+      {/* Khối Thông số (Cấu hình đề) */}
+      <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-[10px] text-white bg-slate-800/50 p-3 rounded-2xl border border-slate-800">
+        <div className="col-span-2 text-emerald-400 font-bold uppercase mb-1 flex justify-between">
+          <span>Cấu hình câu hỏi</span>
+          <i className="fas fa-cog"></i>
+        </div>
+        <div>MCQ: <input type="number" className="w-full bg-slate-900 p-1 rounded border border-slate-700" value={config.numMCQ} onChange={e => setConfig({...config, numMCQ: e.target.value})}/></div>
+        <div>Điểm/câu: <input type="number" className="w-full bg-slate-900 p-1 rounded border border-slate-700" value={config.scoreMCQ} onChange={e => setConfig({...config, scoreMCQ: e.target.value})}/></div>
         
-        <div>Giới hạn Tab: <input type="number" className="w-full bg-slate-800 p-1 rounded border border-slate-700 text-red-400" value={config.tab} onChange={e => setConfig({...config, tab: e.target.value})}/></div>
-        <div>Ngày đóng: <input type="date" className="w-full bg-slate-800 p-1 rounded border border-slate-700 text-[9px]" value={config.close} onChange={e => setConfig({...config, close: e.target.value})}/></div>
+        <div>TF: <input type="number" className="w-full bg-slate-900 p-1 rounded border border-slate-700" value={config.numTF} onChange={e => setConfig({...config, numTF: e.target.value})}/></div>
+        <div>Điểm/câu: <input type="number" className="w-full bg-slate-900 p-1 rounded border border-slate-700" value={config.scoreTF} onChange={e => setConfig({...config, scoreTF: e.target.value})}/></div>
+        
+        <div>SA: <input type="number" className="w-full bg-slate-900 p-1 rounded border border-slate-700" value={config.numSA} onChange={e => setConfig({...config, numSA: e.target.value})}/></div>
+        <div>Điểm/câu: <input type="number" className="w-full bg-slate-900 p-1 rounded border border-slate-700" value={config.scoreSA} onChange={e => setConfig({...config, scoreSA: e.target.value})}/></div>
+
+        <div className="col-span-2 text-orange-400 font-bold uppercase mt-2 border-t border-slate-700 pt-1">Thời gian & Bảo mật</div>
+        <div>Phút thi: <input type="number" className="w-full bg-slate-900 p-1 rounded border border-slate-700 text-orange-300" value={config.duration} onChange={e => setConfig({...config, duration: e.target.value})}/></div>
+        <div>Nộp bài sau: <input type="number" className="w-full bg-slate-900 p-1 rounded border border-slate-700 text-orange-300" value={config.mintime} onChange={e => setConfig({...config, mintime: e.target.value})}/></div>
+        
+        <div>Lỗi Tab: <input type="number" className="w-full bg-slate-900 p-1 rounded border border-slate-700 text-red-400" value={config.tab} onChange={e => setConfig({...config, tab: e.target.value})}/></div>
+        <div>Ngày đóng: <input type="date" className="w-full bg-slate-900 p-1 rounded border border-slate-700 text-[9px]" value={config.close} onChange={e => setConfig({...config, close: e.target.value})}/></div>
       </div>
     </div>
-
-    {/* CỘT 3: HÀNH ĐỘNG */}
+    {/* CỘT BÊN PHẢI: HÀNH ĐỘNG */}
     <div className="flex flex-col gap-2 justify-center">
       <button onClick={() => handleSaveConfig(false)} className="py-4 bg-blue-600 text-white rounded-2xl font-black shadow-lg hover:bg-blue-700 active:scale-95 transition-all text-sm border-b-4 border-blue-800">
         LƯU CẤU HÌNH ĐỀ
@@ -162,10 +174,8 @@ const handleSaveSolutions = async () => {
       </span>
     )}
   </button>
-  
-  <p className="text-[10px] text-gray-500 text-center mt-2 italic">
-    * Hệ thống sẽ tự lọc câu hỏi theo mã exams và trộn 4 mã đề.
-  </p>
+   <button onClick={onBack} className="w-full py-2 bg-red-500/10 text-red-400 rounded-xl text-xs font-bold hover:bg-red-500/20 transition-all">THOÁT TRÌNH TẠO
+   </button> 
 </div>
     </div>
   </div>
