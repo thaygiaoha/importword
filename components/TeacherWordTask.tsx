@@ -9,14 +9,19 @@ const TeacherWordTask = ({ onBack }) => {
   
   // Các thông số nạp vào sheet(exams) của Admin
   const [config, setConfig] = useState({
-    numMCQ: 12, scoreMCQ: 0.25,
-    numTF: 4, scoreTF: 1.0,
-    numSA: 6, scoreSA: 0.5,
-    duration: 90
-  });
+  numMCQ: 12, scoreMCQ: 0.25,
+  numTF: 4, scoreTF: 1.0,
+  numSA: 6, scoreSA: 0.5,
+  duration: 90,
+  mintime: 60,
+  tab: 2,
+  close: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] // Mặc định 1 tuần sau
+});
 
   const [jsonInputWord, setJsonInputWord] = useState(''); 
   const [jsonInputLG, setJsonInputLG] = useState('');
+  const [showOverwriteWarning, setShowOverwriteWarning] = useState(false);
+  const [pendingAction, setPendingAction] = useState(null);
 
   // Tái sử dụng hàm bóc tách của thầy
   const handleWordParser = (text) => {
@@ -33,37 +38,63 @@ const TeacherWordTask = ({ onBack }) => {
     setJsonInputWord(JSON.stringify(results));
   };
 
-  // HÀM LƯU TỔNG HỢP (ONE-CLICK)
-  const handleSaveAll = async () => {
-    if (!idgv || !examCode || !jsonInputWord) return alert("Thầy điền thiếu IDGV, Mã đề hoặc Câu hỏi rồi!");
-    setLoading(true);
+  const handleSaveConfig = async (force = false) => {
+  if (!examCode) return alert("Cần nhập Mã đề!");
+  setLoading(true);
+  try {
+    const targetUrl = customLink || API_ROUTING[idgv];
+    const resp = await fetch(`${targetUrl}?action=saveExamConfig&force=${force}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ idgv, examCode, config })
+    });
+    const res = await resp.json();
     
-    try {
-      // 1. Xác định link gửi (Theo logic F2 thầy dặn)
-      // Giả sử ta gọi hàm check F2 ở đây hoặc truyền idgv để Backend tự xử lý
-      const targetUrl = customLink || API_ROUTING[idgv];
-
-      const payload = {
-        idgv,
-        examCode,
-        config, // Đẩy vào sheet(exams)
-        questions: JSON.parse(jsonInputWord), // Đẩy vào sheet(exam_data)
-        solutions: jsonInputLG // Đẩy vào sheet(exam_data) cột E
-      };
-
-      const resp = await fetch(`${targetUrl}?action=uploadFullData`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain' },
-        body: JSON.stringify(payload)
-      });
-      
-      const res = await resp.json();
+    if (res.status === 'exists') {
+      if (window.confirm("Mã đề này đã có cấu hình. Thầy có muốn GHI ĐÈ không?")) {
+        handleSaveConfig(true); // Gọi lại với quyền ghi đè
+      }
+    } else {
       alert(res.message);
-    } catch (e) {
-      alert("Lỗi hệ thống: " + e.message);
-    } finally { setLoading(false); }
-  };
+    }
+  } catch (e) { alert("Lỗi lưu cấu hình!"); }
+  finally { setLoading(false); }
+};
 
+// HÀM 2: LƯU CÂU HỎI & LG (Ghi vào sheet exam_data)
+// 2. LƯU CÂU HỎI (Ghi vào sheet exam_data - Chỉ cập nhật Cột A, B, C, D, G)
+const handleSaveQuestions = async (isOverwrite = false) => {
+  if (!examCode || !jsonInputWord) return alert("Thiếu mã đề hoặc nội dung câu hỏi!");
+  setLoading(true);
+  try {
+    const targetUrl = customLink || API_ROUTING[idgv];
+    const resp = await fetch(`${targetUrl}?action=saveOnlyQuestions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ idgv, examCode, questions: JSON.parse(jsonInputWord), overwrite: isOverwrite })
+    });
+    const res = await resp.json();
+    if (res.status === 'exists') {
+      if (window.confirm("Mã đề này đã có câu hỏi. Xóa cũ nạp mới?")) handleSaveQuestions(true);
+    } else alert(res.message);
+  } catch (e) { alert("Lỗi lưu câu hỏi!"); } finally { setLoading(false); }
+};
+
+// 3. LƯU LỜI GIẢI (Cập nhật vào Cột E của sheet exam_data dựa trên ID)
+const handleSaveSolutions = async () => {
+  if (!jsonInputLG) return alert("Thầy chưa nhập nội dung lời giải!");
+  setLoading(true);
+  try {
+    const targetUrl = customLink || API_ROUTING[idgv];
+    const resp = await fetch(`${targetUrl}?action=saveOnlySolutions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ idgv, solutions: jsonInputLG })
+    });
+    const res = await resp.json();
+    alert(res.message);
+  } catch (e) { alert("Lỗi cập nhật lời giải!"); } finally { setLoading(false); }
+};
   return (
     <div className="p-6 bg-white rounded-[2rem] shadow-2xl max-w-6xl mx-auto border-4 border-slate-50">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 p-6 bg-slate-900 rounded-[2.5rem]">
