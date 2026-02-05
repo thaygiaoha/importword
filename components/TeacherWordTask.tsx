@@ -21,6 +21,7 @@ const TeacherWordTask = ({ onBack }) => {
   const [jsonInputLG, setJsonInputLG] = useState('');
 
   // Tái sử dụng hàm bóc tách của thầy
+  // =========================================================================================================================================
   const handleWordParser = (text) => {
   const results = [];
   let input = text;
@@ -29,28 +30,24 @@ const TeacherWordTask = ({ onBack }) => {
     let end = input.indexOf('}#') + 2;
     let block = input.substring(start, end).trim();
 
-    // 1. Dọn dẹp dấu ngoặc kỹ thuật của thầy
-    let cleanBlock = block
-      .replace(/^\{/, "")   // Xóa { ở đầu
-      .replace(/\}#$/, "")  // Xóa }# ở cuối
-      .trim();
+    let cleanBlock = block.replace(/^\{/, "").replace(/\}#$/, "").trim();
 
-    // 2. NGẮT DÒNG CHO MCQ (A, B, C, D)
+    // NGẮT DÒNG CHO ĐẸP (MCQ và True-False)
     cleanBlock = cleanBlock
-      .replace(/\s*(\[A\]|A\.)/g, "\n[A]")
-      .replace(/\s*(\[B\]|B\.)/g, "\n[B]")
-      .replace(/\s*(\[C\]|C\.)/g, "\n[C]")
-      .replace(/\s*(\[D\]|D\.)/g, "\n[D]");
+      .replace(/\s*(\[A\]|A\.)/g, "\n[A]").replace(/\s*(\[B\]|B\.)/g, "\n[B]")
+      .replace(/\s*(\[C\]|C\.)/g, "\n[C]").replace(/\s*(\[D\]|D\.)/g, "\n[D]")
+      .replace(/\s*(a\)|a\.)/g, "\na)").replace(/\s*(b\)|b\.)/g, "\nb)")
+      .replace(/\s*(c\)|c\.)/g, "\nc)").replace(/\s*(d\)|d\.)/g, "\nd)");
 
-    // 3. NGẮT DÒNG CHO TRUE-FALSE (a, b, c, d)
-    // Tìm các ký tự a), b), c), d) có khoảng trắng phía trước để ngắt dòng
-    cleanBlock = cleanBlock
-      .replace(/\s*(a\)|a\.)/g, "\na)")
-      .replace(/\s*(b\)|b\.)/g, "\nb)")
-      .replace(/\s*(c\)|c\.)/g, "\nc)")
-      .replace(/\s*(d\)|d\.)/g, "\nd)");
+    // TỰ ĐỘNG PHÂN LOẠI
+    let type = "MCQ";
+    if (cleanBlock.includes("a)")) {
+      type = "TF"; // Đúng/Sai
+    } else if (!cleanBlock.includes("[A]")) {
+      type = "SA"; // Trả lời ngắn
+    }
 
-    if (cleanBlock) results.push(cleanBlock);
+    if (cleanBlock) results.push({ qType: type, content: cleanBlock });
     input = input.substring(end);
   }
   setJsonInputWord(JSON.stringify(results));
