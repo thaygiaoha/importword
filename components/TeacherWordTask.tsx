@@ -22,37 +22,58 @@ const TeacherWordTask = ({ onBack }) => {
 
   // Tái sử dụng hàm bóc tách của thầy
   // =========================================================================================================================================
-  const handleWordParser = (text) => {
+ const handleWordParser = (text) => {
   const results = [];
-  let input = text;
-  while (input.indexOf('{') !== -1 && input.indexOf('}#') !== -1) {
-    let start = input.indexOf('{');
-    let end = input.indexOf('}#') + 2;
-    let block = input.substring(start, end).trim();
+  
+  // 1. Chặt khúc theo "Câu [số]:" hoặc "Câu [số]."
+  const rawBlocks = text.split(/(?=Câu\s*\d+[:.])|(?=\{)/g);
 
-    let cleanBlock = block.replace(/^\{/, "").replace(/\}#$/, "").trim();
+  rawBlocks.forEach(block => {
+    let cleanBlock = block.trim();
+    
+    // Dọn dẹp dấu bọc kỹ thuật (nếu có)
+    cleanBlock = cleanBlock.replace(/^\{/, "").replace(/\}#$/, "").trim();
+    if (cleanBlock.length < 5) return;
 
-    // NGẮT DÒNG CHO ĐẸP (MCQ và True-False)
+    // 2. NGẮT DÒNG & CHUẨN HÓA DẤU CHẤM
+    // Chuyển hết về dạng [A], [B]... để dễ kiểm soát hoặc giữ nguyên A. B. C. D.
     cleanBlock = cleanBlock
-      .replace(/\s*(\[A\]|A\.)/g, "\n[A]").replace(/\s*(\[B\]|B\.)/g, "\n[B]")
-      .replace(/\s*(\[C\]|C\.)/g, "\n[C]").replace(/\s*(\[D\]|D\.)/g, "\n[D]")
-      .replace(/\s*(a\)|a\.)/g, "\na)").replace(/\s*(b\)|b\.)/g, "\nb)")
-      .replace(/\s*(c\)|c\.)/g, "\nc)").replace(/\s*(d\)|d\.)/g, "\nd)");
+      .replace(/\s*(A\.|\[A\])/g, "\nA.")
+      .replace(/\s*(B\.|\[B\])/g, "\nB.")
+      .replace(/\s*(C\.|\[C\])/g, "\nC.")
+      .replace(/\s*(D\.|\[D\])/g, "\nD.")
+      .replace(/\s*(a\)|a\.)/g, "\na)")
+      .replace(/\s*(b\)|b\.)/g, "\nb)")
+      .replace(/\s*(c\)|c\.)/g, "\nc)")
+      .replace(/\s*(d\)|d\.)/g, "\nd)");
 
-    // TỰ ĐỘNG PHÂN LOẠI
-    let type = "MCQ";
-    if (cleanBlock.includes("a)")) {
-      type = "TF"; // Đúng/Sai
-    } else if (!cleanBlock.includes("[A]")) {
-      type = "SA"; // Trả lời ngắn
+    // 3. KIỂM TRẠ NGHIÊM NGẶT (Phải đủ bộ 4 dấu chấm/ngoặc)
+    let type = "SA"; 
+    
+    // Check MCQ: Tìm chính xác sự tồn tại của A. B. C. D. (đã được ngắt dòng ở trên)
+    const hasMCQ = cleanBlock.includes("\nA.") && 
+                   cleanBlock.includes("\nB.") && 
+                   cleanBlock.includes("\nC.") && 
+                   cleanBlock.includes("\nD.");
+                   
+    // Check TF: Tìm chính xác a) b) c) d)
+    const hasTF = cleanBlock.includes("\na)") && 
+                  cleanBlock.includes("\nb)") && 
+                  cleanBlock.includes("\nc)") && 
+                  cleanBlock.includes("\nd)");
+
+    if (hasMCQ) {
+      type = "MCQ";
+    } else if (hasTF) {
+      type = "TF";
     }
 
     if (cleanBlock) results.push({ qType: type, content: cleanBlock });
-    input = input.substring(end);
-  }
+  });
+
   setJsonInputWord(JSON.stringify(results));
 };
-  // 1. LƯU CẤU HÌNH
+  // 1. LƯU CẤU HÌNH =====================================================================================================
   const handleSaveConfig = async (force = false) => {
     if (!idgv) return alert("❌ Thầy chưa nhập ID Giáo viên!");
     if (!examCode) return alert("❌ Cần nhập Mã đề!");
