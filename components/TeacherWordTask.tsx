@@ -154,7 +154,6 @@ const handleSaveSolutions = async () => {
         CẬP NHẬT LỜI GIẢI
       </button>     
       {/* Nút bấm quan trọng nhất đây thầy ơi */}
-<div className="mt-6">
   <button
     onClick={() => handleSaveConfig(false)} // Gọi hàm xử lý đã có của thầy
     disabled={loading}
@@ -176,7 +175,6 @@ const handleSaveSolutions = async () => {
   </button>
    <button onClick={onBack} className="w-full py-2 bg-red-500/10 text-red-400 rounded-xl text-xs font-bold hover:bg-red-500/20 transition-all">THOÁT TRÌNH TẠO
    </button> 
-</div>
     </div>
   </div>
 
