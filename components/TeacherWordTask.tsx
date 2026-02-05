@@ -68,50 +68,64 @@ const TeacherWordTask = ({ onBack }) => {
 
   // 2. LƯU CÂU HỎI
   const handleSaveQuestions = async (isOverwrite = false) => {
-    if (!idgv || !examCode || !jsonInputWord) return alert("Thiếu IDGV, Mã đề hoặc nội dung câu hỏi!");
-    const targetUrl = customLink || API_ROUTING[idgv];
-    if (!targetUrl) return alert("❌ Không tìm thấy Link Script!");
+  if (!idgv || !examCode || !jsonInputWord) return alert("Thiếu IDGV, Mã đề hoặc nội dung câu hỏi!");
+  const targetUrl = customLink || API_ROUTING[idgv];
+  if (!targetUrl) return alert("❌ Không tìm thấy Link Script!");
 
-    setLoading(true);
-    try {
-      const resp = await fetch(`${targetUrl}?action=saveOnlyQuestions`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain' },
-        body: JSON.stringify({ idgv, examCode, questions: JSON.parse(jsonInputWord), overwrite: isOverwrite })
-      });
-      const res = await resp.json();
-      if (res.status === 'exists') {
-        if (window.confirm("Mã đề này đã có câu hỏi. Xóa cũ nạp mới?")) handleSaveQuestions(true);
-      } else {
-        alert(res.message);
+  setLoading(true);
+  try {
+    const resp = await fetch(`${targetUrl}?action=saveOnlyQuestions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ 
+        idgv, 
+        examCode, 
+        questions: JSON.parse(jsonInputWord), 
+        overwrite: isOverwrite 
+      })
+    });
+    
+    const res = await resp.json();
+
+    if (res.status === 'exists') {
+      // ⚠️ Tắt loading trước khi hiện bảng confirm để UI không bị "đơ"
+      setLoading(false); 
+      if (window.confirm("⚠️ Mã đề này đã có câu hỏi. Thầy có muốn XÓA CŨ để NẠP MỚI không?")) {
+        return handleSaveQuestions(true); // Thêm return ở đây cho chắc
       }
-    } catch (e) {
-      alert("❌ Lỗi lưu câu hỏi!");
-    } finally {
-      setLoading(false);
+    } else {
+      alert(res.message);
     }
-  };
+  } catch (e) {
+    console.error(e);
+    alert("❌ Lỗi lưu câu hỏi!");
+  } finally {
+    setLoading(false);
+  }
+};
 
   // 3. LƯU LỜI GIẢI
   const handleSaveSolutions = async () => {
-    if (!idgv || !jsonInputLG) return alert("Thiếu IDGV hoặc nội dung lời giải!");
+  if (!idgv || !examCode || !jsonInputLG) {
+    return alert("❌ Thiếu thông tin: IDGV, Mã đề hoặc Lời giải!");
+  }
+  setLoading(true);
+  try {
     const targetUrl = customLink || API_ROUTING[idgv];
-    
-    setLoading(true);
-    try {
-      const resp = await fetch(`${targetUrl}?action=saveOnlySolutions`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain' },
-        body: JSON.stringify({ idgv, solutions: jsonInputLG })
-      });
-      const res = await resp.json();
-      alert(res.message);
-    } catch (e) {
-      alert("❌ Lỗi cập nhật lời giải!");
-    } finally {
-      setLoading(false);
-    }
-  };
+    const resp = await fetch(`${targetUrl}?action=saveOnlySolutions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      // Gửi thêm examCode để Script biết đề nào mà vá lời giải
+      body: JSON.stringify({ idgv, examCode, solutions: jsonInputLG })
+    });
+    const res = await resp.json();
+    alert(res.message);
+  } catch (e) { 
+    alert("❌ Lỗi cập nhật lời giải!"); 
+  } finally { 
+    setLoading(false); 
+  }
+};
 
   return (
     <div className="p-6 bg-white rounded-[2rem] shadow-2xl max-w-6xl mx-auto border-4 border-slate-50">
