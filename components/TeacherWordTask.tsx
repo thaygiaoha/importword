@@ -24,37 +24,36 @@ const TeacherWordTask = ({ onBack }) => {
   // =========================================================================================================================================
  const handleWordParser = (text) => {
   const results = [];
-  // Chặt theo dấu đóng của thầy
+  // 1. Chặt khúc theo dấu kết thúc }# của thầy
   const segments = text.split('}#');
 
   segments.forEach(segment => {
     const startIndex = segment.indexOf('{');
     if (startIndex !== -1) {
-      // Lấy đúng cái ruột, không thiếu một dấu phẩy
-      let content = segment.substring(startIndex + 1).trim();
+      // Lấy toàn bộ nội dung từ { đến hết segment
+      let jsonString = segment.substring(startIndex).trim();
       
-      if (content) {
-        // Kiểm tra "hộ khẩu" để phân loại
-        let type = "SA";
+      // 2. BIẾN CHUỖI THÀNH OBJECT (Dùng Function thay vì JSON.parse để tránh lỗi dấu nháy)
+      try {
+        // Kỹ thuật mượn hàm thực thi để biến chuỗi "như object" thành object thực thụ
+        const obj = new Function(`return ${jsonString}`)();
         
-        // MCQ: Phải đủ bộ tứ A. B. C. D.
-        const isMCQ = content.includes("A.") && content.includes("B.") && 
-                      content.includes("C.") && content.includes("D.");
-                      
-        // TF: Phải đủ bộ tứ a) b) c) d)
-        const isTF = content.includes("a)") && content.includes("b)") && 
-                     content.includes("c)") && content.includes("d)");
-
-        if (isMCQ) type = "MCQ";
-        else if (isTF) type = "TF";
-
-        results.push({ qType: type, content: content });
+        if (obj) {
+          // Ghi nguyên si cái Object này vào Content để lưu trữ
+          // Cột C sẽ lấy từ obj.type, Cột D là toàn bộ Object bọc lại
+          results.push({ 
+            qType: obj.type.toUpperCase(), // Chuyển "mcq" thành "MCQ"
+            content: JSON.stringify(obj)     // Lưu nguyên cục để sau này trộn đề cho dễ
+          });
+        }
+      } catch (e) {
+        console.error("Lỗi dòng: ", jsonString);
       }
     }
   });
 
   setJsonInputWord(JSON.stringify(results));
-  alert(`Xong! Tuyển được ${results.length} "em vào để tạo đề nhé". Thầy/cô kiểm tra hàng nhé!`);
+  alert(`🎯 Đã "xơi tái" ${results.length} câu JSON chuẩn đét!`);
 };
   // 1. LƯU CẤU HÌNH =====================================================================================================
   const handleSaveConfig = async (force = false) => {
