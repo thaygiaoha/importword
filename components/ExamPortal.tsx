@@ -267,7 +267,7 @@ const ExamPortal: React.FC<ExamPortalProps> = ({ grade: rawGrade, onBack, onStar
     <div className="relative">
       <select className="w-full p-5 bg-slate-50 border-2 border-slate-100 rounded-3xl font-black text-blue-800 focus:ring-4 focus:ring-blue-100 shadow-sm outline-none appearance-none" value={selectedCode} onChange={e => setSelectedCode(e.target.value)}>
         <option value="">-- CHỌN MÃ ĐỀ --</option>
-        {allAvailableCodes.map(c => <option key={c.code} value={c.code}</option>)}
+        {allAvailableCodes.map(c => <option key={c.code} value={c.code}>{c.name}</option>)}
       </select>
       <i className="fas fa-chevron-down absolute right-6 top-1/2 -translate-y-1/2 text-blue-400 pointer-events-none"></i>
     </div>
