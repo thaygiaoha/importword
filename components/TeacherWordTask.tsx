@@ -97,44 +97,71 @@ const handleSaveSolutions = async () => {
 };
   return (
     <div className="p-6 bg-white rounded-[2rem] shadow-2xl max-w-6xl mx-auto border-4 border-slate-50">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 p-6 bg-slate-900 rounded-[2.5rem]">
-        {/* Khu vực Routing & Config */}
-        <div className="space-y-2">
-           <input className="w-full p-3 rounded-xl bg-slate-800 text-white font-bold" placeholder="ID GIÁO VIÊN..." value={idgv} onChange={e => setIdgv(e.target.value)} />
-           <input className="w-full p-3 rounded-xl bg-slate-800 text-white" placeholder="Link Script GV tự do (nếu F2=0)..." value={customLink} onChange={e => setCustomLink(e.target.value)} />
-        </div>
-        <div className="space-y-2">
-           <input className="w-full p-7 rounded-xl bg-slate-500 text-white font-black" placeholder="MÃ ĐỀ KT (EXAMS)..." value={examCode} onChange={e => setExamCode(e.target.value)} />
-           <div className="grid grid-cols-2 gap-2 text-[10px] text-white">
-              <div>Số câu MCQ: <input type="number" className="w-full bg-slate-800 p-1" value={config.numMCQ} onChange={e => setConfig({...config, numMCQ: e.target.value})}/></div>
-              <div>Điểm/câu: <input type="number" className="w-full bg-slate-800 p-1" value={config.scoreMCQ} onChange={e => setConfig({...config, scoreMCQ: e.target.value})}/></div>
-           </div>
-          <div className="grid grid-cols-2 gap-2 text-[10px] text-white">
-              <div>Số câu TF: <input type="number" className="w-full bg-slate-800 p-1" value={config.numTF} onChange={e => setConfig({...config, numTF: e.target.value})}/></div>
-              <div>Điểm/câu: <input type="number" className="w-full bg-slate-800 p-1" value={config.scoreTF} onChange={e => setConfig({...config, scoreTF: e.target.value})}/></div>
-           </div>
-           <div className="grid grid-cols-2 gap-2 text-[10px] text-white">
-              <div>Số câu SA: <input type="number" className="w-full bg-slate-800 p-1" value={config.numSA} onChange={e => setConfig({...config, numSA: e.target.value})}/></div>
-              <div>Điểm/câu: <input type="number" className="w-full bg-slate-800 p-1" value={config.scoreSA} onChange={e => setConfig({...config, scoreSA: e.target.value})}/></div>
-           </div>
-        </div>
-        <div className="flex flex-col gap-2">
-           <button onClick={handleSaveAll} className="flex-1 bg-emerald-600 text-white rounded-2xl font-black">LƯU TỔNG HỢP</button>
-           <button onClick={onBack} className="py-2 bg-red-500/20 text-red-400 rounded-xl text-xs font-bold">THOÁT</button>
-        </div>
-      </div>
+  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 p-6 bg-slate-900 rounded-[2.5rem]">
+    {/* CỘT 1: THÔNG TIN GIÁO VIÊN */}
+    <div className="space-y-2">
+      <div className="text-[10px] text-emerald-400 font-bold uppercase ml-2">Xác thực hệ thống</div>
+      <input className="w-full p-3 rounded-xl bg-slate-800 text-white font-bold border border-slate-700" placeholder="ID GIÁO VIÊN..." value={idgv} onChange={e => setIdgv(e.target.value)} />
+      <input className="w-full p-3 rounded-xl bg-slate-800 text-white text-xs border border-slate-700" placeholder="Link Script GV tự do (nếu F2=0)..." value={customLink} onChange={e => setCustomLink(e.target.value)} />
+      <button onClick={onBack} className="w-full py-2 bg-red-500/10 text-red-400 rounded-xl text-xs font-bold hover:bg-red-500/20 transition-all">THOÁT TRÌNH TẠO</button>
+    </div>
 
-      <div className="grid grid-cols-2 gap-6">
-        <div>
-          <label className="text-xs font-bold text-slate-500 ml-4">NỘI DUNG CÂU HỎI (WORD)</label>
-          <textarea className="w-full h-80 p-5 bg-slate-50 rounded-[2rem] border-2 border-dashed border-slate-200 mt-2 shadow-inner" onChange={e => handleWordParser(e.target.value)} />
-        </div>
-        <div>
-          <label className="text-xs font-bold text-slate-500 ml-4">LỜI GIẢI CHI TIẾT (LG)</label>
-          <textarea className="w-full h-80 p-5 bg-slate-50 rounded-[2rem] border-2 border-dashed border-slate-200 mt-2 shadow-inner" onChange={e => setJsonInputLG(e.target.value)} />
-        </div>
+    {/* CỘT 2: CẤU HÌNH ĐIỂM & THỜI GIAN */}
+    <div className="space-y-2">
+      <input className="w-full p-4 rounded-xl bg-slate-500 text-white font-black text-center placeholder-slate-300" placeholder="MÃ ĐỀ KT (EXAMS)..." value={examCode} onChange={e => setExamCode(e.target.value)} />
+      
+      <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-[10px] text-white">
+        <div className="col-span-2 text-emerald-400 font-bold uppercase mt-1">Cấu hình điểm:</div>
+        <div>MCQ: <input type="number" className="w-full bg-slate-800 p-1 rounded" value={config.numMCQ} onChange={e => setConfig({...config, numMCQ: e.target.value})}/></div>
+        <div>Điểm/câu: <input type="number" className="w-full bg-slate-800 p-1 rounded" value={config.scoreMCQ} onChange={e => setConfig({...config, scoreMCQ: e.target.value})}/></div>
+        
+        <div>TF: <input type="number" className="w-full bg-slate-800 p-1 rounded" value={config.numTF} onChange={e => setConfig({...config, numTF: e.target.value})}/></div>
+        <div>Điểm/câu: <input type="number" className="w-full bg-slate-800 p-1 rounded" value={config.scoreTF} onChange={e => setConfig({...config, scoreTF: e.target.value})}/></div>
+        
+        <div>SA: <input type="number" className="w-full bg-slate-800 p-1 rounded" value={config.numSA} onChange={e => setConfig({...config, numSA: e.target.value})}/></div>
+        <div>Điểm/câu: <input type="number" className="w-full bg-slate-800 p-1 rounded" value={config.scoreSA} onChange={e => setConfig({...config, scoreSA: e.target.value})}/></div>
+
+        <div className="col-span-2 text-emerald-400 font-bold uppercase mt-2">Hạn chót & Thời gian:</div>
+        <div>Phút thi: <input type="number" className="w-full bg-slate-800 p-1 rounded" value={config.duration} onChange={e => setConfig({...config, duration: e.target.value})}/></div>
+        <div>Ngày đóng: <input type="date" className="w-full bg-slate-800 p-1 rounded text-[9px]" value={config.close} onChange={e => setConfig({...config, close: e.target.value})}/></div>
       </div>
     </div>
+
+    {/* CỘT 3: CÁC NÚT LƯU RIÊNG BIỆT */}
+    <div className="flex flex-col gap-2 justify-center">
+      <button onClick={() => handleSaveConfig(false)} className="py-4 bg-blue-600 text-white rounded-2xl font-black shadow-lg hover:bg-blue-700 active:scale-95 transition-all text-sm">
+        1. LƯU CẤU HÌNH ĐỀ
+      </button>
+      <button onClick={() => handleSaveQuestions(false)} className="py-4 bg-orange-600 text-white rounded-2xl font-black shadow-lg hover:bg-orange-700 active:scale-95 transition-all text-sm">
+        2. NẠP CÂU HỎI (WORD)
+      </button>
+      <button onClick={handleSaveSolutions} className="py-4 bg-purple-600 text-white rounded-2xl font-black shadow-lg hover:bg-purple-700 active:scale-95 transition-all text-sm">
+        3. CẬP NHẬT LỜI GIẢI
+      </button>
+      <div className="text-[9px] text-slate-400 text-center italic mt-1">* Lưu ý: Nạp câu hỏi trước khi cập nhật lời giải</div>
+    </div>
+  </div>
+
+  {/* KHU VỰC TEXTAREA NỘI DUNG */}
+  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div className="group">
+      <label className="text-xs font-bold text-slate-500 ml-4 group-hover:text-orange-500 transition-colors">NỘI DUNG CÂU HỎI (DÁN TỪ WORD)</label>
+      <textarea 
+        className="w-full h-80 p-5 bg-slate-50 rounded-[2rem] border-2 border-dashed border-slate-200 mt-2 shadow-inner focus:border-orange-400 focus:bg-white outline-none transition-all text-sm" 
+        placeholder="Dán nội dung từ Word vào đây để hệ thống tự bóc tách..."
+        onChange={e => handleWordParser(e.target.value)} 
+      />
+    </div>
+    <div className="group">
+      <label className="text-xs font-bold text-slate-500 ml-4 group-hover:text-purple-500 transition-colors">LỜI GIẢI CHI TIẾT (DÁN LG)</label>
+      <textarea 
+        className="w-full h-80 p-5 bg-slate-50 rounded-[2rem] border-2 border-dashed border-slate-200 mt-2 shadow-inner focus:border-purple-400 focus:bg-white outline-none transition-all text-sm" 
+        placeholder="Dán lời giải chi tiết (đã format đúng ID) vào đây..."
+        onChange={e => setJsonInputLG(e.target.value)} 
+      />
+    </div>
+  </div>
+</div>
   );
 };
 
