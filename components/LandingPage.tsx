@@ -53,6 +53,17 @@ const LandingPage: React.FC<LandingPageProps> = ({
   const [showModal, setShowModal] = useState(false); 
 
  const [loadingLG, setLoadingLG] = useState(false); // Để hiện trạng thái đang tìm
+
+// Công tắc đóng mở Modal nhập thông tin
+const [showStudentLogin, setShowStudentLogin] = useState(false);
+
+// Nơi chứa dữ liệu HS nhập vào (IDGV, SBD, Mã Đề)
+const [studentInfo, setStudentInfo] = useState({ idgv: '', sbd: '', examCode: '' });
+
+
+  // Trạng thái chờ khi đang xác thực
+const [loading, setLoading] = useState(false);
+  
   const toArray = (v: any) => {
   if (Array.isArray(v)) return v;
   if (!v) return [];
