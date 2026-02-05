@@ -154,27 +154,8 @@ const handleSaveSolutions = async () => {
       <button onClick={handleSaveSolutions} className="py-4 bg-purple-600 text-white rounded-2xl font-black shadow-lg hover:bg-purple-700 active:scale-95 transition-all text-sm border-b-4 border-purple-800">
         CẬP NHẬT LỜI GIẢI
       </button>     
-      {/* Nút bấm quan trọng nhất đây thầy ơi */}
-  <button
-    onClick={() => handleSaveConfig(false)} // Gọi hàm xử lý đã có của thầy
-    disabled={loading}
-    className={`w-full py-4 rounded-xl font-bold text-white shadow-2xl transition-all duration-200 
-      ${loading 
-        ? 'bg-gray-600 cursor-not-allowed' 
-        : 'bg-gradient-to-r from-green-600 to-emerald-500 hover:from-green-500 hover:to-emerald-400 active:scale-95'
-      }`}
-  >
-    {loading ? (
-      <span className="flex items-center justify-center gap-2">
-        <i className="fas fa-spinner animate-spin"></i> ĐANG KHỞI TẠO...
-      </span>
-    ) : (
-      <span className="flex items-center justify-center gap-2 text-lg">
-        <i className="fas fa-magic"></i> BẤM VÀO ĐÂY ĐỂ TẠO ĐỀ
-      </span>
-    )}
-  </button>
-   <button onClick={onBack} className="w-full py-2 bg-red-500/10 text-red-400 rounded-xl text-xs font-bold hover:bg-red-500/20 transition-all">THOÁT TRÌNH TẠO
+      </button>
+   <button onClick={onBack} className="w-full py-2 bg-red-500/10 text-red-400 rounded-xl text-xs font-bold hover:bg-red-500/20 transition-all">Quay về trang chủ
    </button> 
     </div>
   </div>
