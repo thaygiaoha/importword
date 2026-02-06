@@ -169,35 +169,35 @@ const TeacherWordTask = ({ onBack }) => {
 };
   // 3. LƯU LỜI GIẢI từ word ==========================================================================================================================================================
   const handleSaveSolutions = async () => {
-  if (!idgv || !examCode || !jsonInputLG) {
-    return alert("❌ Thiếu thông tin: IDGV, Mã đề hoặc Lời giải!");
-  }
+  if (!idgv || !examCode || !jsonInputLG) return alert("❌ Thiếu thông tin!");
   
   setLoading(true);
   try {
     const targetUrl = customLink || API_ROUTING[idgv];
-    
-    // Đảm bảo solutions gửi sang là một Array thực thụ
     const solutionArray = typeof jsonInputLG === 'string' ? JSON.parse(jsonInputLG) : jsonInputLG;
 
-    const resp = await fetch(`${targetUrl}?action=saveOnlySolutions`, {
+    const resp = await fetch(targetUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify({ 
+        action: "saveOnlySolutions", 
         idgv, 
         examCode, 
         solutions: solutionArray 
       })
     });
 
-    const res = await resp.json();
-    if (res.status === "success") {
-       alert("🎉 " + res.message);
-    } else {
-       alert("⚠️ " + res.message);
+    const text = await resp.text(); // Lấy dữ liệu dạng thô trước
+    try {
+      const res = JSON.parse(text); // Ép về JSON
+      alert(res.message);
+    } catch (e) {
+      // Nếu không phải JSON, nó sẽ hiện thẳng cái đống HTML lỗi của Google ra đây
+      console.log("Dữ liệu thô từ GAS:", text);
+      alert("⚠️ Lỗi từ GAS (Xem Console F12): " + text.substring(0, 100));
     }
   } catch (e) { 
-    alert("❌ Lỗi kết nối server khi cập nhật lời giải!"); 
+    alert("❌ Lỗi kết nối: " + e.message); 
   } finally { 
     setLoading(false); 
   }
