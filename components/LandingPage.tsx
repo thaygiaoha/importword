@@ -147,8 +147,11 @@ const [newsList, setNewsList] = useState<{t: string, l: string}[]>([]);
 }, []);
   // =================================================================================================================
  // TRONG REACT - Hàm handleStudentSubmit
-const handleStudentSubmit = async () => {
-  if (e) e.preventDefault();
+// Thêm (e) vào đây thầy nhé
+const handleStudentSubmit = async (e) => {
+  // Ngăn trang web load lại (Tránh mất dữ liệu)
+  if (e && typeof e.preventDefault === 'function') e.preventDefault();
+
   const targetUrl = API_ROUTING[studentInfo.idgv.toString().trim()];
   
   if (!targetUrl) {
@@ -159,28 +162,38 @@ const handleStudentSubmit = async () => {
   try {
     const response = await fetch(targetUrl, {
       method: "POST",
-      headers: {
-        "Content-Type": "text/plain", // BẮT BUỘC để không bị lỗi kết nối
-      },
+      headers: { "Content-Type": "text/plain" },
       body: JSON.stringify({
         action: "studentGetExam",
-        sbd: studentInfo.sbd,
-        examCode: studentInfo.examCode,
-        idgv: studentInfo.idgv
+        sbd: studentInfo.sbd.toString().trim(),
+        examCode: studentInfo.examCode.toString().trim(),
+        idgv: studentInfo.idgv.toString().trim()
       }),
     });
 
     const result = await response.json();
 
     if (result.status === "success") {
-      // Cho vào thi
-      console.log("Dữ liệu đề:", result.data);
+      console.log("Dữ liệu đề nhận được:", result.data);
+      
+      // Cập nhật toàn bộ thông tin vào State
+      // Đảm bảo các hàm set... này đã được khai báo bằng useState ở trên
+      if (result.data.questions) setQuestions(result.data.questions); 
+      if (result.data.studentName) setStudentName(result.data.studentName);
+      if (result.data.duration) setDuration(result.data.duration); 
+
+      // Kích hoạt chuyển trang thi
+      setExamStarted(true); 
+      setShowStudentLogin(false);
+      
+      // Alert này để học sinh biết là đã sẵn sàng
+      alert(`Xác thực thành công! Chào ${result.data.studentName}.`);
     } else {
-      alert(result.message); // Hiển thị lỗi từ GAS (Ví dụ: "SBD không tồn tại")
+      alert("⚠️ " + result.message);
     }
   } catch (error) {
-    console.error("Lỗi Fetch:", error);
-    alert("❌ Lỗi kết nối tới hệ thống của Giáo viên này!");
+    console.error("Lỗi thực thi:", error);
+    alert("❌ Không thể kết nối tới máy chủ của Giáo viên. Thầy kiểm tra lại Deploy GAS nhé!");
   }
 };
   // =================================================================================================================
