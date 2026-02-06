@@ -169,22 +169,24 @@ const TeacherWordTask = ({ onBack }) => {
 };
   // 3. LƯU LỜI GIẢI từ word ==========================================================================================================================================================
   const handleSaveSolutions = async () => {
-  const targetUrl = customLink || API_ROUTING[idgv];
+  // Tách văn bản thành mảng các câu dựa trên dấu }
+  // Ví dụ: "{id:1...} {id:2...}" -> ["{id:1...}", "{id:2...}"]
+  const rawBlocks = jsonInputLG.split(/(?<=})\s*(?={)/); 
+
   setLoading(true);
   try {
     const resp = await fetch(targetUrl, {
       method: 'POST',
       body: JSON.stringify({ 
         action: "saveOnlySolutions", 
-        idgv, 
         examCode, 
-        solutions: JSON.parse(jsonInputLG) 
+        solutions: rawBlocks // Gửi mảng chuỗi thô
       })
     });
     const res = await resp.json();
     alert(res.message);
-  } catch (e) { 
-    alert("Lỗi: " + e.message); 
+  } catch (e) {
+    alert("Lỗi kết nối!");
   } finally { setLoading(false); }
 };
   return (
