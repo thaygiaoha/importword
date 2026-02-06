@@ -131,30 +131,77 @@ const TeacherWordTask = ({ onBack }) => {
     setLoading(false);
   }
 };
+// =================================================bóc lời giải ============================================================================================
+  const handleSolutionParser = (text) => {
+  const results = [];
+  const segments = text.split('}#');
 
-  // 3. LƯU LỜI GIẢI
+  segments.forEach(segment => {
+    const startIndex = segment.indexOf('{');
+    if (startIndex !== -1) {
+      let rawInside = segment.substring(startIndex).trim();
+      if (!rawInside.endsWith('}')) rawInside += '}'; 
+
+      try {
+        // Nuốt Object không nháy của thầy
+        const obj = new Function(`return ${rawInside}`)();
+        
+        if (obj && obj.id) {
+          results.push({
+            id: obj.id,
+            // Đóng gói lại thành JSON chuẩn để lưu vào cột E
+            // Chỉ giữ lại id và loigiai cho nhẹ sheet
+            content: JSON.stringify({
+              id: obj.id,
+              loigiai: obj.loigiai || ""
+            })
+          });
+        }
+      } catch (e) {
+        console.error("Lỗi parse LG: ", e);
+      }
+    }
+  });
+
+  // Gửi mảng này sang GAS
+  setJsonInputSolution(JSON.stringify(results)); 
+  alert(`✅ Đã chuẩn bị xong ${results.length} lời giải. Bấm nút Nạp LG thôi thầy!`);
+};
+  // 3. LƯU LỜI GIẢI từ word ==========================================================================================================================================================
   const handleSaveSolutions = async () => {
   if (!idgv || !examCode || !jsonInputLG) {
     return alert("❌ Thiếu thông tin: IDGV, Mã đề hoặc Lời giải!");
   }
+  
   setLoading(true);
   try {
     const targetUrl = customLink || API_ROUTING[idgv];
+    
+    // Đảm bảo solutions gửi sang là một Array thực thụ
+    const solutionArray = typeof jsonInputLG === 'string' ? JSON.parse(jsonInputLG) : jsonInputLG;
+
     const resp = await fetch(`${targetUrl}?action=saveOnlySolutions`, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain' },
-      // Gửi thêm examCode để Script biết đề nào mà vá lời giải
-      body: JSON.stringify({ idgv, examCode, solutions: jsonInputLG })
+      body: JSON.stringify({ 
+        idgv, 
+        examCode, 
+        solutions: solutionArray 
+      })
     });
+
     const res = await resp.json();
-    alert(res.message);
+    if (res.status === "success") {
+       alert("🎉 " + res.message);
+    } else {
+       alert("⚠️ " + res.message);
+    }
   } catch (e) { 
-    alert("❌ Lỗi cập nhật lời giải!"); 
+    alert("❌ Lỗi kết nối server khi cập nhật lời giải!"); 
   } finally { 
     setLoading(false); 
   }
 };
-
   return (
     <div className="p-6 bg-white rounded-[2rem] shadow-2xl max-w-6xl mx-auto border-4 border-slate-50">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 p-6 bg-slate-900 rounded-[2.5rem]">
