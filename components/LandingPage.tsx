@@ -146,30 +146,38 @@ const [newsList, setNewsList] = useState<{t: string, l: string}[]>([]);
   fetchContentData();
 }, []);
   // =================================================================================================================
-  const handleStudentSubmit = async () => {
+ const handleStudentSubmit = async () => {
   if (!studentInfo.idgv || !studentInfo.sbd || !studentInfo.examCode) {
     return alert("Vui lòng nhập đủ ID GV, SBD và Mã Exams!");
   }
 
   setLoading(true);
   try {
-    const resp = await fetch(`${DANHGIA_URL}?action=studentGetExam`, {
+    // Dùng link theo IDGV của thầy hoặc customLink
+    const targetUrl = customLink || API_ROUTING[studentInfo.idgv]; 
+    
+    const resp = await fetch(targetUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify(studentInfo)
+      body: JSON.stringify({
+        action: 'studentGetExam', // Khớp với lệnh trong GAS
+        sbd: studentInfo.sbd,
+        examCode: studentInfo.examCode,
+        idgv: studentInfo.idgv
+      })
     });
     
     const res = await resp.json();
     
     if (res.status === 'success') {
-      // res.data.questions là mảng đã trộn MCQ, TF, SA
-      onStartExam(res.data); // Chuyển dữ liệu sang màn hình thi của thầy
+      // res.data chứa: questions (mảng có LG ở cột E), duration, studentName
+      onStartExam(res.data); 
       setShowStudentLogin(false);
     } else {
       alert(res.message);
     }
   } catch (e) {
-    alert("Lỗi kết nối hệ thống đánh giá!");
+    alert("❌ Lỗi kết nối: Thầy kiểm tra lại Deploy GAS bản mới nhất chưa?");
   } finally {
     setLoading(false);
   }
