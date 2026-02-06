@@ -148,7 +148,7 @@ const [newsList, setNewsList] = useState<{t: string, l: string}[]>([]);
   // =================================================================================================================
  // TRONG REACT - Hàm handleStudentSubmit
 const handleStudentSubmit = async () => {
-  const targetUrl = API_ROUTING[studentInfo.idgv];
+  const targetUrl = API_ROUTING[studentInfo.idgv.toString().trim()];
   
   if (!targetUrl) {
     alert("Không tìm thấy link Script của Giáo viên này!");
