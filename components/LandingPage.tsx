@@ -1344,7 +1344,8 @@ const handleRedirect = () => {
                placeholder="SỐ BÁO DANH (SBD)..." value={studentInfo.sbd} onChange={e => setStudentInfo({...studentInfo, sbd: e.target.value})} />
         
         <input className="w-full p-4 rounded-xl bg-slate-800 text-emerald-400 border border-slate-700 font-black text-xs" 
-               placeholder="MÃ ĐỀ THI (EXAMS)..." value={studentInfo.examCode} onChange={e => setStudentInfo({...studentInfo, examCode: e.target.value})} />
+               placeholder="MÃ ĐỀ THI (EXAMS)..." value={studentInfo.examCode} 
+onChange={e => setStudentInfo({...studentInfo, examCode: e.target.value.toUpperCase()})} />
         
         <div className="grid grid-cols-2 gap-3 mt-6">
           <button onClick={() => setShowStudentLogin(false)} className="py-3 bg-slate-800 text-slate-400 rounded-xl font-bold text-[10px]">HỦY</button>
