@@ -151,33 +151,38 @@ const [newsList, setNewsList] = useState<{t: string, l: string}[]>([]);
     return alert("Vui lòng nhập đủ ID GV, SBD và Mã Exams!");
   }
 
+  // TRUY TÌM LINK CỦA GIÁO VIÊN
+  // Dò trong danh sách API_ROUTING bằng cái ID GV học sinh vừa nhập
+  const teacherUrl = API_ROUTING[studentInfo.idgv];
+
+  if (!teacherUrl) {
+    return alert(`❌ Không tìm thấy hệ thống của Giáo viên có ID: ${studentInfo.idgv}`);
+  }
+
   setLoading(true);
   try {
-    // Dùng link theo IDGV của thầy hoặc customLink
-    const targetUrl = customLink || API_ROUTING[studentInfo.idgv]; 
-    
-    const resp = await fetch(targetUrl, {
+    const resp = await fetch(teacherUrl, { 
       method: 'POST',
       headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify({
-        action: 'studentGetExam', // Khớp với lệnh trong GAS
+        action: 'studentGetExam', 
         sbd: studentInfo.sbd,
         examCode: studentInfo.examCode,
         idgv: studentInfo.idgv
       })
     });
-    
+
     const res = await resp.json();
     
     if (res.status === 'success') {
-      // res.data chứa: questions (mảng có LG ở cột E), duration, studentName
+      // res.data bốc từ sheet exam_data của GV đó
       onStartExam(res.data); 
       setShowStudentLogin(false);
     } else {
-      alert(res.message);
+      alert("Hệ thống GV báo: " + res.message);
     }
   } catch (e) {
-    alert("❌ Lỗi kết nối: Thầy kiểm tra lại Deploy GAS bản mới nhất chưa?");
+    alert("❌ Lỗi kết nối tới hệ thống của Giáo viên này!");
   } finally {
     setLoading(false);
   }
