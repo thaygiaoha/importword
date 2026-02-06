@@ -169,25 +169,38 @@ const TeacherWordTask = ({ onBack }) => {
 };
   // 3. LƯU LỜI GIẢI từ word ==========================================================================================================================================================
   const handleSaveSolutions = async () => {
-  // Tách văn bản thành mảng các câu dựa trên dấu }
-  // Ví dụ: "{id:1...} {id:2...}" -> ["{id:1...}", "{id:2...}"]
-  const rawBlocks = jsonInputLG.split(/(?<=})\s*(?={)/); 
-
+  if (!idgv || !jsonInputLG) return alert("Thiếu IDGV hoặc nội dung!");
+  
+  const targetUrl = customLink || API_ROUTING[idgv];
   setLoading(true);
+
+  // Tách các block bằng dấu ngoặc nhọn
+  const rawBlocks = jsonInputLG.split(/}\s*{/).map(s => {
+    let b = s.trim();
+    if (!b.startsWith('{')) b = '{' + b;
+    if (!b.endsWith('}')) b = b + '}';
+    return b;
+  });
+
   try {
     const resp = await fetch(targetUrl, {
       method: 'POST',
+      headers: { 'Content-Type': 'text/plain' }, // Ép kiểu text để không bị soi CORS
       body: JSON.stringify({ 
         action: "saveOnlySolutions", 
-        examCode, 
-        solutions: rawBlocks // Gửi mảng chuỗi thô
+        examCode: examCode,
+        solutions: rawBlocks 
       })
     });
-    const res = await resp.json();
-    alert(res.message);
+
+    // Nếu fetch thành công nó sẽ chạy xuống đây
+    alert("✅ Đã gửi lệnh! Thầy check Sheet xem nó nhảy số chưa.");
   } catch (e) {
-    alert("Lỗi kết nối!");
-  } finally { setLoading(false); }
+    console.error(e);
+    alert("❌ Vẫn lỗi kết nối! Thầy kiểm tra lại Link Script trong GAS đã Deploy bản mới nhất chưa?");
+  } finally {
+    setLoading(false);
+  }
 };
   return (
     <div className="p-6 bg-white rounded-[2rem] shadow-2xl max-w-6xl mx-auto border-4 border-slate-50">
