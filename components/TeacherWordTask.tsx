@@ -94,41 +94,31 @@ const TeacherWordTask = ({ onBack }) => {
     }
   };
 
-  // 2. LƯU CÂU HỎI
-  const handleSaveQuestions = async (isOverwrite = false) => {
-  if (!idgv || !examCode || !jsonInputWord) return alert("Thiếu IDGV, Mã đề hoặc nội dung câu hỏi!");
-  const targetUrl = customLink || API_ROUTING[idgv];
-  if (!targetUrl) return alert("❌ Không tìm thấy Link Script!");
-
-  setLoading(true);
+  // 2. LƯU CÂU HỎI exam_data
+  const saveToDatabase = async (questions) => {
+  const targetUrl = API_ROUTING[idgv]; // Link của GV
+  
   try {
-    const resp = await fetch(`${targetUrl}?action=saveOnlyQuestions`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify({ 
-        idgv, 
-        examCode, 
-        questions: JSON.parse(jsonInputWord), 
-        overwrite: isOverwrite 
-      })
+    const response = await fetch(targetUrl, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain" }, // Dùng text/plain để không bị "đơ"
+      body: JSON.stringify({
+        action: "saveOnlyQuestions", // Hoặc studentGetExam tùy mục đích
+        examCode: examCode, // Đảm bảo đúng tên biến GAS đang đợi
+        idgv: idgv,
+        questions: questions
+      }),
     });
-    
-    const res = await resp.json();
 
-    if (res.status === 'exists') {
-      // ⚠️ Tắt loading trước khi hiện bảng confirm để UI không bị "đơ"
-      setLoading(false); 
-      if (window.confirm("⚠️ Mã đề này đã có câu hỏi. Thầy có muốn XÓA CŨ để NẠP MỚI không?")) {
-        return handleSaveQuestions(true); // Thêm return ở đây cho chắc
-      }
+    const result = await response.json();
+    if (result.status === "success") {
+      alert("✅ Thành công: " + result.message);
     } else {
-      alert(res.message);
+      alert("❌ Lỗi: " + result.message);
     }
-  } catch (e) {
-    console.error(e);
-    alert("❌ Lỗi lưu câu hỏi!");
-  } finally {
-    setLoading(false);
+  } catch (error) {
+    console.error("Lỗi treo fetch:", error);
+    alert("Cửa sổ này đang đơ do lỗi kết nối mạng hoặc Script bị khóa!");
   }
 };
 // =================================================bóc lời giải ============================================================================================
