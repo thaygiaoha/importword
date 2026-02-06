@@ -169,38 +169,23 @@ const TeacherWordTask = ({ onBack }) => {
 };
   // 3. LƯU LỜI GIẢI từ word ==========================================================================================================================================================
   const handleSaveSolutions = async () => {
-  if (!idgv || !examCode || !jsonInputLG) return alert("❌ Thiếu thông tin!");
-  
+  const targetUrl = customLink || API_ROUTING[idgv];
   setLoading(true);
   try {
-    const targetUrl = customLink || API_ROUTING[idgv];
-    const solutionArray = typeof jsonInputLG === 'string' ? JSON.parse(jsonInputLG) : jsonInputLG;
-
     const resp = await fetch(targetUrl, {
       method: 'POST',
-      headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify({ 
         action: "saveOnlySolutions", 
         idgv, 
         examCode, 
-        solutions: solutionArray 
+        solutions: JSON.parse(jsonInputLG) 
       })
     });
-
-    const text = await resp.text(); // Lấy dữ liệu dạng thô trước
-    try {
-      const res = JSON.parse(text); // Ép về JSON
-      alert(res.message);
-    } catch (e) {
-      // Nếu không phải JSON, nó sẽ hiện thẳng cái đống HTML lỗi của Google ra đây
-      console.log("Dữ liệu thô từ GAS:", text);
-      alert("⚠️ Lỗi từ GAS (Xem Console F12): " + text.substring(0, 100));
-    }
+    const res = await resp.json();
+    alert(res.message);
   } catch (e) { 
-    alert("❌ Lỗi kết nối: " + e.message); 
-  } finally { 
-    setLoading(false); 
-  }
+    alert("Lỗi: " + e.message); 
+  } finally { setLoading(false); }
 };
   return (
     <div className="p-6 bg-white rounded-[2rem] shadow-2xl max-w-6xl mx-auto border-4 border-slate-50">
