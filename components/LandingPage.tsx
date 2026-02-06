@@ -146,45 +146,40 @@ const [newsList, setNewsList] = useState<{t: string, l: string}[]>([]);
   fetchContentData();
 }, []);
   // =================================================================================================================
- const handleStudentSubmit = async () => {
-  if (!studentInfo.idgv || !studentInfo.sbd || !studentInfo.examCode) {
-    return alert("Vui lòng nhập đủ ID GV, SBD và Mã Exams!");
+ // TRONG REACT - Hàm handleStudentSubmit
+const handleStudentSubmit = async () => {
+  const targetUrl = API_ROUTING[studentInfo.idgv];
+  
+  if (!targetUrl) {
+    alert("Không tìm thấy link Script của Giáo viên này!");
+    return;
   }
 
-  // TRUY TÌM LINK CỦA GIÁO VIÊN
-  // Dò trong danh sách API_ROUTING bằng cái ID GV học sinh vừa nhập
-  const teacherUrl = API_ROUTING[studentInfo.idgv];
-
-  if (!teacherUrl) {
-    return alert(`❌ Không tìm thấy hệ thống của Giáo viên có ID: ${studentInfo.idgv}`);
-  }
-
-  setLoading(true);
   try {
-    const resp = await fetch(teacherUrl, { 
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain' },
+    const response = await fetch(targetUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "text/plain", // BẮT BUỘC để không bị lỗi kết nối
+      },
       body: JSON.stringify({
-        action: 'studentGetExam', 
+        action: "studentGetExam",
         sbd: studentInfo.sbd,
         examCode: studentInfo.examCode,
         idgv: studentInfo.idgv
-      })
+      }),
     });
 
-    const res = await resp.json();
-    
-    if (res.status === 'success') {
-      // res.data bốc từ sheet exam_data của GV đó
-      onStartExam(res.data); 
-      setShowStudentLogin(false);
+    const result = await response.json();
+
+    if (result.status === "success") {
+      // Cho vào thi
+      console.log("Dữ liệu đề:", result.data);
     } else {
-      alert("Hệ thống GV báo: " + res.message);
+      alert(result.message); // Hiển thị lỗi từ GAS (Ví dụ: "SBD không tồn tại")
     }
-  } catch (e) {
+  } catch (error) {
+    console.error("Lỗi Fetch:", error);
     alert("❌ Lỗi kết nối tới hệ thống của Giáo viên này!");
-  } finally {
-    setLoading(false);
   }
 };
   // =================================================================================================================
