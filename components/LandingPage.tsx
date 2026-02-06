@@ -148,6 +148,7 @@ const [newsList, setNewsList] = useState<{t: string, l: string}[]>([]);
   // =================================================================================================================
  // TRONG REACT - Hàm handleStudentSubmit
 const handleStudentSubmit = async () => {
+  if (e) e.preventDefault();
   const targetUrl = API_ROUTING[studentInfo.idgv.toString().trim()];
   
   if (!targetUrl) {
