@@ -23,7 +23,10 @@ const TeacherWordTask = ({ onBack }) => {
   // Tái sử dụng hàm bóc tách của thầy
   // =========================================================================================================================================
  const handleWordParser = (text) => {
-  if (!text.trim()) return alert("Dán dữ liệu vào đã thầy ơi!");
+  if (!text || !text.trim()) {
+    alert("❌ Chưa có nội dung Word!");
+    return;
+  }
 
   const blocks = [];
   let current = '';
@@ -31,32 +34,37 @@ const TeacherWordTask = ({ onBack }) => {
 
   for (let i = 0; i < text.length; i++) {
     const ch = text[i];
-    if (ch === '{') { if (depth === 0) current = ''; depth++; }
+    if (ch === '{') {
+      if (depth === 0) current = '';
+      depth++;
+    }
     if (depth > 0) current += ch;
-    if (ch === '}') { depth--; if (depth === 0) blocks.push(current.trim()); }
+    if (ch === '}') {
+      depth--;
+      if (depth === 0) blocks.push(current.trim());
+    }
+  }
+
+  if (!blocks.length) {
+    alert("❌ Không tìm thấy khối { } nào!");
+    return;
   }
 
   const results = blocks.map((block, index) => {
-  const tagMatch = block.match(/classTag\s*:\s*["']([^"']+)["']/);
-  const typeMatch = block.match(/type\s*:\s*["']([^"']+)["']/);
+    const tagMatch = block.match(/classTag\s*:\s*["']([^"']+)["']/);
+    const typeMatch = block.match(/type\s*:\s*["']([^"']+)["']/);
 
-  return {
-    id: Date.now() + index,
-    classTag: tagMatch ? tagMatch[1].trim() : "1001.a",
-    type: typeMatch ? typeMatch[1].trim() : "short-answer",
-    question: block.trim() // ⚠️ LƯU NGUYÊN KHỐI
-  };
-});
+    return {
+      id: Date.now() + index,
+      classTag: tagMatch ? tagMatch[1].trim() : "1001.a",
+      type: typeMatch ? typeMatch[1].trim() : "short-answer",
+      question: block.trim()   // 🔥 RAW TEXT
+    };
+  });
 
-
-  if (results.length > 0) {
-    setJsonInput(results);
-    // QUAN TRỌNG: Truyền thẳng kết quả vào hàm lưu
-    handleSaveQuestions(results); 
-  } else {
-    alert("Không tìm thấy dấu { } nào để tách!");
-  }
+  handleSaveQuestions(results);
 };
+
 
   // ==============================================================================================================================================
     // =================================================
@@ -252,7 +260,7 @@ const handleSaveQuestions = async (dataArray) => {
           </button>
           <button 
             disabled={loading}
-            onClick={() => handleSaveQuestions(false)} 
+            onClick={() => handleWordParser(jsonInputWord)}
             className="py-4 bg-orange-600 text-white rounded-2xl font-black shadow-lg hover:bg-orange-700 active:scale-95 disabled:opacity-50 transition-all text-sm border-b-4 border-orange-800"
           >
             NẠP CÂU HỎI (WORD)
@@ -277,11 +285,13 @@ const handleSaveQuestions = async (dataArray) => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="group">
           <label className="text-xs font-bold text-slate-500 ml-4 group-focus-within:text-orange-500 transition-colors uppercase">Nội dung câu hỏi (Dán từ Word)</label>
-          <textarea 
-            className="w-full h-80 p-5 bg-slate-50 rounded-[2rem] border-2 border-dashed border-slate-200 mt-2 shadow-inner focus:border-orange-400 focus:bg-white outline-none transition-all text-sm" 
+          <textarea
+            className="..."
             placeholder="Ctrl + V nội dung từ file Word vào đây..."
-            onChange={e => handleWordParser(e.target.value)} 
+            value={jsonInputWord}
+            onChange={e => setJsonInputWord(e.target.value)}
           />
+
         </div>
         <div className="group">
           <label className="text-xs font-bold text-slate-500 ml-4 group-focus-within:text-purple-500 transition-colors uppercase">Lời giải chi tiết (Dán LG)</label>
