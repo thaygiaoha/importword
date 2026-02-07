@@ -23,52 +23,36 @@ const TeacherWordTask = ({ onBack }) => {
   // Tái sử dụng hàm bóc tách của thầy
   // =========================================================================================================================================
  const handleWordParser = (text) => {
-  if (!text.trim()) return;
+  if (!text.trim()) return alert("Dán dữ liệu vào đã thầy ơi!");
 
   const blocks = [];
   let current = '';
   let depth = 0;
 
-  // 1. Quét toàn bộ text để tách khối dựa trên độ sâu ngoặc
   for (let i = 0; i < text.length; i++) {
     const ch = text[i];
-    if (ch === '{') {
-      if (depth === 0) current = '';
-      depth++; 
-    }
+    if (ch === '{') { if (depth === 0) current = ''; depth++; }
     if (depth > 0) current += ch;
-    if (ch === '}') {
-      depth--;
-      if (depth === 0) {
-        // Đã lấy trọn vẹn một khối từ { đến } 
-        blocks.push(current.trim());
-      }
-    }
+    if (ch === '}') { depth--; if (depth === 0) blocks.push(current.trim()); }
   }
 
-  // 2. Chuyển các khối thô thành mảng Object để gửi sang GAS
-  const results = blocks.map((block) => {
-    // Trích xuất ID và ClassTag sơ bộ để hiển thị/phân loại
-    const idMatch = block.match(/id\s*:\s*(\d+)/);
+  const results = blocks.map((block, index) => {
     const tagMatch = block.match(/classTag\s*:\s*["']([^"']+)["']/);
-    
-    // Nhận diện Type
-    let type = "SA";
-    if (block.includes('"mcq"') || block.includes("'mcq'")) type = "MCQ";
-    else if (block.includes("true-false")) type = "TF";
-
+    const typeMatch = block.match(/type\s*:\s*["']([^"']+)["']/);
     return {
-      id: idMatch ? idMatch[1] : Date.now(),
+      id: Date.now() + index,
       classTag: tagMatch ? tagMatch[1] : "1001.a",
-      type: type,
-      question: block // Bê nguyên văn nội dung thô (đã bảo vệ bởi depth)
+      type: typeMatch ? typeMatch[1] : "SA",
+      question: block
     };
   });
 
- if (results.length > 0) {
-    setJsonInput(results); 
-    // GỌI HÀM LƯU LUÔN VÀ TRUYỀN kết quả trực tiếp
+  if (results.length > 0) {
+    setJsonInput(results);
+    // QUAN TRỌNG: Truyền thẳng kết quả vào hàm lưu
     handleSaveQuestions(results); 
+  } else {
+    alert("Không tìm thấy dấu { } nào để tách!");
   }
 };
   // 1. LƯU CẤU HÌNH =====================================================================================================
@@ -103,7 +87,7 @@ const TeacherWordTask = ({ onBack }) => {
   };
 // ==============================================================================================================================================
     // =================================================
- const handleSaveQuestions = async (dataArray) => {
+const handleSaveQuestions = async (dataArray) => {
   // 1. Kiểm tra dữ liệu đầu vào
   if (!dataArray || (Array.isArray(dataArray) && dataArray.length === 0)) {
     alert("Chưa có dữ liệu để nạp!");
