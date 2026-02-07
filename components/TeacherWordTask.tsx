@@ -23,44 +23,54 @@ const TeacherWordTask = ({ onBack }) => {
   // Tái sử dụng hàm bóc tách của thầy
   // =========================================================================================================================================
  const handleWordParser = (text) => {
-  const results = [];
-  
-  // 1. Dùng Regex để bắt mọi thứ nằm giữa { và }# 
-  // gms: global, multiline, dotAll (để bắt được cả dấu xuống dòng bên trong câu hỏi)
-  const regex = /\{([\s\S]*?)\}#/gms;
-  let match;
+  if (!text.trim()) return;
 
-  while ((match = regex.exec(text)) !== null) {
-    let rawInside = match[1].trim(); // Nội dung bên trong { }
-    
-    try {
-      // 2. Chuyển chuỗi text thành Object thực thụ
-      // Dùng eval hoặc Function vì JSON thầy gửi là định dạng Object Literal (không nháy kép ở key)
-      const obj = eval(`({${rawInside}})`);
-      
-      if (obj) {
-        // Chuẩn hóa Type để ghi vào cột C
-        let typeDisplay = "SA";
-        if (obj.type === "mcq") typeDisplay = "MCQ";
-        if (obj.type === "true-false") typeDisplay = "TF";
-        if (obj.type === "short-answer") typeDisplay = "SA";
+  const blocks = [];
+  let current = '';
+  let depth = 0;
 
-        // 3. Đưa vào mảng (Cột C: Type, Cột D: Toàn bộ Object đã bọc lại)
-        results.push({ 
-          qType: typeDisplay, 
-          content: JSON.stringify(obj) // Lưu dạng JSON string để sau này dễ truy xuất
-        });
+  // 1. Quét toàn bộ text để tách khối dựa trên độ sâu ngoặc
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (ch === '{') {
+      if (depth === 0) current = '';
+      depth++; 
+    }
+    if (depth > 0) current += ch;
+    if (ch === '}') {
+      depth--;
+      if (depth === 0) {
+        // Đã lấy trọn vẹn một khối từ { đến } 
+        blocks.push(current.trim());
       }
-    } catch (e) {
-      console.error("Lỗi parse câu: ", e);
     }
   }
 
+  // 2. Chuyển các khối thô thành mảng Object để gửi sang GAS
+  const results = blocks.map((block) => {
+    // Trích xuất ID và ClassTag sơ bộ để hiển thị/phân loại
+    const idMatch = block.match(/id\s*:\s*(\d+)/);
+    const tagMatch = block.match(/classTag\s*:\s*["']([^"']+)["']/);
+    
+    // Nhận diện Type
+    let type = "SA";
+    if (block.includes('"mcq"') || block.includes("'mcq'")) type = "MCQ";
+    else if (block.includes("true-false")) type = "TF";
+
+    return {
+      id: idMatch ? idMatch[1] : Date.now(),
+      classTag: tagMatch ? tagMatch[1] : "1001.a",
+      type: type,
+      question: block // Bê nguyên văn nội dung thô (đã bảo vệ bởi depth)
+    };
+  });
+
   if (results.length > 0) {
-    setJsonInputWord(JSON.stringify(results));
-    alert(`🎯 Đã bóc thành công ${results.length} câu! Thầy bấm "Nạp câu hỏi" đi.`);
+    // Lưu vào state để chuẩn bị gửi sang GAS
+    setJsonInput(results); // Lưu dạng mảng luôn cho sạch
+    alert(`🎯 Tuyệt vời thầy ơi! Hàm "Depth" đã hốt trọn ${results.length} câu.`);
   } else {
-    alert("❌ Vẫn ra 0 câu! Thầy kiểm tra xem cuối mỗi câu đã có dấu }# chưa?");
+    alert("❌ Không tìm thấy khối { } nào hợp lệ!");
   }
 };
   // 1. LƯU CẤU HÌNH =====================================================================================================
