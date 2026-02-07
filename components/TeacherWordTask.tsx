@@ -135,78 +135,68 @@ const handleSaveQuestions = async (dataArray) => {
   };
 
 // =================================================bóc lời giải ============================================================================================
-  const handleSolutionParser = (text) => {  
-if (!text || !text.trim()) {
-alert("❌ Chưa có nội dung Word!");
-return;
-}
-const blocks = [];
-let current = '';
-let depth = 0;
-for (let i = 0; i < text.length; i++) {
-const ch = text[i];
-if (ch === '{') {
-if (depth === 0) current = '';
-depth++;
-}
-if (depth > 0) current += ch;
-if (ch === '}') {
-depth--;
-if (depth === 0) blocks.push(current.trim());
-}
-}
-if (!blocks.length) {
-alert("❌ Không tìm thấy khối { } nào!");
-return;
-}
-const results = blocks.map((block, index) => {
-const tagMatch = block.match(/classTag\s*:\s*["']([^"']+)["']/);
-const typeMatch = block.match(/type\s*:\s*["']([^"']+)["']/);
-return {
-id: Date.now() + index,
-classTag: tagMatch ? tagMatch[1].trim() : "1001.a",
-type: typeMatch ? typeMatch[1].trim() : "short-answer",
-question: block.trim()   // 🔥 RAW TEXT
+  const handleSolutionParser = () => {
+  if (!jsonInputLG || !jsonInputLG.trim()) {
+    alert("❌ Chưa có nội dung lời giải!");
+    return;
+  }
+
+  const blocks = [];
+  let current = '';
+  let depth = 0;
+
+  for (let i = 0; i < jsonInputLG.length; i++) {
+    const ch = jsonInputLG[i];
+    if (ch === '{') {
+      if (depth === 0) current = '';
+      depth++;
+    }
+    if (depth > 0) current += ch;
+    if (ch === '}') {
+      depth--;
+      if (depth === 0) blocks.push(current.trim());
+    }
+  }
+
+  if (!blocks.length) {
+    alert("❌ Không tìm thấy block { }");
+    return;
+  }
+
+  handleSaveSolutions(blocks); // 🚀 GỬI THẲNG
 };
-});
-handleSaveSolutions(results);
-};
+
 
   // 3. LƯU LỜI GIẢI từ word ==========================================================================================================================================================
-  const handleSaveSolutions = async () => {
-  if (!idgv || !jsonInputLG) return alert("Thiếu IDGV hoặc nội dung!");
-  
+  const handleSaveSolutions = async (rawBlocks) => {
+  if (!idgv || !rawBlocks?.length) {
+    alert("Thiếu dữ liệu!");
+    return;
+  }
+
   const targetUrl = customLink || API_ROUTING[idgv];
   setLoading(true);
-
-  // Tách các block bằng dấu ngoặc nhọn
-  const rawBlocks = jsonInputLG.split(/}\s*{/).map(s => {
-    let b = s.trim();
-    if (!b.startsWith('{')) b = '{' + b;
-    if (!b.endsWith('}')) b = b + '}';
-    return b;
-  });
 
   try {
     const resp = await fetch(targetUrl, {
       method: 'POST',
-      headers: { 'Content-Type': 'text/plain' }, // Ép kiểu text để không bị soi CORS
-      body: JSON.stringify({ 
-        action: "saveOnlySolutions", 
-        examCode: examCode,
-        solutions: rawBlocks 
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({
+        action: "saveOnlySolutions",
+        examCode,
+        solutions: rawBlocks // 👈 mảng block string
       })
     });
 
-    // Nếu fetch thành công nó sẽ chạy xuống đây
-    alert("✅ Đã gửi lệnh! Thầy check Sheet xem nó nhảy số chưa.");
+    alert("✅ Đã gửi lời giải lên GAS!");
   } catch (e) {
     console.error(e);
-    alert("❌ Vẫn lỗi kết nối! Thầy kiểm tra lại Link Script trong GAS đã Deploy bản mới nhất chưa?");
+    alert("❌ Lỗi kết nối GAS!");
   } finally {
     setLoading(false);
   }
 };
+
   return (
     <div className="p-6 bg-white rounded-[2rem] shadow-2xl max-w-6xl mx-auto border-4 border-slate-50">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 p-6 bg-slate-900 rounded-[2.5rem]">
