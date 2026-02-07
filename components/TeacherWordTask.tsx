@@ -22,7 +22,7 @@ const TeacherWordTask = ({ onBack }) => {
 
   // Tái sử dụng hàm bóc tách của thầy
   // =========================================================================================================================================
- const handleWordParser = (text) => {
+ const handleWordParser1 = (text) => {
   if (!text.trim()) return;
 
   const blocks = [];
@@ -101,9 +101,76 @@ const TeacherWordTask = ({ onBack }) => {
       setLoading(false);
     }
   };
-
+// ==============================================================================================================================================
   // 2. LƯU CÂU HỎI exam_data
-  const handleSaveQuestions = async (dataToSave) => { // Truyền mảng vào đây
+   const handleWordParser = (text) => {
+  if (!text.trim()) {
+    setJsonInput('');
+    return;
+  }
+
+  // Tách từng block { ... }
+  const blocks = [];
+  let current = '';
+  let depth = 0;
+
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (ch === '{') {
+      if (depth === 0) current = '';
+      depth++;
+    }
+    if (depth > 0) current += ch;
+    if (ch === '}') {
+      depth--;
+      if (depth === 0) blocks.push(current.trim());
+    }
+  }
+
+  const baseId = Date.now(); // mốc an toàn
+  const results = blocks.map((block, index) => {
+    const classTagMatch = block.match(/classTag\s*:\s*["']([^"']+)["']/);
+
+    return {
+      id: baseId + index,
+      classTag: classTagMatch ? classTagMatch[1] : "1001.a",
+      question: block
+    };
+  });
+
+  setJsonInput(JSON.stringify(results, null, 2));
+};
+// ======================================================================================Ghi câu hoi ngân hàng exam_data=========
+  
+ const handleSaveQuestions = async () => {
+  if (!jsonInput) return alert("Chưa có dữ liệu!");
+  setLoading(true);
+  try {
+    // Phải parse jsonInput thành mảng Object trước khi gửi
+    const dataArray = JSON.parse(jsonInput); 
+    
+    const resp = await fetch(`${API_ROUTING[idgv]}?action=saveOnlyQuestions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' }, 
+      body: JSON.stringify(dataArray) 
+    });
+    
+    const res = await resp.json();
+    if (res.status === 'success') { 
+      alert(`🚀 Thành công! Đã chèn ${dataArray.length} câu hỏi vào ngân hàng .`); 
+      setJsonInput(''); 
+    } else {
+      alert("Lỗi: " + res.message);
+    }
+  } catch (e) { 
+    console.error(e);
+    alert("Lỗi gửi dữ liệu! Thầy kiểm tra dữ liệu đầu vào có chuẩn mảng JSON không nhé."); 
+  } finally { 
+    setLoading(false); 
+  }
+};
+  // =================================================
+  const handleSaveQuestions1 = async (dataToSave) => { // Truyền mảng vào đây
   if (!dataToSave || dataToSave.length === 0) return alert("Chưa có dữ liệu để nạp!");
   
   try {
@@ -111,7 +178,7 @@ const TeacherWordTask = ({ onBack }) => {
       method: "POST",
       headers: { "Content-Type": "text/plain" },
       body: JSON.stringify({
-        action: "saveOnlyQuestions",
+        action: "saveOnlyQuestions1",
         examCode: examCode,
         idgv: idgv,
         questions: dataToSave // Gửi thẳng cái mảng Object
