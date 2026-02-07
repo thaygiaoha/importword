@@ -159,7 +159,7 @@ const AdminPanel = ({ mode, onBack }) => {
     
     const res = await resp.json();
     if (res.status === 'success') { 
-      alert(`🚀 Thành công! Đã chèn ${dataArray.length} dòng.`); 
+      alert(`🚀 Thành công! Đã chèn thêm ${dataArray.length} câu hỏi vào ngân hàng .`); 
       setJsonInput(''); 
     } else {
       alert("Lỗi: " + res.message);
