@@ -270,7 +270,7 @@ handleSaveSolutions(results);
           </button>
           <button 
             disabled={loading} 
-            onClick={() => handleSolutionParser(jsonInputWord)}
+            onClick={() => handleSolutionParser(jsonInputLG)}
             className="py-4 bg-purple-600 text-white rounded-2xl font-black shadow-lg hover:bg-purple-700 active:scale-95 disabled:opacity-50 transition-all text-sm border-b-4 border-purple-800"
           >
             CẬP NHẬT LỜI GIẢI
