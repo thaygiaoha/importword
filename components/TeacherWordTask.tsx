@@ -65,12 +65,10 @@ const TeacherWordTask = ({ onBack }) => {
     };
   });
 
-  if (results.length > 0) {
-    // Lưu vào state để chuẩn bị gửi sang GAS
-    setJsonInput(results); // Lưu dạng mảng luôn cho sạch
-    alert(`🎯 Tuyệt vời thầy ơi! Hàm "Depth" đã hốt trọn ${results.length} câu.`);
-  } else {
-    alert("❌ Không tìm thấy khối { } nào hợp lệ!");
+ if (results.length > 0) {
+    setJsonInput(results); 
+    // GỌI HÀM LƯU LUÔN VÀ TRUYỀN kết quả trực tiếp
+    handleSaveQuestions(results); 
   }
 };
   // 1. LƯU CẤU HÌNH =====================================================================================================
@@ -105,31 +103,22 @@ const TeacherWordTask = ({ onBack }) => {
   };
 
   // 2. LƯU CÂU HỎI exam_data
-  const handleSaveQuestions = async (questions) => {
-  const targetUrl = API_ROUTING[idgv]; // Link của GV
+  const handleSaveQuestions = async (dataToSave) => { // Truyền mảng vào đây
+  if (!dataToSave || dataToSave.length === 0) return alert("Chưa có dữ liệu để nạp!");
   
   try {
     const response = await fetch(targetUrl, {
       method: "POST",
-      headers: { "Content-Type": "text/plain" }, // Dùng text/plain để không bị "đơ"
+      headers: { "Content-Type": "text/plain" },
       body: JSON.stringify({
-        action: "saveOnlyQuestions", // Hoặc studentGetExam tùy mục đích
-        examCode: examCode, // Đảm bảo đúng tên biến GAS đang đợi
+        action: "saveOnlyQuestions",
+        examCode: examCode,
         idgv: idgv,
-        questions: questions
+        questions: dataToSave // Gửi thẳng cái mảng Object
       }),
     });
-
-    const result = await response.json();
-    if (result.status === "success") {
-      alert("✅ Thành công: " + result.message);
-    } else {
-      alert("❌ Lỗi: " + result.message);
-    }
-  } catch (error) {
-    console.error("Lỗi treo fetch:", error);
-    alert("Cửa sổ này đang đơ do lỗi kết nối mạng hoặc Script bị khóa!");
-  }
+    // ... xử lý kết quả
+  } catch (error) { console.error(error); }
 };
 // =================================================bóc lời giải ============================================================================================
   const handleSolutionParser = (text) => {
