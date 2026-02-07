@@ -106,22 +106,40 @@ const AdminPanel = ({ mode, onBack }) => {
 };  
 // ===========================================================================================================================================tách dữ liệu câu hỏi
   const handleWordParser = (text) => {
-  if (!text.trim()) return;
-  const results = [];
-  let input = text;
-
-  while (input.indexOf('{') !== -1 && input.indexOf('}#') !== -1) {
-    let start = input.indexOf('{');
-    let end = input.indexOf('}#') + 2;
-    let block = input.substring(start, end).trim();
-
-    // CHIÊU CUỐI: Nén mọi dấu xuống dòng và khoảng trắng thừa trong block
-    // Biến toàn bộ cục { ... }# thành 1 dòng duy nhất trước khi nạp
-    let cleanBlock = block.replace(/[\n\r]+/g, " ").replace(/\s+/g, " ");
-    
-    if (cleanBlock) results.push(cleanBlock);
-    input = input.substring(end);
+  if (!text.trim()) {
+    setJsonInput('');
+    return;
   }
+
+  // Tách từng block { ... }
+  const blocks = [];
+  let current = '';
+  let depth = 0;
+
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (ch === '{') {
+      if (depth === 0) current = '';
+      depth++;
+    }
+    if (depth > 0) current += ch;
+    if (ch === '}') {
+      depth--;
+      if (depth === 0) blocks.push(current.trim());
+    }
+  }
+
+  const baseId = Date.now(); // mốc an toàn
+  const results = blocks.map((block, index) => {
+    const classTagMatch = block.match(/classTag\s*:\s*["']([^"']+)["']/);
+
+    return {
+      id: baseId + index,
+      classTag: classTagMatch ? classTagMatch[1] : "1001.1",
+      question: block
+    };
+  });
+
   setJsonInput(JSON.stringify(results, null, 2));
 };
 // ======================================================================================Ghi câu hoi ngân hàng=========
