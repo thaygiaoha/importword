@@ -37,15 +37,17 @@ const TeacherWordTask = ({ onBack }) => {
   }
 
   const results = blocks.map((block, index) => {
-    const tagMatch = block.match(/classTag\s*:\s*["']([^"']+)["']/);
-    const typeMatch = block.match(/type\s*:\s*["']([^"']+)["']/);
-    return {
-      id: Date.now() + index,
-      classTag: tagMatch ? tagMatch[1] : "1001.a",
-      type: typeMatch ? typeMatch[1] : "SA",
-      question: block
-    };
-  });
+  const tagMatch = block.match(/classTag\s*:\s*["']([^"']+)["']/);
+  const typeMatch = block.match(/type\s*:\s*["']([^"']+)["']/);
+
+  return {
+    id: Date.now() + index,
+    classTag: tagMatch ? tagMatch[1].trim() : "1001.a",
+    type: typeMatch ? typeMatch[1].trim() : "short-answer",
+    question: block.trim() // ⚠️ LƯU NGUYÊN KHỐI
+  };
+});
+
 
   if (results.length > 0) {
     setJsonInput(results);
@@ -55,37 +57,8 @@ const TeacherWordTask = ({ onBack }) => {
     alert("Không tìm thấy dấu { } nào để tách!");
   }
 };
-  // 1. LƯU CẤU HÌNH =====================================================================================================
-  const handleSaveConfig = async (force = false) => {
-    if (!idgv) return alert("❌ Thầy chưa nhập ID Giáo viên!");
-    if (!examCode) return alert("❌ Cần nhập Mã đề!");
-    
-    const targetUrl = customLink || API_ROUTING[idgv];
-    if (!targetUrl) return alert("❌ Không tìm thấy Link Script cho ID này!");
 
-    setLoading(true);
-    try {
-      const resp = await fetch(`${targetUrl}?action=saveExamConfig&force=${force}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain' },
-        body: JSON.stringify({ idgv, examCode, config })
-      });
-      const res = await resp.json();
-
-      if (res.status === 'exists') {
-        if (window.confirm("⚠️ Mã đề này đã có cấu hình. Thầy có muốn GHI ĐÈ không?")) {
-          handleSaveConfig(true);
-        }
-      } else {
-        alert(res.message);
-      }
-    } catch (e) {
-      alert("❌ Lỗi kết nối đến Script giáo viên!");
-    } finally {
-      setLoading(false);
-    }
-  };
-// ==============================================================================================================================================
+  // ==============================================================================================================================================
     // =================================================
 const handleSaveQuestions = async (dataArray) => {
   // 1. Kiểm tra dữ liệu đầu vào
@@ -121,6 +94,37 @@ const handleSaveQuestions = async (dataArray) => {
     setLoading(false);
   }
 };
+  // 1. LƯU CẤU HÌNH =====================================================================================================
+  const handleSaveConfig = async (force = false) => {
+    if (!idgv) return alert("❌ Thầy chưa nhập ID Giáo viên!");
+    if (!examCode) return alert("❌ Cần nhập Mã đề!");
+    
+    const targetUrl = customLink || API_ROUTING[idgv];
+    if (!targetUrl) return alert("❌ Không tìm thấy Link Script cho ID này!");
+
+    setLoading(true);
+    try {
+      const resp = await fetch(`${targetUrl}?action=saveExamConfig&force=${force}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify({ idgv, examCode, config })
+      });
+      const res = await resp.json();
+
+      if (res.status === 'exists') {
+        if (window.confirm("⚠️ Mã đề này đã có cấu hình. Thầy có muốn GHI ĐÈ không?")) {
+          handleSaveConfig(true);
+        }
+      } else {
+        alert(res.message);
+      }
+    } catch (e) {
+      alert("❌ Lỗi kết nối đến Script giáo viên!");
+    } finally {
+      setLoading(false);
+    }
+  };
+
 // =================================================bóc lời giải ============================================================================================
   const handleSolutionParser = (text) => {
   const results = [];
