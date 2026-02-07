@@ -135,41 +135,43 @@ const handleSaveQuestions = async (dataArray) => {
   };
 
 // =================================================bóc lời giải ============================================================================================
-  const handleSolutionParser = (text) => {
-  const results = [];
-  const segments = text.split('}#');
-
-  segments.forEach(segment => {
-    const startIndex = segment.indexOf('{');
-    if (startIndex !== -1) {
-      let rawInside = segment.substring(startIndex).trim();
-      if (!rawInside.endsWith('}')) rawInside += '}'; 
-
-      try {
-        // Nuốt Object không nháy của thầy
-        const obj = new Function(`return ${rawInside}`)();
-        
-        if (obj && obj.id) {
-          results.push({
-            id: obj.id,
-            // Đóng gói lại thành JSON chuẩn để lưu vào cột E
-            // Chỉ giữ lại id và loigiai cho nhẹ sheet
-            content: JSON.stringify({
-              id: obj.id,
-              loigiai: obj.loigiai || ""
-            })
-          });
-        }
-      } catch (e) {
-        console.error("Lỗi parse LG: ", e);
-      }
-    }
-  });
-
-  // Gửi mảng này sang GAS
-  setJsonInputSolution(JSON.stringify(results)); 
-  alert(`✅ Đã chuẩn bị xong ${results.length} lời giải. Bấm nút Nạp LG thôi thầy!`);
+  const handleSolutionParser = (text) => {  
+if (!text || !text.trim()) {
+alert("❌ Chưa có nội dung Word!");
+return;
+}
+const blocks = [];
+let current = '';
+let depth = 0;
+for (let i = 0; i < text.length; i++) {
+const ch = text[i];
+if (ch === '{') {
+if (depth === 0) current = '';
+depth++;
+}
+if (depth > 0) current += ch;
+if (ch === '}') {
+depth--;
+if (depth === 0) blocks.push(current.trim());
+}
+}
+if (!blocks.length) {
+alert("❌ Không tìm thấy khối { } nào!");
+return;
+}
+const results = blocks.map((block, index) => {
+const tagMatch = block.match(/classTag\s*:\s*["']([^"']+)["']/);
+const typeMatch = block.match(/type\s*:\s*["']([^"']+)["']/);
+return {
+id: Date.now() + index,
+classTag: tagMatch ? tagMatch[1].trim() : "1001.a",
+type: typeMatch ? typeMatch[1].trim() : "short-answer",
+question: block.trim()   // 🔥 RAW TEXT
 };
+});
+handleSaveSolutions(results);
+};
+
   // 3. LƯU LỜI GIẢI từ word ==========================================================================================================================================================
   const handleSaveSolutions = async () => {
   if (!idgv || !jsonInputLG) return alert("Thiếu IDGV hoặc nội dung!");
@@ -267,8 +269,8 @@ const handleSaveQuestions = async (dataArray) => {
             NẠP CÂU HỎI (WORD)
           </button>
           <button 
-            disabled={loading}
-            onClick={handleSaveSolutions} 
+            disabled={loading} 
+            onClick={() => handleSolutionParser(jsonInputWord)}
             className="py-4 bg-purple-600 text-white rounded-2xl font-black shadow-lg hover:bg-purple-700 active:scale-95 disabled:opacity-50 transition-all text-sm border-b-4 border-purple-800"
           >
             CẬP NHẬT LỜI GIẢI
