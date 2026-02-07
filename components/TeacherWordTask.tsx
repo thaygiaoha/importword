@@ -95,7 +95,7 @@ const TeacherWordTask = ({ onBack }) => {
   };
 
   // 2. LƯU CÂU HỎI exam_data
-  const saveToDatabase = async (questions) => {
+  const saveOnlyQuestions = async (questions) => {
   const targetUrl = API_ROUTING[idgv]; // Link của GV
   
   try {
