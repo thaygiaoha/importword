@@ -22,52 +22,53 @@ const TeacherWordTask = ({ onBack }) => {
 
   // Tái sử dụng hàm bóc tách của thầy
   // =========================================================================================================================================
- const handleWordParser = (text) => {
-  if (!text || !text.trim()) {
-    alert("❌ Chưa có nội dung Word!");
+  const handleWordParser = (text) => {
+  if (!text.trim()) {
+    alert("Dán dữ liệu vào đã thầy ơi!");
     return;
   }
 
-  const blocks = [];
-  let current = '';
-  let depth = 0;
+  // 1️⃣ Tách câu theo }#
+  const rawBlocks = text
+    .split('}#')
+    .map(b => b.trim())
+    .filter(b => b.startsWith('{'))
+    .map(b => b.endsWith('}') ? b : b + '}');
 
-  for (let i = 0; i < text.length; i++) {
-    const ch = text[i];
-    if (ch === '{') {
-      if (depth === 0) current = '';
-      depth++;
-    }
-    if (depth > 0) current += ch;
-    if (ch === '}') {
-      depth--;
-      if (depth === 0) blocks.push(current.trim());
-    }
-  }
-
-  if (!blocks.length) {
-    alert("❌ Không tìm thấy khối { } nào!");
+  if (rawBlocks.length === 0) {
+    alert("Không tìm thấy câu hỏi hợp lệ!");
     return;
   }
 
-  const results = blocks.map((block, index) => {
-    const tagMatch = block.match(/classTag\s*:\s*["']([^"']+)["']/);
-    const typeMatch = block.match(/type\s*:\s*["']([^"']+)["']/);
+  // 2️⃣ Parse từng block
+  const results = rawBlocks.map((block, index) => {
+    try {
+      const obj = new Function(`return (${block})`)();
 
-    return {
-      id: Date.now() + index,
-      classTag: tagMatch ? tagMatch[1].trim() : "1001.a",
-      type: typeMatch ? typeMatch[1].trim() : "short-answer",
-      question: block.trim()   // 🔥 RAW TEXT
-    };
-  });
+      return {
+        id: obj.id || Date.now() + index,
+        classTag: (obj.classTag || "1001.a").trim(),
+        type: obj.type || "short-answer",
+        question: JSON.stringify(obj) // 🔥 LƯU NGUYÊN JSON
+      };
+    } catch (e) {
+      console.error("❌ Lỗi parse câu:", block);
+      return null;
+    }
+  }).filter(Boolean);
 
+  if (!results.length) {
+    alert("Parse xong nhưng không có câu nào hợp lệ!");
+    return;
+  }
+
+  // 3️⃣ Gửi thẳng sang GAS
   handleSaveQuestions(results);
 };
 
 
   // ==============================================================================================================================================
-    // =================================================
+   
 const handleSaveQuestions = async (dataArray) => {
   // 1. Kiểm tra dữ liệu đầu vào
   if (!dataArray || (Array.isArray(dataArray) && dataArray.length === 0)) {
