@@ -111,43 +111,22 @@ const AdminPanel = ({ mode, onBack }) => {
     return;
   }
 
-  const blocks = [];
-  let i = 0;
+  // 1️⃣ Tách câu theo }#
+  const rawBlocks = text
+    .split('}#')
+    .map(b => b.trim())
+    .filter(b => b.startsWith('{'))
+    .map(b => b.endsWith('}') ? b : b + '}');
 
-  while (i < text.length) {
-    // chỉ bắt block bắt đầu bằng { id:
-    if (text.slice(i).match(/^\{\s*id\s*:/)) {
-      let depth = 0;
-      let start = i;
-      let j = i;
-
-      while (j < text.length) {
-        if (text[j] === '{') depth++;
-        if (text[j] === '}') depth--;
-
-        if (depth === 0) {
-          blocks.push(text.slice(start, j + 1).trim());
-          i = j + 1;
-          break;
-        }
-        j++;
-      }
-    }
-    i++;
-  }
-
-  if (!blocks.length) {
-    alert("❌ Không tìm thấy block { id: ... }");
+  if (rawBlocks.length === 0) {
+    alert("Không tìm thấy câu hỏi hợp lệ!");
     return;
   }
 
-  const results = blocks.map((block, index) => {
-    let obj;
+  // 2️⃣ Parse từng block
+  const results = rawBlocks.map((block, index) => {
     try {
-      obj = new Function(`return (${block})`)();
-    } catch {
-      return null;
-    }
+      const obj = new Function(`return (${block})`)();
 
     return {
       id: obj.id,
