@@ -152,7 +152,7 @@ const handleStudentSubmit = async (e) => {
   // Ngăn trang web load lại (Tránh mất dữ liệu)
   if (e && typeof e.preventDefault === 'function') e.preventDefault();
 
-  const targetUrl = API_ROUTING[studentInfo.idgv.toString().trim()];
+  const targetUrl = API_ROUTING[idgv];
   
   if (!targetUrl) {
     alert("Không tìm thấy link Script của Giáo viên này!");
