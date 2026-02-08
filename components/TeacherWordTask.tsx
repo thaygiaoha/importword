@@ -168,33 +168,67 @@ const handleSaveQuestions = async (dataArray) => {
 
 
   // 3. LƯU LỜI GIẢI từ word ==========================================================================================================================================================
-  const handleSaveSolutions = async (blocks) => {
-  if (!idgv || !blocks?.length) {
-    return alert("❌ Chưa có lời giải để gửi!");
+  const handleUpdateSolutions = async () => {
+  if (!jsonInputLG || !jsonInputLG.trim()) {
+    alert("❌ Chưa có nội dung lời giải!");
+    return;
+  }
+  if (!idgv) {
+    alert("❌ Thiếu IDGV!");
+    return;
   }
 
+  // 1️⃣ TÁCH BLOCK { }
+  const blocks = [];
+  let buf = "";
+  let depth = 0;
+
+  for (let ch of jsonInputLG) {
+    if (ch === "{") {
+      if (depth === 0) buf = "";
+      depth++;
+    }
+    if (depth > 0) buf += ch;
+    if (ch === "}") {
+      depth--;
+      if (depth === 0) blocks.push(buf.trim());
+    }
+  }
+
+  if (!blocks.length) {
+    alert("❌ Không tìm thấy block { } nào!");
+    return;
+  }
+
+  console.log("📦 LG gửi lên:", blocks);
+
+  // 2️⃣ GỬI LÊN GAS
   const targetUrl = customLink || API_ROUTING[idgv];
   setLoading(true);
 
   try {
     const resp = await fetch(targetUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify({ 
-        action: "saveOnlySolutions", 
+      method: "POST",
+      headers: { "Content-Type": "text/plain" },
+      body: JSON.stringify({
+        action: "saveOnlySolutions",
         examCode,
-        solutions: blocks   // 🔥 DÙNG KẾT QUẢ PARSE
+        solutions: blocks
       })
     });
+
+    const data = await resp.json();
+    console.log("📥 GAS trả:", data);
 
     alert("✅ Đã gửi lời giải lên GAS!");
   } catch (e) {
     console.error(e);
-    alert("❌ Lỗi kết nối GAS!");
+    alert("❌ Không kết nối được GAS!");
   } finally {
     setLoading(false);
   }
 };
+
 
 
   return (
@@ -258,13 +292,14 @@ const handleSaveQuestions = async (dataArray) => {
           >
             NẠP CÂU HỎI (WORD)
           </button>
-          <button 
-            disabled={loading} 
-            onClick={() => handleSolutionParser(jsonInputLG)}
-            className="py-4 bg-purple-600 text-white rounded-2xl font-black shadow-lg hover:bg-purple-700 active:scale-95 disabled:opacity-50 transition-all text-sm border-b-4 border-purple-800"
+          <button
+          disabled={loading}
+          onClick={handleUpdateSolutions}
+          className="py-4 bg-purple-600 text-white rounded-2xl font-black"
           >
-            CẬP NHẬT LỜI GIẢI
-          </button>
+          CẬP NHẬT LỜI GIẢI
+        </button>
+
           <button 
             onClick={onBack} 
             className="w-full py-2 mt-2 bg-red-500/10 text-red-400 rounded-xl text-xs font-bold hover:bg-red-500/20 transition-all"
