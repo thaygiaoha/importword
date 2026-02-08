@@ -106,40 +106,60 @@ const AdminPanel = ({ mode, onBack }) => {
 };  
 // ===========================================================================================================================================tách dữ liệu câu hỏi
   const handleWordParser = (text) => {
-  if (!text.trim()) {
+  if (!text || !text.trim()) {
     setJsonInput('');
     return;
   }
 
-  // 1️⃣ Tách câu theo }#
-  const rawBlocks = text
-    .split('}#')
-    .map(b => b.trim())
-    .filter(b => b.startsWith('{'))
-    .map(b => b.endsWith('}') ? b : b + '}');
+  const blocks = [];
+  let i = 0;
 
-  if (rawBlocks.length === 0) {
-    alert("Không tìm thấy câu hỏi hợp lệ!");
+  while (i < text.length) {
+    // chỉ bắt block bắt đầu bằng { id:
+    if (text.slice(i).match(/^\{\s*id\s*:/)) {
+      let depth = 0;
+      let start = i;
+      let j = i;
+
+      while (j < text.length) {
+        if (text[j] === '{') depth++;
+        if (text[j] === '}') depth--;
+
+        if (depth === 0) {
+          blocks.push(text.slice(start, j + 1).trim());
+          i = j + 1;
+          break;
+        }
+        j++;
+      }
+    }
+    i++;
+  }
+
+  if (!blocks.length) {
+    alert("❌ Không tìm thấy block { id: ... }");
     return;
   }
 
-  // 2️⃣ Parse từng block
-  const results = rawBlocks.map((block, index) => {
+  const results = blocks.map((block, index) => {
+    let obj;
     try {
-      const obj = new Function(`return (${block})`)();
-
-      return {
-        id: obj.id || Date.now() + index,
-        classTag: (obj.classTag || "1001.a").trim(),
-        type: obj.type || "short-answer",
-        question: JSON.stringify(obj) // 🔥 LƯU NGUYÊN JSON
-      };
-    } catch (e) {
-      console.error("❌ Lỗi parse câu:", block);
+      obj = new Function(`return (${block})`)();
+    } catch {
       return null;
     }
+
+    return {
+      id: obj.id,
+      classTag: obj.classTag || "1001.a",
+      type: obj.type || "",
+      question: block
+    };
+  }).filter(Boolean);
+
   setJsonInput(JSON.stringify(results, null, 2));
 };
+
 // ======================================================================================Ghi câu hoi ngân hàng=========
   
  const handleSaveQuestions = async () => {
