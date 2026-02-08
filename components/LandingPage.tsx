@@ -149,13 +149,22 @@ const [newsList, setNewsList] = useState<{t: string, l: string}[]>([]);
  // TRONG REACT - Hàm handleStudentSubmit
 // Thêm (e) vào đây thầy nhé
 const handleStudentSubmit = async (e) => {
-  // Ngăn trang web load lại (Tránh mất dữ liệu)
   if (e && typeof e.preventDefault === 'function') e.preventDefault();
 
-  const targetUrl = API_ROUTING[idgv];
+  // 1. Lấy giá trị trực tiếp từ state studentInfo
+  const currentIDGV = studentInfo.idgv.toString().trim();
   
+  // 2. Truy xuất URL
+  const targetUrl = API_ROUTING[currentIDGV];
+
+  // LOG ĐỂ SOI LỖI (Thầy bật F12 lên xem cái này)
+  console.log("--- DEBUG ĐĂNG NHẬP ---");
+  console.log("IDGV nhập vào:", currentIDGV);
+  console.log("Link tìm được:", targetUrl);
+  console.log("Toàn bộ API_ROUTING:", API_ROUTING);
+
   if (!targetUrl) {
-    alert("Không tìm thấy link Script của Giáo viên này!");
+    alert(`❌ Không tìm thấy link Script của mã GV: "${currentIDGV}"`);
     return;
   }
 
@@ -167,7 +176,7 @@ const handleStudentSubmit = async (e) => {
         action: "studentGetExam",
         sbd: studentInfo.sbd.toString().trim(),
         examCode: studentInfo.examCode.toString().trim(),
-        idgv: studentInfo.idgv.toString().trim()
+        idgv: currentIDGV // Dùng luôn biến vừa lấy
       }),
     });
 
