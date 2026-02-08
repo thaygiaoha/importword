@@ -168,10 +168,9 @@ const handleSaveQuestions = async (dataArray) => {
 
 
   // 3. LƯU LỜI GIẢI từ word ==========================================================================================================================================================
-  const handleSaveSolutions = async (rawBlocks) => {
-  if (!idgv || !rawBlocks?.length) {
-    alert("Thiếu dữ liệu!");
-    return;
+  const handleSaveSolutions = async (blocks) => {
+  if (!idgv || !blocks?.length) {
+    return alert("❌ Chưa có lời giải để gửi!");
   }
 
   const targetUrl = customLink || API_ROUTING[idgv];
@@ -181,10 +180,10 @@ const handleSaveQuestions = async (dataArray) => {
     const resp = await fetch(targetUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify({
-        action: "saveOnlySolutions",
+      body: JSON.stringify({ 
+        action: "saveOnlySolutions", 
         examCode,
-        solutions: rawBlocks // 👈 mảng block string
+        solutions: blocks   // 🔥 DÙNG KẾT QUẢ PARSE
       })
     });
 
@@ -196,6 +195,7 @@ const handleSaveQuestions = async (dataArray) => {
     setLoading(false);
   }
 };
+
 
   return (
     <div className="p-6 bg-white rounded-[2rem] shadow-2xl max-w-6xl mx-auto border-4 border-slate-50">
