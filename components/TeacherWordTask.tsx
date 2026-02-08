@@ -135,23 +135,26 @@ const handleSaveQuestions = async (dataArray) => {
   };
 
 // =================================================bóc lời giải ============================================================================================
-  const handleSolutionParser = () => {
-  if (!jsonInputLG || !jsonInputLG.trim()) {
-    alert("❌ Chưa có nội dung lời giải!");
+ const handleSolutionParser = (text) => {
+  if (!text || !text.trim()) {
+    alert("❌ Chưa có nội dung LG");
     return;
   }
 
   const blocks = [];
-  let current = '';
   let depth = 0;
+  let current = '';
 
-  for (let i = 0; i < jsonInputLG.length; i++) {
-    const ch = jsonInputLG[i];
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+
     if (ch === '{') {
       if (depth === 0) current = '';
       depth++;
     }
+
     if (depth > 0) current += ch;
+
     if (ch === '}') {
       depth--;
       if (depth === 0) blocks.push(current.trim());
@@ -159,50 +162,30 @@ const handleSaveQuestions = async (dataArray) => {
   }
 
   if (!blocks.length) {
-    alert("❌ Không tìm thấy block { }");
+    alert("❌ Không bóc được block LG nào");
     return;
   }
 
-  handleSaveSolutions(blocks); // 🚀 GỬI THẲNG
+  // 🔥 LƯU MẢNG STRING – KHÔNG PARSE
+  setJsonInputLG(blocks);
+
+  alert(`✅ Đã bóc ${blocks.length} lời giải`);
 };
 
 
+
   // 3. LƯU LỜI GIẢI từ word ==========================================================================================================================================================
-  const handleUpdateSolutions = async () => {
-  if (!jsonInputLG || !jsonInputLG.trim()) {
-    alert("❌ Chưa có nội dung lời giải!");
-    return;
-  }
-  if (!idgv) {
-    alert("❌ Thiếu IDGV!");
+  const handleSaveSolutions = async () => {
+  if (!idgv || !examCode) {
+    alert("❌ Thiếu IDGV hoặc mã đề");
     return;
   }
 
-  // 1️⃣ TÁCH BLOCK { }
-  const blocks = [];
-  let buf = "";
-  let depth = 0;
-
-  for (let ch of jsonInputLG) {
-    if (ch === "{") {
-      if (depth === 0) buf = "";
-      depth++;
-    }
-    if (depth > 0) buf += ch;
-    if (ch === "}") {
-      depth--;
-      if (depth === 0) blocks.push(buf.trim());
-    }
-  }
-
-  if (!blocks.length) {
-    alert("❌ Không tìm thấy block { } nào!");
+  if (!Array.isArray(jsonInputLG) || jsonInputLG.length === 0) {
+    alert("❌ Chưa có LG để nạp");
     return;
   }
 
-  console.log("📦 LG gửi lên:", blocks);
-
-  // 2️⃣ GỬI LÊN GAS
   const targetUrl = customLink || API_ROUTING[idgv];
   setLoading(true);
 
@@ -213,17 +196,15 @@ const handleSaveQuestions = async (dataArray) => {
       body: JSON.stringify({
         action: "saveOnlySolutions",
         examCode,
-        solutions: blocks
+        solutions: jsonInputLG   // 🔥 ĐÚNG KIỂU
       })
     });
 
-    const data = await resp.json();
-    console.log("📥 GAS trả:", data);
-
-    alert("✅ Đã gửi lời giải lên GAS!");
+    const res = await resp.json();
+    alert(`✅ LG OK: update ${res.updated}, append ${res.appended}`);
   } catch (e) {
     console.error(e);
-    alert("❌ Không kết nối được GAS!");
+    alert("❌ Không kết nối được GAS");
   } finally {
     setLoading(false);
   }
