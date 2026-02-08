@@ -6,6 +6,7 @@ const TeacherWordTask = ({ onBack }) => {
   const [idgv, setIdgv] = useState('');
   const [customLink, setCustomLink] = useState(''); // Để dự phòng nếu cần dán trực tiếp link
   const [examCode, setExamCode] = useState('');
+  const [rawLGText, setRawLGText] = useState('');
 
   const [config, setConfig] = useState({
     numMCQ: 12, scoreMCQ: 0.25,
@@ -305,11 +306,14 @@ const handleSaveQuestions = async (dataArray) => {
   <div className="group">
     <label className="text-xs font-bold text-slate-500 ml-4 group-focus-within:text-purple-500 transition-colors uppercase">Lời giải chi tiết</label>
     <textarea 
-      className="w-full h-80 p-5 bg-slate-50 rounded-[2rem] border-2 border-dashed border-slate-200 mt-2 shadow-inner focus:border-purple-400 focus:bg-white outline-none transition-all text-sm" 
-      placeholder="Ctrl + V nội dung lời giải đã format vào đây..."
-      value={typeof jsonInputLG === 'string' ? jsonInputLG : JSON.stringify(jsonInputLG, null, 2)}
-      onChange={e => handleSolutionParser(e.target.value)} 
-    />
+  className="w-full h-96 p-6 bg-slate-50 rounded-[2.5rem] border-2 border-dashed border-slate-200 mt-2 shadow-inner focus:border-purple-400 focus:bg-white outline-none transition-all text-sm font-mono" 
+  placeholder="Dán lời giải vào đây..."
+  value={rawLGText}
+  onChange={(e) => {
+     setRawLGText(e.target.value);
+     handleSolutionParser(e.target.value);
+  }} 
+/>
   </div>
 </div>
     </div>
