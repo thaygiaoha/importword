@@ -111,35 +111,33 @@ const AdminPanel = ({ mode, onBack }) => {
     return;
   }
 
-  // Tách từng block { ... }
-  const blocks = [];
-  let current = '';
-  let depth = 0;
+  // 1️⃣ Tách câu theo }#
+  const rawBlocks = text
+    .split('}#')
+    .map(b => b.trim())
+    .filter(b => b.startsWith('{'))
+    .map(b => b.endsWith('}') ? b : b + '}');
 
-  for (let i = 0; i < text.length; i++) {
-    const ch = text[i];
-    if (ch === '{') {
-      if (depth === 0) current = '';
-      depth++;
-    }
-    if (depth > 0) current += ch;
-    if (ch === '}') {
-      depth--;
-      if (depth === 0) blocks.push(current.trim());
-    }
+  if (rawBlocks.length === 0) {
+    alert("Không tìm thấy câu hỏi hợp lệ!");
+    return;
   }
 
-  const baseId = Date.now(); // mốc an toàn
-  const results = blocks.map((block, index) => {
-    const classTagMatch = block.match(/classTag\s*:\s*["']([^"']+)["']/);
+  // 2️⃣ Parse từng block
+  const results = rawBlocks.map((block, index) => {
+    try {
+      const obj = new Function(`return (${block})`)();
 
-    return {
-      id: baseId + index,
-      classTag: classTagMatch ? classTagMatch[1] : "1001.1",
-      question: block
-    };
-  });
-
+      return {
+        id: obj.id || Date.now() + index,
+        classTag: (obj.classTag || "1001.a").trim(),
+        type: obj.type || "short-answer",
+        question: JSON.stringify(obj) // 🔥 LƯU NGUYÊN JSON
+      };
+    } catch (e) {
+      console.error("❌ Lỗi parse câu:", block);
+      return null;
+    }
   setJsonInput(JSON.stringify(results, null, 2));
 };
 // ======================================================================================Ghi câu hoi ngân hàng=========
