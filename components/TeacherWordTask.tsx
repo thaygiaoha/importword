@@ -175,7 +175,7 @@ const handleSaveQuestions = async (dataArray) => {
 
 
   // 3. LƯU LỜI GIẢI từ word ==========================================================================================================================================================
-  const handleSaveSolutions = async () => {
+  const handleUpdateSolutions = async () => {
   if (!idgv || !examCode) {
     alert("❌ Thiếu IDGV hoặc mã đề");
     return;
