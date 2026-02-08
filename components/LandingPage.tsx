@@ -49,8 +49,9 @@ const LandingPage: React.FC<LandingPageProps> = ({
   const [idgv, setIdgv] = useState('');
   const [questions, setQuestions] = useState([]);
   const [studentName, setStudentName] = useState("");
-  const [duration, setDuration] = useState(60);          // <-- Và dòng này
+  const [duration, setDuration] = useState(60);          
   const [examStarted, setExamStarted] = useState(false);
+ 
  
   const [searchId, setSearchId] = useState('');
   const [foundLG, setFoundLG] = useState(null);
