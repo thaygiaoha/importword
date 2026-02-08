@@ -111,33 +111,45 @@ const AdminPanel = ({ mode, onBack }) => {
     return;
   }
 
-  // 1️⃣ Tách câu theo }#
-  const rawBlocks = text
-    .split('}#')
-    .map(b => b.trim())
-    .filter(b => b.startsWith('{'))
-    .map(b => b.endsWith('}') ? b : b + '}');
+  const blocks = [];
 
-  if (rawBlocks.length === 0) {
-    alert("Không tìm thấy câu hỏi hợp lệ!");
+  // Tách theo }#
+  const rawParts = text.split('}#');
+
+  rawParts.forEach(part => {
+    const start = part.indexOf('{');
+    if (start !== -1) {
+      const block = part.slice(start).trim() + '}';
+      blocks.push(block);
+    }
+  });
+
+  if (!blocks.length) {
+    alert("❌ Không tìm thấy block { ... }# nào!");
     return;
   }
 
-  // 2️⃣ Parse từng block
-  const results = rawBlocks.map((block, index) => {
+  const results = blocks.map((block, index) => {
+    let obj;
     try {
-      const obj = new Function(`return (${block})`)();
+      obj = new Function(`return (${block})`)();
+    } catch (e) {
+      console.error("❌ Parse lỗi block:", block);
+      return null;
+    }
 
     return {
       id: obj.id,
       classTag: obj.classTag || "1001.a",
       type: obj.type || "",
-      question: block
+      question: block   // 🔥 GIỮ NGUYÊN RAW
     };
   }).filter(Boolean);
 
+  console.log("✅ Parsed questions:", results.length);
   setJsonInput(JSON.stringify(results, null, 2));
 };
+
 
 // ======================================================================================Ghi câu hoi ngân hàng=========
   
