@@ -291,26 +291,27 @@ const handleSaveQuestions = async (dataArray) => {
       </div>
 
       {/* KHU VỰC TEXTAREA */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="group">
-          <label className="text-xs font-bold text-slate-500 ml-4 group-focus-within:text-orange-500 transition-colors uppercase">Nội dung</label>
-          <textarea
-            className="..."
-            placeholder="Ctrl + V nội dung từ file Word Latex vào đây..."
-            value={jsonInputWord}
-            onChange={e => setJsonInputWord(e.target.value)}
-          />
-
-        </div>
-        <div className="group">
-          <label className="text-xs font-bold text-slate-500 ml-4 group-focus-within:text-purple-500 transition-colors uppercase">Lời giải</label>
-          <textarea 
-            className="w-full h-80 p-5 bg-slate-50 rounded-[2rem] border-2 border-dashed border-slate-200 mt-2 shadow-inner focus:border-purple-400 focus:bg-white outline-none transition-all text-sm" 
-            placeholder="Ctrl + V nội dung lời giải đã format vào đây..."
-            onChange={e => setJsonInputLG(e.target.value)} 
-          />
-        </div>
-      </div>
+     {/* KHU VỰC TEXTAREA */}
+<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+  <div className="group">
+    <label className="text-xs font-bold text-slate-500 ml-4 group-focus-within:text-orange-500 transition-colors uppercase">Nội dung câu hỏi</label>
+    <textarea
+      className="w-full h-80 p-5 bg-slate-50 rounded-[2rem] border-2 border-dashed border-slate-200 mt-2 shadow-inner focus:border-orange-400 focus:bg-white outline-none transition-all text-sm"
+      placeholder="Ctrl + V nội dung từ file Word Latex vào đây..."
+      value={jsonInputWord}
+      onChange={e => setJsonInputWord(e.target.value)}
+    />
+  </div>
+  <div className="group">
+    <label className="text-xs font-bold text-slate-500 ml-4 group-focus-within:text-purple-500 transition-colors uppercase">Lời giải chi tiết</label>
+    <textarea 
+      className="w-full h-80 p-5 bg-slate-50 rounded-[2rem] border-2 border-dashed border-slate-200 mt-2 shadow-inner focus:border-purple-400 focus:bg-white outline-none transition-all text-sm" 
+      placeholder="Ctrl + V nội dung lời giải đã format vào đây..."
+      value={typeof jsonInputLG === 'string' ? jsonInputLG : JSON.stringify(jsonInputLG, null, 2)}
+      onChange={e => handleSolutionParser(e.target.value)} 
+    />
+  </div>
+</div>
     </div>
   );
 };
