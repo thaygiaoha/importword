@@ -47,6 +47,10 @@ const LandingPage: React.FC<LandingPageProps> = ({
   const [isMatrixOpen, setIsMatrixOpen] = useState(false); // Đóng/mở bảng ma trận
   const [loadingMatrix, setLoadingMatrix] = useState(false); //
   const [idgv, setIdgv] = useState('');
+  const [questions, setQuestions] = useState([]);
+  const [studentName, setStudentName] = useState("");
+  const [duration, setDuration] = useState(60);          // <-- Và dòng này
+  const [examStarted, setExamStarted] = useState(false);
  
   const [searchId, setSearchId] = useState('');
   const [foundLG, setFoundLG] = useState(null);
