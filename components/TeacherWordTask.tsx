@@ -202,7 +202,7 @@ const handleSaveQuestions = async (dataArray) => {
     });
 
     const res = await resp.json();
-    alert(`✅ LG OK: update ${res.updated}, append ${res.appended}`);
+    alert(`✅ Đã cập nhật lời giải thành công rồi nhé tình yêu!`);
   } catch (e) {
     console.error(e);
     alert("❌ Không kết nối được GAS");
