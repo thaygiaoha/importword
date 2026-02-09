@@ -1,4 +1,10 @@
-export const scoreWord = (questions: any[], answers: Record<number, any>) => {
+export const scoreWord = (
+  questions: any[], 
+  answers: Record<number, any>,
+  scMCQ: number = 0.25, // Điểm mặc định nếu sheet trống
+  scTF: number = 1.0,   // Điểm tối đa câu Đúng/Sai
+  scSA: number = 0.5    // Điểm câu trả lời ngắn
+) => {
   let totalScore = 0;
   const details: any[] = [];
 
@@ -7,40 +13,42 @@ export const scoreWord = (questions: any[], answers: Record<number, any>) => {
     let point = 0;
     const qType = (q.type || "").toString().trim().toLowerCase();
 
-    // PHẦN I: Trắc nghiệm (MCQ) - 0.25đ mỗi câu
+    // 1. PHẦN I: Trắc nghiệm (MCQ) - Lấy điểm từ cột D
     if (qType === 'mcq') {
       if (studentAns === q.a) {
-        point = 0.25;
+        point = scMCQ;
       }
     }
 
-    // PHẦN II: Đúng/Sai - Chấm lũy tiến theo quy chế Bộ GD
+    // 2. PHẦN II: Đúng/Sai - Lấy điểm tối đa từ cột F và chia lũy tiến
     else if (qType === 'true-false') {
       const subQuestions = q.s || q.o || [];
       let correctCount = 0;
 
       subQuestions.forEach((sub: any, sIdx: number) => {
         const subLabel = String.fromCharCode(65 + sIdx);
-        // Chấp nhận cả boolean true/false hoặc chuỗi "Đúng"/"Sai" từ dữ liệu
-        const isTrue = sub.a === true || sub.a === 'Đúng';
-        const correctValue = isTrue ? 'Đúng' : 'Sai';
-        
+        const correctValue = (sub.a === true || sub.a === 'Đúng') ? 'Đúng' : 'Sai';
         if (studentAns?.[subLabel] === correctValue) {
           correctCount++;
         }
       });
 
-      // Thang điểm lũy tiến: 1 ý: 0.1 | 2 ý: 0.25 | 3 ý: 0.5 | 4 ý: 1.0
-      const progression = { 1: 0.1, 2: 0.25, 3: 0.5, 4: 1.0 };
-      point = progression[correctCount as keyof typeof progression] || 0;
+      // Quy chế lũy tiến dựa trên mức điểm tối đa (scTF)
+      // Thường là: 1 ý (1/10 điểm tối đa), 2 ý (1/4), 3 ý (1/2), 4 ý (điểm tối đa)
+      const progression: Record<number, number> = {
+        1: Math.round(scTF * 0.1 * 100) / 100,
+        2: Math.round(scTF * 0.25 * 100) / 100,
+        3: Math.round(scTF * 0.5 * 100) / 100,
+        4: scTF
+      };
+      point = progression[correctCount] || 0;
     }
 
-    // PHẦN III: Trả lời ngắn (SA) - 0.5đ mỗi câu
+    // 3. PHẦN III: Trả lời ngắn (SA) - Lấy điểm từ cột H
     else if (qType === 'sa' || qType === 'short-answer') {
-      // Chuẩn hóa: bỏ khoảng trắng, đổi phẩy thành chấm để so sánh số
       const normalize = (val: any) => val?.toString().trim().replace(',', '.').toLowerCase() || "";
       if (normalize(studentAns) !== "" && normalize(studentAns) === normalize(q.a)) {
-        point = 0.5;
+        point = scSA;
       }
     }
 
@@ -49,7 +57,7 @@ export const scoreWord = (questions: any[], answers: Record<number, any>) => {
   });
 
   return {
-    totalScore: Math.round(totalScore * 100) / 100, // Làm tròn 2 chữ số thập phân
+    totalScore: Math.round(totalScore * 100) / 100,
     details
   };
 };
