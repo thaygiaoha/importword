@@ -42,13 +42,15 @@ const formatContent = (text: string) => {
 };
 const handleAnswerChange = (questionId: string, value: any, subIndex?: number) => {
   setAnswers(prev => {
+    // Nếu là câu hỏi Đúng/Sai (Phần II)
     if (typeof subIndex === 'number') {
-      // Xử lý Phần II (Đúng/Sai)
-      const currentArr = Array.isArray(prev[questionId]) ? [...prev[questionId]] : [null, null, null, null];
+      const currentArr = Array.isArray(prev[questionId]) 
+        ? [...prev[questionId]] 
+        : [null, null, null, null];
       currentArr[subIndex] = value;
       return { ...prev, [questionId]: currentArr };
     }
-    // Xử lý Phần I và III
+    // Nếu là câu hỏi trắc nghiệm hoặc điền số (Phần I, III)
     return { ...prev, [questionId]: value };
   });
 };
@@ -90,26 +92,26 @@ const QuestionCard = React.memo(({ q, idx, answer, onSelect }: any) => {
       )}
 
       {/* PHẦN II: TRUE-FALSE - Đã chỉnh theo mảng 's' */}
-     // Trong hàm render câu hỏi, phần type === 'true-false'
-{q.type === 'true-false' && (
-  <div className="space-y-4 mt-4">
-    {q.s.map((sub, sIdx) => (
-      <div key={sIdx} className="flex items-center justify-between p-2 border rounded-lg hover:bg-gray-50">
-        <div className="flex-1 mr-4">
-          <span className="font-medium mr-2">{String.fromCharCode(97 + sIdx)}.</span>
+     {q.type === 'true-false' && (
+  <div className="space-y-3 mt-4">
+    {q.s && q.s.map((sub: any, sIdx: number) => (
+      <div key={sIdx} className="flex items-center justify-between p-3 border rounded-lg bg-white shadow-sm">
+        <div className="flex-1 pr-4 text-gray-800">
+          <span className="font-bold mr-2">{String.fromCharCode(97 + sIdx)}.</span>
           <span dangerouslySetInnerHTML={{ __html: sub.text }} />
         </div>
-        <div className="flex gap-2 shrink-0">
+        <div className="flex gap-2">
           {['Đúng', 'Sai'].map((label) => {
-            const isSelected = answers[q.id]?.[sIdx] === (label === 'Đúng');
+            const val = label === 'Đúng';
+            const isSelected = answers[q.id] && answers[q.id][sIdx] === val;
             return (
               <button
                 key={label}
-                onClick={() => handleAnswerChange(q.id, label === 'Đúng', sIdx)}
-                className={`px-3 py-1 text-sm rounded-md border transition-colors ${
+                onClick={() => handleAnswerChange(q.id, val, sIdx)}
+                className={`px-4 py-1.5 text-sm font-medium rounded-md border transition-all ${
                   isSelected 
-                    ? 'bg-blue-600 text-white border-blue-600' 
-                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'
+                    ? 'bg-green-600 text-white border-green-600 shadow-inner' 
+                    : 'bg-gray-50 text-gray-600 border-gray-200 hover:border-blue-400'
                 }`}
               >
                 {label}
@@ -123,37 +125,19 @@ const QuestionCard = React.memo(({ q, idx, answer, onSelect }: any) => {
 )}
       {/* PHẦN III: SHORT ANSWER - Chỉnh lại Input */}
       {q.type === 'short-answer' && (
-  <div className="mt-4">
-    <label className="block text-sm font-medium text-gray-700 mb-2">
-      Đáp án của bạn:
-    </label>
-    <input
-      type="text"
-      className="w-full max-w-xs p-2 border-2 border-blue-500 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-300"
-      placeholder="Nhập kết quả..."
-      value={answers[q.id] || ''}
-      onChange={(e) => handleAnswerChange(q.id, e.target.value)}
-    />
-    <p className="mt-2 text-xs text-gray-500 italic">
-      * Lưu ý: Nhập số thập phân dùng dấu phẩy hoặc dấu chấm theo yêu cầu đề bài.
-    </p>
+  <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-100">
+    <div className="flex items-center gap-3">
+      <span className="font-medium text-blue-800">Đáp án:</span>
+      <input
+        type="text"
+        className="flex-1 max-w-[200px] p-2 border-2 border-blue-300 rounded focus:border-blue-500 focus:ring-0 outline-none"
+        placeholder="Nhập kết quả..."
+        value={answers[q.id] || ''}
+        onChange={(e) => handleAnswerChange(q.id, e.target.value)}
+      />
+    </div>
   </div>
-)}
-
-      {/* PHẦN III: SHORT ANSWER - Ô nhập đáp án "xịn" */}
-      {q.type === 'sa' && (
-        <div className="bg-slate-800/30 p-8 rounded-[2rem] border-2 border-dashed border-slate-700">
-          <label className="block text-sm font-black text-slate-500 uppercase tracking-widest mb-4">Đáp án của bạn:</label>
-          <input 
-            type="text"
-            placeholder="Gõ câu trả lời vào đây..."
-            className="w-full bg-transparent border-b-4 border-slate-700 focus:border-emerald-500 outline-none text-white font-black text-4xl py-4 transition-all"
-            value={answer || ''}
-            onChange={(e) => onSelect(idx, e.target.value)}
-          />
-          <p className="mt-4 text-slate-500 text-sm italic">Lưu ý: Nhập số thập phân dùng dấu phẩy hoặc dấu chấm theo yêu cầu đề bài.</p>
-        </div>
-      )}
+)}     
     </div>
   );
 }, (prev, next) => {
@@ -166,6 +150,8 @@ export default function ExamRoom({ questions, studentInfo, duration, onFinish }:
   const [timeLeft, setTimeLeft] = useState(duration * 60);
   const [answers, setAnswers] = useState<Record<number, any>>({});
   const [startTime] = useState(new Date());
+  // Thêm dòng này nếu chưa có
+  const [answers, setAnswers] = useState<Record<string, any>>({});
 
   // Chỉ chạy MathJax khi load đề xong
   useEffect(() => {
