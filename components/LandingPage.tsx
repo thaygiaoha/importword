@@ -50,7 +50,7 @@ const LandingPage: React.FC<LandingPageProps> = ({
   const [idgv, setIdgv] = useState('');
   const [questions, setQuestions] = useState([]);
   const [studentName, setStudentName] = useState("");
-  const [duration, setDuration] = useState(60);          
+  const [duration, setDuration] = useState(90);          
   const [examStarted, setExamStarted] = useState(false);
  
  
@@ -157,17 +157,8 @@ const [newsList, setNewsList] = useState<{t: string, l: string}[]>([]);
 const handleStudentSubmit = async (e) => {
   if (e && typeof e.preventDefault === 'function') e.preventDefault();
 
-  // 1. Lấy giá trị trực tiếp từ state studentInfo
   const currentIDGV = studentInfo.idgv.toString().trim();
-  
-  // 2. Truy xuất URL
   const targetUrl = API_ROUTING[currentIDGV];
-
-  // LOG ĐỂ SOI LỖI (Thầy bật F12 lên xem cái này)
-  console.log("--- DEBUG ĐĂNG NHẬP ---");
-  console.log("IDGV nhập vào:", currentIDGV);
-  console.log("Link tìm được:", targetUrl);
-  console.log("Toàn bộ API_ROUTING:", API_ROUTING);
 
   if (!targetUrl) {
     alert(`❌ Không tìm thấy link Script của mã GV: "${currentIDGV}"`);
@@ -182,33 +173,39 @@ const handleStudentSubmit = async (e) => {
         action: "studentGetExam",
         sbd: studentInfo.sbd.toString().trim(),
         examCode: studentInfo.examCode.toString().trim(),
-        idgv: currentIDGV // Dùng luôn biến vừa lấy
+        idgv: currentIDGV
       }),
     });
 
     const result = await response.json();
 
     if (result.status === "success") {
-      console.log("Dữ liệu đề nhận được:", result.data);
-      
-      // Cập nhật toàn bộ thông tin vào State
-      // Đảm bảo các hàm set... này đã được khai báo bằng useState ở trên
+      // Cập nhật dữ liệu từ GAS vào State của LandingPage
       if (result.data.questions) setQuestions(result.data.questions); 
-      if (result.data.studentName) setStudentName(result.data.studentName);
-      if (result.data.duration) setDuration(result.data.duration); 
+      
+      // Lưu tên học sinh và thời gian thi vào state để truyền cho ExamRoom
+      const nameFromGas = result.data.studentName || "Thí sinh";
+      const timeFromGas = result.data.duration || 90;
+      
+      setStudentName(nameFromGas);
+      setDuration(timeFromGas);
 
-      // Kích hoạt chuyển trang thi
+      // Cập nhật lại object studentInfo để có đủ tên (hiển thị trong ExamRoom)
+      setStudentInfo({
+        ...studentInfo,
+        name: nameFromGas
+      });
+
       setExamStarted(true); 
       setShowStudentLogin(false);
       
-      // Alert này để học sinh biết là đã sẵn sàng
-      alert(`Xác thực thành công! Chào ${result.data.studentName}.`);
+      alert(`Xác thực thành công! Chào ${nameFromGas}.`);
     } else {
       alert("⚠️ " + result.message);
     }
   } catch (error) {
     console.error("Lỗi thực thi:", error);
-    alert("❌ Không thể kết nối tới máy chủ của Giáo viên. Thầy kiểm tra lại Deploy GAS nhé!");
+    alert("❌ Không thể kết nối tới máy chủ.");
   }
 };
   // =================================================================================================================
@@ -512,14 +509,12 @@ const handleRedirect = () => {
     {/* TRƯỜNG HỢP 1: ĐANG THI (Hiện phòng thi, ẩn toàn bộ Landing) */}
     {examStarted ? (
       <div className="animate-in slide-in-from-bottom duration-500">
-        <ExamRoom 
-          questions={questions} 
-          studentName={studentName} 
-          studentInfo={studentInfo}
-          duration={examDuration}
-          duration={duration} 
-          onFinish={() => setExamStarted(false)} 
-        />
+       <ExamRoom 
+    questions={questions} 
+    studentInfo={studentInfo} // Bây giờ studentInfo đã có idgv, sbd, examCode và name
+    duration={duration}      // Truyền biến duration đã lấy từ GAS (không phải examDuration)
+    onFinish={() => setExamStarted(false)} 
+  />
       </div>
     ) : (
     <div className="min-h-screen bg-slate-50 font-sans pb-12 overflow-x-hidden">
