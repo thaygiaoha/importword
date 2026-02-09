@@ -29,27 +29,24 @@ const formatContent = (text: string) => {
   if (!text) return "";
   let clean = text.toString().trim();
 
-  // 1. Nếu nội dung bị bao bởi dấu ngoặc nhọn kiểu chuỗi JSON thừa, ta làm sạch nó
-  if (clean.startsWith('{') && clean.endsWith('}')) {
-     // Đoạn này giúp xử lý nếu vô tình truyền nguyên object vào
-     try {
-       const obj = JSON.parse(clean);
-       clean = obj.question || clean;
-     } catch (e) {
-       // Không phải JSON chuẩn thì cứ để im xử lý tiếp
-     }
+  // BƯỚC 1: Nếu là chuỗi JSON (giống ảnh 1), bóc tách lấy trường 'question'
+  if (clean.startsWith('{') && clean.includes('"question"')) {
+    try {
+      const obj = JSON.parse(clean);
+      clean = obj.question || clean;
+    } catch (e) {
+      // Nếu parse lỗi thì bỏ qua, xử lý tiếp như chuỗi thường
+    }
   }
 
-  // 2. Sửa lỗi LaTeX dính chữ (Fix lỗi left[-3pi] trong ảnh của thầy)
+  // BƯỚC 2: Dọn dẹp các lỗi hiển thị
   return clean
-    .replace(/\\left\[/g, "\\left [ ")  // Thêm khoảng trắng sau left
-    .replace(/\\right\]/g, " \\right ]") // Thêm khoảng trắng trước right
-    .replace(/(\d+)\s*pi/g, "$1\\pi")    // Đổi '3pi' thành '3\pi' để MathJax hiểu
-    .replace(/sin\s*x/g, "\\sin x")      // Đổi 'sin x' thành '\sin x'
-    .replace(/\\\\/g, "\\")              // Sửa lỗi double backslash do database
-    .replace(/\n/g, "<br />")            // Chuyển xuống dòng thành thẻ br
-    .replace(/\\left\s+([\(\[\{])/g, "\\left$1")
-    .replace(/\\right\s+([\)\}\]])/g, "\\right$1");
+    .replace(/\\+/g, '\\')               // Sửa lỗi dư thừa dấu gạch chéo
+    .replace(/left\s*\[/g, "\\left[")    // Sửa lỗi 'left[' dính chữ (Ảnh 1)
+    .replace(/right\s*\]/g, "\\right]")
+    .replace(/sin\s*x/g, "\\sin x")      // Sửa 'sinx' thành '\sin x'
+    .replace(/\n/g, "<br />")            // Chuyển xuống dòng
+    .trim();
 };
 
 const QuestionCard = React.memo(({ q, idx, answer, onSelect }: any) => {
