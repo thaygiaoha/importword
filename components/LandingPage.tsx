@@ -199,7 +199,7 @@ const handleStudentSubmit = async (e) => {
       setExamStarted(true); 
       setShowStudentLogin(false);
       
-      alert(`Xác thực thành công! Chào ${nameFromGas}.`);
+      alert(`Chúc mừng ${nameFromGas}. Bạn hãy bấm Ok để vào thi nhé`);
     } else {
       alert("⚠️ " + result.message);
     }
