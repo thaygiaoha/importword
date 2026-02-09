@@ -28,19 +28,28 @@ interface ExamRoomProps {
 const formatContent = (text: string) => {
   if (!text) return "";
   let clean = text.toString().trim();
-  if (clean.startsWith('/')) clean = clean.substring(1).trim();
+
+  // 1. Nếu nội dung bị bao bởi dấu ngoặc nhọn kiểu chuỗi JSON thừa, ta làm sạch nó
+  if (clean.startsWith('{') && clean.endsWith('}')) {
+     // Đoạn này giúp xử lý nếu vô tình truyền nguyên object vào
+     try {
+       const obj = JSON.parse(clean);
+       clean = obj.question || clean;
+     } catch (e) {
+       // Không phải JSON chuẩn thì cứ để im xử lý tiếp
+     }
+  }
+
+  // 2. Sửa lỗi LaTeX dính chữ (Fix lỗi left[-3pi] trong ảnh của thầy)
   return clean
-    .replace(/\\\\/g, "\\")
+    .replace(/\\left\[/g, "\\left [ ")  // Thêm khoảng trắng sau left
+    .replace(/\\right\]/g, " \\right ]") // Thêm khoảng trắng trước right
+    .replace(/(\d+)\s*pi/g, "$1\\pi")    // Đổi '3pi' thành '3\pi' để MathJax hiểu
+    .replace(/sin\s*x/g, "\\sin x")      // Đổi 'sin x' thành '\sin x'
+    .replace(/\\\\/g, "\\")              // Sửa lỗi double backslash do database
+    .replace(/\n/g, "<br />")            // Chuyển xuống dòng thành thẻ br
     .replace(/\\left\s+([\(\[\{])/g, "\\left$1")
-    .replace(/\\right\s+([\)\}\]])/g, "\\right$1")
-    .replace(/\{\s*\\begin\{matrix\}/g, "\\begin{cases}") 
-    .replace(/\\end\{matrix\}\s*\}/g, "\\end{cases}")
-    .replace(/\\left\s*\(/g, "(")
-    .replace(/\\right\s*\)/g, ")")
-    .replace(/\\left\s*\[/g, "[")
-    .replace(/\\right\s*\]/g, "]")
-    .replace(/\\left\s*\\\{/g, "{")
-    .replace(/\\right\s*\\\}/g, "}");
+    .replace(/\\right\s+([\)\}\]])/g, "\\right$1");
 };
 
 const QuestionCard = React.memo(({ q, idx, answer, onSelect }: any) => {
