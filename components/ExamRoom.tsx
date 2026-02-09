@@ -22,7 +22,11 @@ interface ExamRoomProps {
 }
 
 // HÀM QUÉT DẤU / VÀ DỌN DẸP MATHJAX
-const formatContent = (text: string) => {
+export default function ExamRoom({ questions, studentInfo, duration, onFinish }: ExamRoomProps) {
+  const [timeLeft, setTimeLeft] = useState(duration * 60);
+  const [answers, setAnswers] = useState<Record<number, any>>({});
+  const [startTime] = useState(new Date());
+  const formatContent = (text: string) => {
   if (!text) return "";
   let clean = text.toString().trim();
   
@@ -53,18 +57,15 @@ const formatContent = (text: string) => {
   return clean;
 };
 
-export default function ExamRoom({ questions, studentInfo, duration, onFinish }: ExamRoomProps) {
-  const [timeLeft, setTimeLeft] = useState(duration * 60);
-  const [answers, setAnswers] = useState<Record<number, any>>({});
-  const [startTime] = useState(new Date());
-
   useEffect(() => {
-    // @ts-ignore
-    if (window.MathJax && window.MathJax.typesetPromise) {
-      // @ts-ignore
-      window.MathJax.typesetPromise().catch((err) => console.log('MathJax Error:', err));
-    }
-  });
+  // Chỉ chạy duy nhất 1 lần khi questions (đề thi) thay đổi
+  // Không chạy lại khi answers (đáp án) thay đổi
+  if (window.MathJax && window.MathJax.typesetPromise) {
+    window.MathJax.typesetPromise().then(() => {
+      console.log("MathJax đã vẽ xong toàn bộ đề!");
+    });
+  }
+}, [questions]); 
 
   useEffect(() => {
     const timer = setInterval(() => {
