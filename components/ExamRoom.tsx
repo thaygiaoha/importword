@@ -123,7 +123,7 @@ const QuestionCard = React.memo(({ q, idx, answer, onSelect }: any) => {
           <input
             type="text"
             className="w-full bg-slate-900 border-2 border-slate-700 p-4 rounded-xl text-white font-bold focus:border-emerald-500 outline-none text-2xl"
-            placeholder="Nhập kết quả..."
+            placeholder="Nhập kết quả, dùng dấu chấm(.) để ghi số thập phân nhé, ví dụ: 6.32"
             value={answer || ''}
             onChange={(e) => onSelect(idx, e.target.value)}
           />
