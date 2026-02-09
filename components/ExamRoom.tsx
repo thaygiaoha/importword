@@ -79,53 +79,55 @@ const QuestionCard = React.memo(({ q, idx, answer, onSelect }: any) => {
       )}
 
       {/* PHẦN II: TRUE-FALSE - Đã chỉnh theo mảng 's' */}
-      {q.type === 'true-false' && q.s && (
-        <div className="space-y-6">
-          <p className="text-sm text-slate-400 italic mb-4">* Chọn Đúng hoặc Sai cho mỗi ý sau:</p>
-          {q.s.map((subItem: any, i: number) => {
-            const subLabel = String.fromCharCode(65 + i); // A, B, C, D
+     // Trong hàm render câu hỏi, phần type === 'true-false'
+{q.type === 'true-false' && (
+  <div className="space-y-4 mt-4">
+    {q.s.map((sub, sIdx) => (
+      <div key={sIdx} className="flex items-center justify-between p-2 border rounded-lg hover:bg-gray-50">
+        <div className="flex-1 mr-4">
+          <span className="font-medium mr-2">{String.fromCharCode(97 + sIdx)}.</span>
+          <span dangerouslySetInnerHTML={{ __html: sub.text }} />
+        </div>
+        <div className="flex gap-2 shrink-0">
+          {['Đúng', 'Sai'].map((label) => {
+            const isSelected = answers[q.id]?.[sIdx] === (label === 'Đúng');
             return (
-              <div key={i} className="bg-slate-800/20 p-6 rounded-3xl border border-slate-800 flex flex-col gap-4">
-                <div className="flex gap-4">
-                  <span className="font-black text-emerald-500 text-xl">{subLabel}.</span>
-                  {/* Dùng subItem.text thay vì opt */}
-                  <div className="text-lg text-slate-200" dangerouslySetInnerHTML={{ __html: formatContent(subItem.text) }} />
-                </div>
-                <div className="flex gap-4 mt-2">
-                  {['Đúng', 'Sai'].map((val) => (
-                    <button
-                      key={val}
-                      onClick={() => {
-                        const currentAnswers = answer || {};
-                        onSelect(idx, { ...currentAnswers, [subLabel]: val });
-                      }}
-                      className={`flex-1 py-4 rounded-2xl font-black transition-all border-2 ${answer?.[subLabel] === val 
-                        ? (val === 'Đúng' ? 'bg-blue-600 border-blue-400 text-white' : 'bg-red-600 border-red-400 text-white') 
-                        : 'bg-slate-700 border-slate-600 text-slate-500 hover:border-slate-600'}`}
-                    >
-                      {val.toUpperCase()}
-                    </button>
-                  ))}
-                </div>
-              </div>
+              <button
+                key={label}
+                onClick={() => handleAnswerChange(q.id, label === 'Đúng', sIdx)}
+                className={`px-3 py-1 text-sm rounded-md border transition-colors ${
+                  isSelected 
+                    ? 'bg-blue-600 text-white border-blue-600' 
+                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'
+                }`}
+              >
+                {label}
+              </button>
             );
           })}
         </div>
-      )}
-
+      </div>
+    ))}
+  </div>
+)}
       {/* PHẦN III: SHORT ANSWER - Chỉnh lại Input */}
-      {q.type === 'sa' && (
-        <div className="bg-slate-800/30 p-8 rounded-[2rem] border-2 border-dashed border-slate-700">
-          <label className="block text-sm font-black text-slate-500 uppercase tracking-widest mb-4">Đáp án của bạn:</label>
-          <input 
-            type="text"
-            placeholder="Gõ câu trả lời vào đây..."
-            className="w-full bg-transparent border-b-4 border-slate-700 focus:border-emerald-500 outline-none text-white font-black text-4xl py-4 transition-all"
-            value={answer || ''}
-            onChange={(e) => onSelect(idx, e.target.value)}
-          />
-        </div>
-      )}
+      {q.type === 'short-answer' && (
+  <div className="mt-4">
+    <label className="block text-sm font-medium text-gray-700 mb-2">
+      Đáp án của bạn:
+    </label>
+    <input
+      type="text"
+      className="w-full max-w-xs p-2 border-2 border-blue-500 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-300"
+      placeholder="Nhập kết quả..."
+      value={answers[q.id] || ''}
+      onChange={(e) => handleAnswerChange(q.id, e.target.value)}
+    />
+    <p className="mt-2 text-xs text-gray-500 italic">
+      * Lưu ý: Nhập số thập phân dùng dấu phẩy hoặc dấu chấm theo yêu cầu đề bài.
+    </p>
+  </div>
+)}
 
       {/* PHẦN III: SHORT ANSWER - Ô nhập đáp án "xịn" */}
       {q.type === 'sa' && (
