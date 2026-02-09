@@ -40,7 +40,18 @@ const formatContent = (text: string) => {
     .replace(/\\left\s*\\\{/g, "{")
     .replace(/\\right\s*\\\}/g, "}");
 };
-
+const handleAnswerChange = (questionId: string, value: any, subIndex?: number) => {
+  setAnswers(prev => {
+    if (typeof subIndex === 'number') {
+      // Xử lý Phần II (Đúng/Sai)
+      const currentArr = Array.isArray(prev[questionId]) ? [...prev[questionId]] : [null, null, null, null];
+      currentArr[subIndex] = value;
+      return { ...prev, [questionId]: currentArr };
+    }
+    // Xử lý Phần I và III
+    return { ...prev, [questionId]: value };
+  });
+};
 // 2. COMPONENT CON CHO TỪNG CÂU HỎI (CHỐNG LAG)
 const QuestionCard = React.memo(({ q, idx, answer, onSelect }: any) => {
   console.log(`Render câu: ${idx + 1}`); // Thầy xem log sẽ thấy chỉ câu nào chọn mới hiện log này
