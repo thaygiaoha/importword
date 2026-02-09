@@ -252,5 +252,22 @@ const VipModal = ({ user, onClose, onSuccess }: { user: AppUser, onClose: () => 
     </div>
   );
 };
+// Tìm hàm này trong App.tsx của thầy
+const handleFinish = async (result: any) => { 
+  // 'result' là dữ liệu từ ExamRoom ném ra (gồm điểm và thời gian)
+
+  const payload = {
+    timestamp: new Date().toLocaleString('vi-VN'), // Cột A
+    exams: examData.exams,                        // Cột B (Mã đề)
+    sbd: studentInfo.sbd,                         // Cột C
+    name: studentInfo.name,                       // Cột D
+    class: studentInfo.class,                     // Cột E
+    tongdiem: result.totalScore.toString().replace('.', ','), // Cột F
+    time: result.timeInSeconds                    // Cột G (Số giây)
+  };
+
+  // Sau khi gom xong, ta gọi hàm gửi đi (Vị trí 2)
+  await submitToSheet(payload);
+};
 
 export default App;
