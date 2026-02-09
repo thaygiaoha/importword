@@ -40,20 +40,7 @@ const formatContent = (text: string) => {
     .replace(/\\left\s*\\\{/g, "{")
     .replace(/\\right\s*\\\}/g, "}");
 };
-const handleAnswerChange = (questionId: string, value: any, subIndex?: number) => {
-  setAnswers(prev => {
-    // Nếu là câu hỏi Đúng/Sai (Phần II)
-    if (typeof subIndex === 'number') {
-      const currentArr = Array.isArray(prev[questionId]) 
-        ? [...prev[questionId]] 
-        : [null, null, null, null];
-      currentArr[subIndex] = value;
-      return { ...prev, [questionId]: currentArr };
-    }
-    // Nếu là câu hỏi trắc nghiệm hoặc điền số (Phần I, III)
-    return { ...prev, [questionId]: value };
-  });
-};
+
 // 2. COMPONENT CON CHO TỪNG CÂU HỎI (CHỐNG LAG)
 const QuestionCard = React.memo(({ q, idx, answer, onSelect }: any) => {
   console.log(`Render câu: ${idx + 1}`); // Thầy xem log sẽ thấy chỉ câu nào chọn mới hiện log này
@@ -150,8 +137,7 @@ export default function ExamRoom({ questions, studentInfo, duration, onFinish }:
   const [timeLeft, setTimeLeft] = useState(duration * 60);
   const [answers, setAnswers] = useState<Record<number, any>>({});
   const [startTime] = useState(new Date());
-  // Thêm dòng này nếu chưa có
-  const [answers, setAnswers] = useState<Record<string, any>>({});
+  // Thêm dòng này nếu chưa có  
 
   // Chỉ chạy MathJax khi load đề xong
   useEffect(() => {
@@ -190,6 +176,20 @@ export default function ExamRoom({ questions, studentInfo, duration, onFinish }:
     alert(`Bài làm của ${studentInfo.name} đã được nộp!`);
     onFinish();
   };
+  const handleAnswerChange = (questionId: string, value: any, subIndex?: number) => {
+  setAnswers(prev => {
+    // Nếu là câu hỏi Đúng/Sai (Phần II)
+    if (typeof subIndex === 'number') {
+      const currentArr = Array.isArray(prev[questionId]) 
+        ? [...prev[questionId]] 
+        : [null, null, null, null];
+      currentArr[subIndex] = value;
+      return { ...prev, [questionId]: currentArr };
+    }
+    // Nếu là câu hỏi trắc nghiệm hoặc điền số (Phần I, III)
+    return { ...prev, [questionId]: value };
+  });
+};
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-200 p-4 pb-40">
