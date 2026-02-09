@@ -1370,7 +1370,8 @@ const handleRedirect = () => {
     </div>
   </div>
 )}
-      {showStudentLogin && (
+      {/* 4. MODAL ĐĂNG NHẬP THI LẺ */}
+        {showStudentLogin && (
           <div className="fixed inset-0 bg-slate-950/90 backdrop-blur-md flex items-center justify-center z-[110] p-4">
             <div className="bg-slate-900 border-2 border-emerald-500/30 p-8 rounded-[2rem] w-full max-w-sm shadow-2xl animate-in zoom-in duration-300">
               <div className="text-emerald-400 font-black text-center mb-6 text-sm uppercase tracking-tighter">
@@ -1407,31 +1408,34 @@ const handleRedirect = () => {
             </div>
           </div>
         )}
-{/* GIAO DIỆN TRA CỨU LỜI GIẢI - BẢN FULL KHÔNG THIẾU THỨ GÌ */}
 
-      {/* ICON FONTAWESOME */}
-      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+        {/* GIAO DIỆN TRA CỨU LỜI GIẢI VÀ CÁC PHẦN KHÁC CỦA THẦY Ở ĐÂY */}
 
-     {/* STYLE TỔNG HỢP: CHỮ CHẠY & HIỆU ỨNG VIP */}
-      <style>{`
-        @keyframes marquee { 
-          0% { transform: translateX(100%); } 
-          100% { transform: translateX(-100%); } 
-        }
-        @keyframes shimmer {
-          100% { transform: translateX(100%); }
-        }
-        .animate-marquee { 
-          display: inline-block; 
-          animation: marquee 25s linear infinite; 
-        }
-        .animate-shimmer {
-          animation: shimmer 2s infinite;
-        }
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-      `}</style>
-    </div>
+      </div> // Đóng div.min-h-screen (Trang chủ)
+    )} // Đóng ngoặc nhọn của logic {examStarted ? ... : ... }
+
+    {/* PHẦN NÀY NẰM NGOÀI LOGIC CHUYỂN TRANG ĐỂ LUÔN LOAD */}
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+
+    <style>{`
+      @keyframes marquee { 
+        0% { transform: translateX(100%); } 
+        100% { transform: translateX(-100%); } 
+      }
+      @keyframes shimmer {
+        100% { transform: translateX(100%); }
+      }
+      .animate-marquee { 
+        display: inline-block; 
+        animation: marquee 25s linear infinite; 
+      }
+      .animate-shimmer {
+        animation: shimmer 2s infinite;
+      }
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    `}</style>
+  </> // Kết thúc Fragment bao ngoài cùng
   );
 };
 
