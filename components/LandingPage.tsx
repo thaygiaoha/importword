@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { DANHGIA_URL, ADMIN_CONFIG, OTHER_APPS, API_ROUTING } from '../config';
 import { AppUser, Student } from '../types';
 import { postToScript } from '../postToScript';
+import ExamRoom from './ExamRoom';
 
 interface LandingPageProps {
   onSelectGrade: (grade: number) => void;
