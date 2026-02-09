@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 
 interface Question {
   id: string;
-  type: string; 
+  type: 'mcq' | 'true-false' | 'sa' | 'short-answer'; 
   question: string;
   o?: string[];
   s?: any[];
@@ -11,7 +11,13 @@ interface Question {
 
 interface ExamRoomProps {
   questions: Question[];
-  studentInfo: any;
+  studentInfo: {
+    idgv: string;
+    sbd: string;
+    name: string;
+    className: string;
+    examCode: string;
+  };
   duration: number;
   minSubmitTime?: number; 
   maxTabSwitches?: number; 
@@ -22,24 +28,29 @@ interface ExamRoomProps {
 const formatContent = (text: string) => {
   if (!text) return "";
   let clean = text.toString().trim();
+
+  // BƯỚC 1: Nếu là chuỗi JSON (giống ảnh 1), bóc tách lấy trường 'question'
   if (clean.startsWith('{') && clean.includes('"question"')) {
     try {
       const obj = JSON.parse(clean);
       clean = obj.question || clean;
-    } catch (e) {}
+    } catch (e) {
+      // Nếu parse lỗi thì bỏ qua, xử lý tiếp như chuỗi thường
+    }
   }
+
+  // BƯỚC 2: Dọn dẹp các lỗi hiển thị
   return clean
-    .replace(/\\+/g, '\\')
-    .replace(/left\s*\[/g, "\\left[")
+    .replace(/\\+/g, '\\')               // Sửa lỗi dư thừa dấu gạch chéo
+    .replace(/left\s*\[/g, "\\left[")    // Sửa lỗi 'left[' dính chữ (Ảnh 1)
     .replace(/right\s*\]/g, "\\right]")
-    .replace(/sin\s*x/g, "\\sin x")
-    .replace(/\n/g, "<br />")
+    .replace(/sin\s*x/g, "\\sin x")      // Sửa 'sinx' thành '\sin x'
+    .replace(/\n/g, "<br />")            // Chuyển xuống dòng
     .trim();
 };
 
-// --- PHẢI CÓ COMPONENT NÀY ĐỂ KHÔNG BỊ TRẮNG TRANG ---
 const QuestionCard = React.memo(({ q, idx, answer, onSelect }: any) => {
-  const qType = (q.type || "").toString().trim().toLowerCase();
+  const qType = q.type ? q.type.toString().trim().toLowerCase() : "";
   return (
     <div className="bg-slate-900 border-2 border-slate-800 p-8 md:p-10 rounded-[2.5rem] shadow-xl relative overflow-hidden mb-10">
       <div className="flex items-center gap-4 mb-8">
@@ -72,8 +83,8 @@ const QuestionCard = React.memo(({ q, idx, answer, onSelect }: any) => {
             const content = typeof sub === 'string' ? sub : (sub.text || "");
             return (
               <div key={sIdx} className="flex flex-col md:flex-row md:items-center justify-between p-4 border border-slate-800 rounded-2xl bg-slate-800/30 gap-4">
-                <div className="flex-1 text-slate-200 font-bold">
-                  <span className="text-emerald-500 mr-2">{subLabel}.</span>
+                <div className="flex-1 text-slate-200">
+                  <span className="font-bold text-emerald-500 mr-2">{subLabel}.</span>
                   <span dangerouslySetInnerHTML={{ __html: formatContent(content) }} />
                 </div>
                 <div className="flex gap-2">
@@ -100,108 +111,79 @@ const QuestionCard = React.memo(({ q, idx, answer, onSelect }: any) => {
   );
 }, (prev, next) => JSON.stringify(prev.answer) === JSON.stringify(next.answer));
 
-// --- COMPONENT CHÍNH ---
 export default function ExamRoom({ 
-  questions, studentInfo, duration, 
-  minSubmitTime = 0, maxTabSwitches = 0, deadline = "", 
+  questions, 
+  studentInfo, 
+  duration, 
+  minSubmitTime = 50, 
+  maxTabSwitches = 2, 
+  deadline = "", 
   onFinish 
 }: ExamRoomProps) {
-  
-  // ÉP KIỂU SỐ TUYỆT ĐỐI (Fix lỗi minitime/tab không chuẩn do nhận String từ Sheets)
-  const minTimeConst = Number(minSubmitTime) || 0;
-  const maxTabConst = Number(maxTabSwitches) || 999;
-
-  const [timeLeft, setTimeLeft] = useState(Number(duration) * 60);
+  const [timeLeft, setTimeLeft] = useState(duration * 60);
   const [answers, setAnswers] = useState<Record<number, any>>({});
+  const [startTime] = useState(new Date());
   const [tabSwitches, setTabSwitches] = useState(0);
-  const [startTime] = useState(Date.now());
 
   const handleFinish = useCallback((isAuto = false) => {
     if (!isAuto) {
-      const timeSpentMin = (Date.now() - startTime) / 60000;
-      if (timeSpentMin < minTimeConst) {
-        alert(`CHƯA ĐỦ THỜI GIAN! \nBạn mới làm được ${Math.floor(timeSpentMin)} phút. Cần tối thiểu ${minTimeConst} phút mới được nộp.`);
+      const timeSpent = Math.floor((new Date().getTime() - startTime.getTime()) / 60000);
+      if (timeSpent < minSubmitTime) {
+        alert(`Cần tối thiểu ${minSubmitTime} phút để nộp. Còn ${minSubmitTime - timeSpent} phút.`);
         return;
       }
     }
-    alert(isAuto ? "HỆ THỐNG TỰ ĐỘNG NỘP BÀI!" : "Nộp bài thành công!");
+    alert(isAuto ? "Tự động nộp bài!" : "Nộp bài thành công!");
     onFinish();
-  }, [startTime, minTimeConst, onFinish]);
+  }, [startTime, minSubmitTime, onFinish]);
 
-  // Tab Switch - Chốt chặn cứng
   useEffect(() => {
     const handleTab = () => {
-      if (document.hidden && maxTabConst > 0) {
-        setTabSwitches(prev => {
-          const currentViolation = prev + 1;
-          if (currentViolation >= maxTabConst) {
-            handleFinish(true);
-            return currentViolation;
-          }
-          alert(`CẢNH BÁO: Không rời Tab! \nLần vi phạm: ${currentViolation}/${maxTabConst}`);
-          return currentViolation;
+      if (document.hidden && maxTabSwitches > 0) {
+        setTabSwitches(v => {
+          if (v + 1 >= maxTabSwitches) { handleFinish(true); return v + 1; }
+          alert(`Cảnh báo chuyển Tab (${v + 1}/${maxTabSwitches})`);
+          return v + 1;
         });
       }
     };
     document.addEventListener("visibilitychange", handleTab);
     return () => document.removeEventListener("visibilitychange", handleTab);
-  }, [maxTabConst, handleFinish]);
+  }, [maxTabSwitches, handleFinish]);
 
-  // Deadline & Timer logic (giữ nguyên)
   useEffect(() => {
-    if (!deadline) return;
-    const checkDeadline = () => {
-      const parts = deadline.split(' ');
-      const [d, m, y] = parts[0].split('/');
-      const t = parts[1] || "23:59";
-      if (new Date() > new Date(`${y}-${m}-${d}T${t}`)) { onFinish(); }
-    };
-    const dlTimer = setInterval(checkDeadline, 30000);
-    return () => clearInterval(dlTimer);
+    if (deadline) {
+      const [d, m, y] = deadline.split(' ')[0].split('/');
+      const t = deadline.split(' ')[1] || "23:59";
+      if (new Date() > new Date(`${y}-${m}-${d}T${t}`)) { alert("Hết hạn!"); onFinish(); }
+    }
   }, [deadline, onFinish]);
 
   useEffect(() => {
     const timer = setInterval(() => {
-      setTimeLeft(v => {
-        if (v <= 1) { clearInterval(timer); handleFinish(true); return 0; }
-        return v - 1;
-      });
+      setTimeLeft(v => { if (v <= 1) { clearInterval(timer); handleFinish(true); return 0; } return v - 1; });
     }, 1000);
     return () => clearInterval(timer);
   }, [handleFinish]);
 
-  const handleSelect = useCallback((idx: number, val: any) => {
-    setAnswers(p => ({ ...p, [idx]: val }));
-  }, []);
+  const handleSelect = useCallback((idx: number, val: any) => setAnswers(p => ({ ...p, [idx]: val })), []);
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-200 p-4 pb-40 font-sans">
-      <div className="sticky top-0 z-50 bg-slate-900/95 backdrop-blur-md border-b-2 border-emerald-500/30 p-4 mb-8 flex justify-between items-center rounded-3xl shadow-2xl">
+    <div className="min-h-screen bg-slate-950 text-slate-200 p-4 pb-40">
+      <div className="sticky top-0 z-50 bg-slate-900/90 backdrop-blur-xl border-b-2 border-emerald-500/30 p-4 mb-8 flex justify-between items-center rounded-3xl shadow-2xl">
         <div className="flex flex-col">
-          <span className="text-white font-black text-lg">{studentInfo?.name}</span>
-          <div className="flex gap-2">
-            <span className="text-[10px] bg-slate-800 px-2 py-0.5 rounded text-emerald-400 font-mono uppercase tracking-tighter">SBD: {studentInfo?.sbd}</span>
-            {maxTabConst < 999 && (
-              <span className={`text-[10px] px-2 py-0.5 rounded font-bold ${tabSwitches >= maxTabConst - 1 ? 'bg-red-600 text-white' : 'bg-slate-800 text-slate-400'}`}>
-                TAB: {tabSwitches}/{maxTabConst}
-              </span>
-            )}
-          </div>
+          <span className="text-white font-black">{studentInfo?.name}</span>
+          <span className="text-xs text-emerald-400">SBD: {studentInfo?.sbd}</span>
         </div>
         <div className="flex items-center gap-4">
-          <div className="text-2xl font-mono font-black text-white bg-slate-800 px-5 py-2 rounded-2xl border border-slate-700">
+          <div className="text-2xl font-mono font-black text-white bg-slate-800 px-6 py-2 rounded-2xl">
             {Math.floor(timeLeft / 60)}:{String(timeLeft % 60).padStart(2, '0')}
           </div>
-          <button onClick={() => handleFinish(false)} className="bg-emerald-600 hover:bg-emerald-500 text-white px-8 py-3 rounded-2xl font-black transition-all active:scale-90 shadow-lg shadow-emerald-600/20">
-            NỘP BÀI
-          </button>
+          <button onClick={() => handleFinish(false)} className="bg-emerald-600 px-8 py-3 rounded-2xl font-black">NỘP BÀI</button>
         </div>
       </div>
-
       <div className="max-w-4xl mx-auto">
-        {questions.map((q, idx) => (
-          <QuestionCard key={q.id || idx} q={q} idx={idx} answer={answers[idx]} onSelect={handleSelect} />
-        ))}
+        {questions.map((q, idx) => <QuestionCard key={idx} q={q} idx={idx} answer={answers[idx]} onSelect={handleSelect} />)}
       </div>
     </div>
   );
