@@ -136,6 +136,12 @@ export default function ExamRoom({
     alert(isAuto ? "Tự động nộp bài!" : "Nộp bài thành công!");
     onFinish();
   }, [startTime, minSubmitTime, onFinish]);
+  // Render MathJax an toàn
+  useEffect(() => {
+    if (typeof window !== 'undefined' && (window as any).MathJax?.typesetPromise) {
+      (window as any).MathJax.typesetPromise().catch((err: any) => console.log(err));
+    }
+  }, [questions, answers]);
 
   useEffect(() => {
     const handleTab = () => {
