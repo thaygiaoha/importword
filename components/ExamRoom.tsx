@@ -59,7 +59,7 @@ const QuestionCard = React.memo(({ q, idx, answer, onSelect }: any) => {
         dangerouslySetInnerHTML={{ __html: formatContent(q.question) }}
       />
 
-      {/* PHẦN I: MCQ */}
+     {/* PHẦN I: MCQ - Giữ nguyên vì đã chạy tốt */}
       {q.type === 'mcq' && q.o && (
         <div className="grid grid-cols-1 gap-4">
           {q.o.map((opt: string, i: number) => {
@@ -78,40 +78,58 @@ const QuestionCard = React.memo(({ q, idx, answer, onSelect }: any) => {
         </div>
       )}
 
-      {/* PHẦN II: TRUE-FALSE */}
+      {/* PHẦN II: TRUE-FALSE - Sửa lỗi không hiện nội dung các ý */}
       {q.type === 'true-false' && (
-        <div className="space-y-4">
-          {['A', 'B', 'C', 'D'].map((sub) => (
-            <div key={sub} className="flex items-center justify-between p-4 bg-slate-800/30 rounded-2xl border border-slate-800">
-              <span className="font-black text-emerald-500 text-xl">{sub}.</span>
-              <div className="flex gap-2">
-                {['Đúng', 'Sai'].map((val) => (
-                  <button
-                    key={val}
-                    onClick={() => {
-                      const currentAnswers = answer || {};
-                      onSelect(idx, { ...currentAnswers, [sub]: val });
-                    }}
-                    className={`px-8 py-3 rounded-xl font-black text-sm transition-all border-2 ${answer?.[sub] === val ? (val === 'Đúng' ? 'bg-blue-600 border-blue-500' : 'bg-red-600 border-red-500') : 'bg-slate-700 border-slate-600 text-slate-400'}`}
-                  >
-                    {val.toUpperCase()}
-                  </button>
-                ))}
-              </div>
-            </div>
-          ))}
+        <div className="space-y-6">
+          <p className="text-sm text-slate-400 italic mb-4">* Chọn Đúng hoặc Sai cho mỗi ý sau:</p>
+          {/* Nếu q.o có chứa nội dung các ý A, B, C, D từ file Word */}
+          {q.o && q.o.length > 0 ? (
+            q.o.map((opt: string, i: number) => {
+              const subLabel = String.fromCharCode(65 + i); // A, B, C, D
+              return (
+                <div key={i} className="bg-slate-800/20 p-6 rounded-3xl border border-slate-800 flex flex-col gap-4">
+                  <div className="flex gap-4">
+                    <span className="font-black text-emerald-500 text-xl">{subLabel}.</span>
+                    <div className="text-lg text-slate-200" dangerouslySetInnerHTML={{ __html: formatContent(opt) }} />
+                  </div>
+                  <div className="flex gap-4 mt-2">
+                    {['Đúng', 'Sai'].map((val) => (
+                      <button
+                        key={val}
+                        onClick={() => {
+                          const currentAnswers = answer || {};
+                          onSelect(idx, { ...currentAnswers, [subLabel]: val });
+                        }}
+                        className={`flex-1 py-4 rounded-2xl font-black transition-all border-2 ${answer?.[subLabel] === val 
+                          ? (val === 'Đúng' ? 'bg-blue-600 border-blue-400 text-white' : 'bg-red-600 border-red-400 text-white') 
+                          : 'bg-slate-800 border-slate-700 text-slate-500 hover:border-slate-600'}`}
+                      >
+                        {val.toUpperCase()}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              );
+            })
+          ) : (
+            <p className="text-red-400">Thiếu dữ liệu các ý con (Kiểm tra lại mảng 'o' trong JSON)</p>
+          )}
         </div>
       )}
 
-      {/* PHẦN III: SHORT ANSWER */}
+      {/* PHẦN III: SHORT ANSWER - Ô nhập đáp án "xịn" */}
       {q.type === 'sa' && (
-        <input 
-          type="text"
-          placeholder="Nhập đáp án..."
-          className="w-full p-8 rounded-3xl bg-slate-800/50 border-4 border-slate-800 focus:border-emerald-500 outline-none text-white font-black text-3xl"
-          value={answer || ''}
-          onChange={(e) => onSelect(idx, e.target.value)}
-        />
+        <div className="bg-slate-800/30 p-8 rounded-[2rem] border-2 border-dashed border-slate-700">
+          <label className="block text-sm font-black text-slate-500 uppercase tracking-widest mb-4">Đáp án của bạn:</label>
+          <input 
+            type="text"
+            placeholder="Gõ câu trả lời vào đây..."
+            className="w-full bg-transparent border-b-4 border-slate-700 focus:border-emerald-500 outline-none text-white font-black text-4xl py-4 transition-all"
+            value={answer || ''}
+            onChange={(e) => onSelect(idx, e.target.value)}
+          />
+          <p className="mt-4 text-slate-500 text-sm italic">Lưu ý: Nhập số thập phân dùng dấu phẩy hoặc dấu chấm theo yêu cầu đề bài.</p>
+        </div>
       )}
     </div>
   );
