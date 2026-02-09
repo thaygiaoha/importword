@@ -19,6 +19,9 @@ interface ExamRoomProps {
     examCode: string;
   };
   duration: number;
+  minSubmitTime: number; // Phút
+  maxTabSwitches: number; // Lần
+  deadline: string;       // Dạng dd/mm/yyyy hh:mm
   onFinish: () => void;
 }
 
@@ -41,9 +44,7 @@ const formatContent = (text: string) => {
     .replace(/\\right\s*\\\}/g, "}");
 };
 
-// 2. COMPONENT CON (Đã sửa lỗi ReferenceError)
 const QuestionCard = React.memo(({ q, idx, answer, onSelect }: any) => {
-  // 1. Dọn dẹp type để tránh lỗi "mcq " (có khoảng trắng)
   const qType = q.type ? q.type.toString().trim().toLowerCase() : "";
 
   return (
@@ -60,7 +61,6 @@ const QuestionCard = React.memo(({ q, idx, answer, onSelect }: any) => {
         dangerouslySetInnerHTML={{ __html: formatContent(q.question) }}
       />
 
-      {/* PHẦN I: MCQ */}
       {qType === 'mcq' && q.o && (
         <div className="grid grid-cols-1 gap-4">
           {q.o.map((opt: any, i: number) => {
@@ -80,12 +80,10 @@ const QuestionCard = React.memo(({ q, idx, answer, onSelect }: any) => {
         </div>
       )}
 
-      {/* PHẦN II: TRUE-FALSE (Hỗ trợ cả mảng 's' và mảng 'o') */}
       {qType === 'true-false' && (
         <div className="space-y-3">
           {(q.s || q.o || []).map((sub: any, sIdx: number) => {
             const subLabel = String.fromCharCode(65 + sIdx);
-            // Lấy text bất kể dữ liệu là string hay object
             const content = typeof sub === 'string' ? sub : (sub.text || "");
             return (
               <div key={sIdx} className="flex flex-col md:flex-row md:items-center justify-between p-4 border border-slate-800 rounded-2xl bg-slate-800/30 gap-4">
@@ -116,14 +114,13 @@ const QuestionCard = React.memo(({ q, idx, answer, onSelect }: any) => {
         </div>
       )}
 
-      {/* PHẦN III: SHORT ANSWER (Chỉ hiện khi đúng type) */}
       {(qType === 'sa' || qType === 'short-answer') && (
         <div className="mt-4 p-6 bg-slate-800/50 rounded-[2rem] border-2 border-slate-700 flex flex-col md:flex-row items-center gap-4">
           <span className="font-black text-emerald-400 shrink-0">ĐÁP ÁN:</span>
           <input
             type="text"
-            className="w-full bg-slate-900 border-2 border-slate-700 p-4 rounded-xl text-white font-bold focus:border-emerald-500 outline-none text-2xl"
-            placeholder="Nhập kết quả, dùng dấu chấm(.) để ghi số thập phân nhé, ví dụ: 6.32"
+            className="w-full bg-slate-900 border-2 border-slate-700 p-4 rounded-xl text-white font-bold focus:border-emerald-500 outline-none text-2xl font-mono"
+            placeholder="Ví dụ: 6.32"
             value={answer || ''}
             onChange={(e) => onSelect(idx, e.target.value)}
           />
@@ -131,37 +128,80 @@ const QuestionCard = React.memo(({ q, idx, answer, onSelect }: any) => {
       )}
     </div>
   );
-}, (prev, next) => {
-  return JSON.stringify(prev.answer) === JSON.stringify(next.answer);
-});
+}, (prev, next) => JSON.stringify(prev.answer) === JSON.stringify(next.answer));
 
-// 3. COMPONENT CHÍNH
-export default function ExamRoom({ questions, studentInfo, duration, onFinish }: ExamRoomProps) {
+export default function ExamRoom({ questions, studentInfo, duration, minSubmitTime, maxTabSwitches, deadline, onFinish }: ExamRoomProps) {
   const [timeLeft, setTimeLeft] = useState(duration * 60);
   const [answers, setAnswers] = useState<Record<number, any>>({});
   const [startTime] = useState(new Date());
+  const [tabSwitches, setTabSwitches] = useState(0);
 
-  useEffect(() => {
-    if (window.MathJax && window.MathJax.typesetPromise) {
-      window.MathJax.typesetPromise();
+  // Xử lý nộp bài
+  const handleFinish = useCallback(async (isAutoSubmit = false) => {
+    const endTime = new Date();
+    const timeSpentSeconds = Math.floor((endTime.getTime() - startTime.getTime()) / 1000);
+    const minSubmitSeconds = (minSubmitTime || 0) * 60;
+
+    if (!isAutoSubmit && timeSpentSeconds < minSubmitSeconds) {
+      alert(`Chưa thể nộp bài! Bạn cần làm bài tối thiểu ${minSubmitTime} phút (Còn ${Math.ceil((minSubmitSeconds - timeSpentSeconds)/60)} phút nữa).`);
+      return;
     }
+
+    alert(isAutoSubmit ? "Hệ thống đã tự động nộp bài do vi phạm!" : "Bài làm đã được nộp thành công!");
+    onFinish();
+  }, [startTime, minSubmitTime, onFinish]);
+
+  // Hạn chế chuyển Tab
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        setTabSwitches(prev => {
+          const newCount = prev + 1;
+          if (newCount >= maxTabSwitches) {
+            handleFinish(true);
+            return newCount;
+          }
+          alert(`Cảnh báo: Không rời tab! (Lần ${newCount}/${maxTabSwitches})`);
+          return newCount;
+        });
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
+  }, [maxTabSwitches, handleFinish]);
+
+  // Kiểm tra Hạn đóng đề (dd/mm/yyyy)
+  useEffect(() => {
+    if (!deadline) return;
+    const [datePart, timePart] = deadline.split(' ');
+    const [d, m, y] = datePart.split('/');
+    const closeDate = new Date(`${y}-${m}-${d}T${timePart || '23:59:50'}`);
+    
+    if (new Date() > closeDate) {
+      alert("Đề thi đã đóng vào lúc: " + deadline);
+      onFinish();
+    }
+  }, [deadline, onFinish]);
+
+  // MathJax & Timer
+  useEffect(() => {
+    if (window.MathJax?.typesetPromise) window.MathJax.typesetPromise();
   }, [questions]);
 
   useEffect(() => {
     const timer = setInterval(() => {
-      setTimeLeft((prev) => {
+      setTimeLeft(prev => {
         if (prev <= 1) {
           clearInterval(timer);
-          handleFinish();
+          handleFinish(true);
           return 0;
         }
         return prev - 1;
       });
     }, 1000);
     return () => clearInterval(timer);
-  }, []);
+  }, [handleFinish]);
 
-  // Dùng useCallback để hàm không bị tạo lại lãng phí
   const handleSelect = useCallback((idx: number, value: any) => {
     setAnswers(prev => ({ ...prev, [idx]: value }));
   }, []);
@@ -172,31 +212,28 @@ export default function ExamRoom({ questions, studentInfo, duration, onFinish }:
     return `${m}:${s < 10 ? '0' : ''}${s}`;
   };
 
-  const handleFinish = async () => {
-    alert(`Bài làm đã được nộp thành công!`);
-    onFinish();
-  };
-
   return (
     <div className="min-h-screen bg-slate-950 text-slate-200 p-4 pb-40">
-      <div className="sticky top-0 z-50 bg-slate-900/90 backdrop-blur-xl border-b-2 border-emerald-500/30 p-4 mb-8 flex justify-between items-center rounded-3xl shadow-2xl">
+      <div className="sticky top-0 z-50 bg-slate-900/90 backdrop-blur-xl border-b-2 border-emerald-500/30 p-4 mb-8 flex flex-wrap justify-between items-center rounded-3xl shadow-2xl gap-4">
         <div className="flex items-center gap-3">
-          <div className="bg-emerald-500/20 p-2 rounded-xl text-emerald-400 font-black text-xs">SBD: {studentInfo.sbd}</div>
+          <div className="bg-emerald-500/10 p-2 rounded-xl border border-emerald-500/20 text-emerald-400 font-bold text-xs">SBD: {studentInfo.sbd}</div>
           <div className="font-black text-white">{studentInfo.name}</div>
         </div>
-        <div className="text-2xl font-mono font-black text-white bg-slate-800 px-6 py-2 rounded-2xl">{formatTime(timeLeft)}</div>
-        <button onClick={handleFinish} className="bg-emerald-600 hover:bg-emerald-500 text-white px-8 py-3 rounded-2xl font-black">NỘP BÀI</button>
+        
+        <div className="flex items-center gap-4">
+          {maxTabSwitches > 0 && (
+            <div className={`px-4 py-2 rounded-xl border font-bold text-xs ${tabSwitches > 0 ? 'bg-red-500/10 border-red-500/50 text-red-400' : 'bg-slate-800 border-slate-700 text-slate-400'}`}>
+              TAB: {tabSwitches}/{maxTabSwitches}
+            </div>
+          )}
+          <div className="text-2xl font-mono font-black text-white bg-slate-800 px-6 py-2 rounded-2xl shadow-inner border border-slate-700">{formatTime(timeLeft)}</div>
+          <button onClick={() => handleFinish(false)} className="bg-emerald-600 hover:bg-emerald-500 text-white px-8 py-3 rounded-2xl font-black transition-all hover:scale-105 active:scale-95 shadow-lg shadow-emerald-600/20">NỘP BÀI</button>
+        </div>
       </div>
 
       <div className="max-w-4xl mx-auto">
         {questions.map((q, idx) => (
-          <QuestionCard 
-            key={q.id || idx} 
-            q={q} 
-            idx={idx} 
-            answer={answers[idx]} 
-            onSelect={handleSelect} 
-          />
+          <QuestionCard key={q.id || idx} q={q} idx={idx} answer={answers[idx]} onSelect={handleSelect} />
         ))}
       </div>
     </div>
