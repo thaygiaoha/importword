@@ -205,6 +205,43 @@ const AuthModal = ({ onClose, onSuccess }: { onClose: () => void, onSuccess: (u:
       setLoading(false);
     }
   };
+  // HÀM MỚI: Xử lý nộp bài cho đề thi Import từ Word
+  const handleFinishWord = async (result: any) => {
+    // 1. Chuyển màn hình sang xem kết quả
+    setExamResult(result);
+    setCurrentView('result');
+
+    // 2. Lấy URL từ hệ thống Routing dựa trên mã đề lẻ (601.1, 1201...)
+    const targetUrl = (activeStudent && API_ROUTING[activeStudent.idnumber]) 
+                      ? API_ROUTING[activeStudent.idnumber] 
+                      : DEFAULT_API_URL;
+
+    // 3. Đóng gói 7 cột chuẩn cho sheet(ketqua)
+    const payload = {
+      timestamp: new Date().toLocaleString('vi-VN'), // Cột A: Thời gian
+      exams: activeExam?.code || "WORD_DE",  // Cột B: Mã đề biến đổi (ID 601, 1001, 1201...)
+      sbd: activeStudent?.sbd,                      // Cột C: SBD
+      name: activeStudent?.name,                    // Cột D: Họ tên
+      class: activeStudent?.class,                  // Cột E: Lớp
+      // Cột F: Tổng điểm (đổi sang dấu phẩy để thầy dễ tính toán trong Excel/Sheets)
+      tongdiem: result.score.toString().replace('.', ','), 
+      time: result.timeUsed                          // Cột G: Thời gian làm (giây)
+    };
+
+    // 4. Bắn dữ liệu về Sheet
+    try {
+      await fetch(targetUrl, { 
+        method: 'POST', 
+        mode: 'no-cors', 
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload) 
+      });
+      console.log("🚀 [Word] Đã gửi kết quả mã đề:", payload.exams);
+    } catch (e) { 
+      console.error("❌ [Word] Lỗi nộp bài:", e); 
+    }
+  };
+
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm">
@@ -251,23 +288,6 @@ const VipModal = ({ user, onClose, onSuccess }: { user: AppUser, onClose: () => 
       </div>
     </div>
   );
-};
-// Tìm hàm này trong App.tsx của thầy
-const handleFinish = async (result: any) => { 
-  // 'result' là dữ liệu từ ExamRoom ném ra (gồm điểm và thời gian)
-
-  const payload = {
-    timestamp: new Date().toLocaleString('vi-VN'), // Cột A
-    exams: examData.exams,                        // Cột B (Mã đề)
-    sbd: studentInfo.sbd,                         // Cột C
-    name: studentInfo.name,                       // Cột D
-    class: studentInfo.class,                     // Cột E
-    tongdiem: result.totalScore.toString().replace('.', ','), // Cột F
-    time: result.timeInSeconds                    // Cột G (Số giây)
-  };
-
-  // Sau khi gom xong, ta gọi hàm gửi đi (Vị trí 2)
-  await submitToSheet(payload);
 };
 
 export default App;
