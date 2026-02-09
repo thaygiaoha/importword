@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 
 interface Question {
   id: string;
@@ -21,52 +21,119 @@ interface ExamRoomProps {
   onFinish: () => void;
 }
 
-// HÀM QUÉT DẤU / VÀ DỌN DẸP MATHJAX
-export default function ExamRoom({ questions, studentInfo, duration, onFinish }: ExamRoomProps) {
-  const [timeLeft, setTimeLeft] = useState(duration * 60);
-  const [answers, setAnswers] = useState<Record<number, any>>({});
-  const [startTime] = useState(new Date());
-  const formatContent = (text: string) => {
+// 1. HÀM DỌN DẸP NỘI DUNG (GIỮ LẠI PHÒNG THỦ)
+const formatContent = (text: string) => {
   if (!text) return "";
   let clean = text.toString().trim();
+  if (clean.startsWith('/')) clean = clean.substring(1).trim();
   
-  // 1. Xóa dấu / ở đầu dòng (Lỗi do VBA nối chuỗi)
-  if (clean.startsWith('/')) {
-    clean = clean.substring(1).trim();
-  }
-
-  // 2. Vá lỗi MathJax Delimiter & Double Backslash
-  clean = clean
-    .replace(/\\\\/g, "\\") // Đưa \\ về \ đơn để MathJax nhận diện đúng
-    .replace(/\\left\s+([\(\[\{])/g, "\\left$1") // Xóa dấu cách sau \left (Sửa lỗi ảnh 1, 5)
-    .replace(/\\right\s+([\)\}\]])/g, "\\right$1") // Xóa dấu cách sau \right
-    
-    // 3. Xử lý trường hợp hệ phương trình/hàm số cho ảnh 7
-    // Đảm bảo dấu { của hệ thức được hiểu đúng
+  return clean
+    .replace(/\\\\/g, "\\")
+    .replace(/\\left\s+([\(\[\{])/g, "\\left$1")
+    .replace(/\\right\s+([\)\}\]])/g, "\\right$1")
     .replace(/\{\s*\\begin\{matrix\}/g, "\\begin{cases}") 
     .replace(/\\end\{matrix\}\s*\}/g, "\\end{cases}")
-    
-    // 4. Ép các ngoặc \left( về dạng an toàn nếu vẫn lỗi
     .replace(/\\left\s*\(/g, "(")
     .replace(/\\right\s*\)/g, ")")
     .replace(/\\left\s*\[/g, "[")
     .replace(/\\right\s*\]/g, "]")
     .replace(/\\left\s*\\\{/g, "{")
     .replace(/\\right\s*\\\}/g, "}");
-
-  return clean;
 };
 
-  useEffect(() => {
-  // Chỉ chạy duy nhất 1 lần khi questions (đề thi) thay đổi
-  // Không chạy lại khi answers (đáp án) thay đổi
-  if (window.MathJax && window.MathJax.typesetPromise) {
-    window.MathJax.typesetPromise().then(() => {
-      console.log("MathJax đã vẽ xong toàn bộ đề!");
-    });
-  }
-}, [questions]); 
+// 2. COMPONENT CON CHO TỪNG CÂU HỎI (CHỐNG LAG)
+const QuestionCard = React.memo(({ q, idx, answer, onSelect }: any) => {
+  console.log(`Render câu: ${idx + 1}`); // Thầy xem log sẽ thấy chỉ câu nào chọn mới hiện log này
+  
+  return (
+    <div id={`q-${idx}`} className="bg-slate-900 border-2 border-slate-800 p-8 md:p-10 rounded-[2.5rem] shadow-xl relative overflow-hidden mb-10">
+      <div className="flex items-center gap-4 mb-8">
+        <span className="bg-emerald-600 text-white w-10 h-10 flex items-center justify-center rounded-xl font-black">{idx + 1}</span>
+        <span className="text-slate-500 font-black uppercase text-[10px] tracking-widest bg-slate-800 px-4 py-1 rounded-full">
+          {q.type === 'mcq' ? 'Phần I' : q.type === 'true-false' ? 'Phần II' : 'Phần III'}
+        </span>
+      </div>
 
+      <div 
+        className="text-xl md:text-2xl leading-relaxed mb-10 font-bold text-slate-100"
+        dangerouslySetInnerHTML={{ __html: formatContent(q.question) }}
+      />
+
+      {/* PHẦN I: MCQ */}
+      {q.type === 'mcq' && q.o && (
+        <div className="grid grid-cols-1 gap-4">
+          {q.o.map((opt: string, i: number) => {
+            const label = String.fromCharCode(65 + i);
+            return (
+              <button
+                key={i}
+                onClick={() => onSelect(idx, label)}
+                className={`p-6 rounded-3xl text-left border-2 transition-all flex items-center gap-6 ${answer === label ? 'border-emerald-500 bg-emerald-500/10' : 'border-slate-800 bg-slate-800/50 hover:border-slate-700'}`}
+              >
+                <span className={`w-10 h-10 flex-shrink-0 flex items-center justify-center rounded-xl font-black ${answer === label ? 'bg-emerald-500 text-white' : 'bg-slate-700 text-slate-400'}`}>{label}</span>
+                <div className="text-lg font-bold" dangerouslySetInnerHTML={{ __html: formatContent(opt) }} />
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {/* PHẦN II: TRUE-FALSE */}
+      {q.type === 'true-false' && (
+        <div className="space-y-4">
+          {['A', 'B', 'C', 'D'].map((sub) => (
+            <div key={sub} className="flex items-center justify-between p-4 bg-slate-800/30 rounded-2xl border border-slate-800">
+              <span className="font-black text-emerald-500 text-xl">{sub}.</span>
+              <div className="flex gap-2">
+                {['Đúng', 'Sai'].map((val) => (
+                  <button
+                    key={val}
+                    onClick={() => {
+                      const currentAnswers = answer || {};
+                      onSelect(idx, { ...currentAnswers, [sub]: val });
+                    }}
+                    className={`px-8 py-3 rounded-xl font-black text-sm transition-all border-2 ${answer?.[sub] === val ? (val === 'Đúng' ? 'bg-blue-600 border-blue-500' : 'bg-red-600 border-red-500') : 'bg-slate-700 border-slate-600 text-slate-400'}`}
+                  >
+                    {val.toUpperCase()}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* PHẦN III: SHORT ANSWER */}
+      {q.type === 'sa' && (
+        <input 
+          type="text"
+          placeholder="Nhập đáp án..."
+          className="w-full p-8 rounded-3xl bg-slate-800/50 border-4 border-slate-800 focus:border-emerald-500 outline-none text-white font-black text-3xl"
+          value={answer || ''}
+          onChange={(e) => onSelect(idx, e.target.value)}
+        />
+      )}
+    </div>
+  );
+}, (prev, next) => {
+  // Chỉ vẽ lại nếu đáp án của câu này thay đổi thực sự
+  return JSON.stringify(prev.answer) === JSON.stringify(next.answer);
+});
+
+// 3. COMPONENT CHÍNH
+export default function ExamRoom({ questions, studentInfo, duration, onFinish }: ExamRoomProps) {
+  const [timeLeft, setTimeLeft] = useState(duration * 60);
+  const [answers, setAnswers] = useState<Record<number, any>>({});
+  const [startTime] = useState(new Date());
+
+  // Chỉ chạy MathJax khi load đề xong
+  useEffect(() => {
+    if (window.MathJax && window.MathJax.typesetPromise) {
+      window.MathJax.typesetPromise();
+    }
+  }, [questions]);
+
+  // Timer
   useEffect(() => {
     const timer = setInterval(() => {
       setTimeLeft((prev) => {
@@ -81,6 +148,11 @@ export default function ExamRoom({ questions, studentInfo, duration, onFinish }:
     return () => clearInterval(timer);
   }, []);
 
+  // Hàm chọn đáp án tối ưu
+  const handleSelect = useCallback((idx: number, value: any) => {
+    setAnswers(prev => ({ ...prev, [idx]: value }));
+  }, []);
+
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60);
     const s = seconds % 60;
@@ -88,20 +160,7 @@ export default function ExamRoom({ questions, studentInfo, duration, onFinish }:
   };
 
   const handleFinish = async () => {
-    const endTime = new Date();
-    const timeSpent = Math.floor((endTime.getTime() - startTime.getTime()) / 1000);
-    const resultData = {
-      timestamp: new Date().toLocaleString('vi-VN'),
-      examCode: studentInfo.examCode,
-      sbd: studentInfo.sbd,
-      name: studentInfo.name,
-      class: studentInfo.className,
-      answers: JSON.stringify(answers),
-      timeSpent: `${Math.floor(timeSpent / 60)} phút ${timeSpent % 60} giây`,
-      idgv: studentInfo.idgv
-    };
-    console.log("Dữ liệu nộp bài:", resultData);
-    alert(`Bài làm của ${studentInfo.name} đã được ghi nhận thành công!`);
+    alert(`Bài làm của ${studentInfo.name} đã được nộp!`);
     onFinish();
   };
 
@@ -113,84 +172,19 @@ export default function ExamRoom({ questions, studentInfo, duration, onFinish }:
           <div className="bg-emerald-500/20 p-2 rounded-xl text-emerald-400 font-black text-xs">SBD: {studentInfo.sbd}</div>
           <div className="font-black text-white">{studentInfo.name}</div>
         </div>
-
-        <div className="bg-slate-800 px-6 py-2 rounded-2xl border border-slate-700">
-          <div className="text-2xl font-mono font-black text-white">{formatTime(timeLeft)}</div>
-        </div>
-
-        <button onClick={handleFinish} className="bg-emerald-600 hover:bg-emerald-500 text-white px-8 py-3 rounded-2xl font-black">
-          NỘP BÀI
-        </button>
+        <div className="text-2xl font-mono font-black text-white bg-slate-800 px-6 py-2 rounded-2xl">{formatTime(timeLeft)}</div>
+        <button onClick={handleFinish} className="bg-emerald-600 hover:bg-emerald-500 text-white px-8 py-3 rounded-2xl font-black">NỘP BÀI</button>
       </div>
 
-      <div className="max-w-4xl mx-auto space-y-10">
+      <div className="max-w-4xl mx-auto">
         {questions.map((q, idx) => (
-          <div key={idx} id={`q-${idx}`} className="bg-slate-900 border-2 border-slate-800 p-8 md:p-10 rounded-[2.5rem] shadow-xl relative overflow-hidden">
-            <div className="flex items-center gap-4 mb-8">
-              <span className="bg-emerald-600 text-white w-10 h-10 flex items-center justify-center rounded-xl font-black">{idx + 1}</span>
-              <span className="text-slate-500 font-black uppercase text-[10px] tracking-widest bg-slate-800 px-4 py-1 rounded-full">
-                {q.type === 'mcq' ? 'Phần I' : q.type === 'true-false' ? 'Phần II' : 'Phần III'}
-              </span>
-            </div>
-
-            {/* CÂU HỎI - ĐÃ DỌN DẸP DẤU / */}
-            <div 
-              className="text-xl md:text-2xl leading-relaxed mb-10 font-bold text-slate-100"
-              dangerouslySetInnerHTML={{ __html: formatContent(q.question) }}
-            />
-
-            {/* PHẦN I: MCQ */}
-            {q.type === 'mcq' && q.o && (
-              <div className="grid grid-cols-1 gap-4">
-                {q.o.map((opt, i) => {
-                  const label = String.fromCharCode(65 + i);
-                  return (
-                    <button
-                      key={i}
-                      onClick={() => setAnswers({...answers, [idx]: label})}
-                      className={`p-6 rounded-3xl text-left border-2 transition-all flex items-center gap-6 ${answers[idx] === label ? 'border-emerald-500 bg-emerald-500/10' : 'border-slate-800 bg-slate-800/50 hover:border-slate-700'}`}
-                    >
-                      <span className={`w-10 h-10 flex-shrink-0 flex items-center justify-center rounded-xl font-black ${answers[idx] === label ? 'bg-emerald-500 text-white' : 'bg-slate-700 text-slate-400'}`}>{label}</span>
-                      <div className="text-lg font-bold" dangerouslySetInnerHTML={{ __html: formatContent(opt) }} />
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-
-            {/* PHẦN II: TRUE-FALSE */}
-            {q.type === 'true-false' && (
-              <div className="space-y-4">
-                {['A', 'B', 'C', 'D'].map((sub) => (
-                  <div key={sub} className="flex items-center justify-between p-4 bg-slate-800/30 rounded-2xl border border-slate-800">
-                    <span className="font-black text-emerald-500 text-xl">{sub}.</span>
-                    <div className="flex gap-2">
-                      {['Đúng', 'Sai'].map((val) => (
-                        <button
-                          key={val}
-                          onClick={() => setAnswers({...answers, [idx]: {...(answers[idx] || {}), [sub]: val}})}
-                          className={`px-8 py-3 rounded-xl font-black text-sm transition-all border-2 ${answers[idx]?.[sub] === val ? (val === 'Đúng' ? 'bg-blue-600 border-blue-500' : 'bg-red-600 border-red-500') : 'bg-slate-700 border-slate-600 text-slate-400'}`}
-                        >
-                          {val.toUpperCase()}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* PHẦN III: SHORT ANSWER */}
-            {q.type === 'sa' && (
-              <input 
-                type="text"
-                placeholder="Ví dụ: 6.23"
-                className="w-full p-8 rounded-3xl bg-slate-800/50 border-4 border-slate-800 focus:border-emerald-500 outline-none text-white font-black text-3xl"
-                value={answers[idx] || ''}
-                onChange={(e) => setAnswers({...answers, [idx]: e.target.value})}
-              />
-            )}
-          </div>
+          <QuestionCard 
+            key={q.id || idx} 
+            q={q} 
+            idx={idx} 
+            answer={answers[idx]} 
+            onSelect={handleSelect} 
+          />
         ))}
       </div>
     </div>
