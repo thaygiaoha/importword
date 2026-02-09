@@ -22,21 +22,29 @@ interface ExamRoomProps {
 }
 
 // HÀM QUÉT DẤU / VÀ DỌN DẸP MATHJAX
+// Cập nhật lại hàm này trong ExamRoom.tsx của thầy
 const formatContent = (text: string) => {
   if (!text) return "";
   let clean = text.toString().trim();
   
-  // 1. Xóa dấu / ở đầu dòng (Lỗi do VBA)
+  // 1. Xóa dấu / ở đầu dòng (Do VBA)
   if (clean.startsWith('/')) {
     clean = clean.substring(1).trim();
   }
 
-  // 2. Sửa lỗi MathJax Delimiter (Biến các ngoặc ảo thành ngoặc thật để tránh lỗi render)
+  // 2. Xử lý Double Backslash từ JSON thành Single Backslash cho MathJax
+  // Thay thế \\ thành \ để MathJax nhận diện đúng lệnh LaTeX
+  clean = clean.replace(/\\\\/g, "\\");
+
+  // 3. Sửa lỗi ngoặc \left \right bị lỗi delimiter
+  // Thay vì dùng \left( (kén chọn), ta đưa về dạng đơn giản hơn nếu gặp lỗi
   return clean
-    .replace(/\\left\(/g, "(")
-    .replace(/\\right\)/g, ")")
-    .replace(/\\left\[/g, "[")
-    .replace(/\\right\]/g, "]")
+    .replace(/\\left\s*\(/g, "(")
+    .replace(/\\right\s*\)/g, ")")
+    .replace(/\\left\s*\[/g, "[")
+    .replace(/\\right\s*\]/g, "]")
+    .replace(/\\left\s*\{/g, "{")
+    .replace(/\\right\s*\}/g, "}")
     .replace(/\\text\{\/\}/g, "/");
 };
 
