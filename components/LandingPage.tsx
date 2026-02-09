@@ -508,6 +508,18 @@ const handleRedirect = () => {
 };
 
   return (
+    <>
+    {/* TRƯỜNG HỢP 1: ĐANG THI (Hiện phòng thi, ẩn toàn bộ Landing) */}
+    {examStarted ? (
+      <div className="animate-in slide-in-from-bottom duration-500">
+        <ExamRoom 
+          questions={questions} 
+          studentName={studentName} 
+          duration={duration} 
+          onFinish={() => setExamStarted(false)} 
+        />
+      </div>
+    ) : (
     <div className="min-h-screen bg-slate-50 font-sans pb-12 overflow-x-hidden">
       
      {/* 1. TOP NAV (Style SmartEdu - Đã tích hợp VIP lấp lánh) */}
@@ -1359,31 +1371,42 @@ const handleRedirect = () => {
   </div>
 )}
       {showStudentLogin && (
-  <div className="fixed inset-0 bg-slate-950/90 backdrop-blur-md flex items-center justify-center z-[100] p-4">
-    <div className="bg-slate-900 border-2 border-emerald-500/30 p-8 rounded-[2rem] w-full max-w-sm shadow-2xl">
-      <div className="text-emerald-400 font-black text-center mb-6 text-sm uppercase tracking-tighter">
-        <i className="fas fa-user-shield mr-2"></i> Hệ thống thi lẻ
-      </div>
-      
-      <div className="space-y-3">
-        <input className="w-full p-4 rounded-xl bg-slate-800 text-white border border-slate-700 font-bold text-xs" 
-               placeholder="MÃ GIÁO VIÊN (IDGV)..." value={studentInfo.idgv} onChange={e => setStudentInfo({...studentInfo, idgv: e.target.value})} />
-        
-        <input className="w-full p-4 rounded-xl bg-slate-800 text-white border border-slate-700 font-bold text-xs" 
-               placeholder="SỐ BÁO DANH (SBD)..." value={studentInfo.sbd} onChange={e => setStudentInfo({...studentInfo, sbd: e.target.value})} />
-        
-        <input className="w-full p-4 rounded-xl bg-slate-800 text-emerald-400 border border-slate-700 font-black text-xs" 
-               placeholder="MÃ ĐỀ THI (EXAMS)..." value={studentInfo.examCode} 
-onChange={e => setStudentInfo({...studentInfo, examCode: e.target.value.toUpperCase()})} />
-        
-        <div className="grid grid-cols-2 gap-3 mt-6">
-          <button onClick={() => setShowStudentLogin(false)} className="py-3 bg-slate-800 text-slate-400 rounded-xl font-bold text-[10px]">HỦY</button>
-          <button onClick={handleStudentSubmit} className="py-3 bg-emerald-600 text-white rounded-xl font-black text-[10px] shadow-lg shadow-emerald-900/40">VÀO THI</button>
-        </div>
-      </div>
-    </div>
-  </div>
-)}
+          <div className="fixed inset-0 bg-slate-950/90 backdrop-blur-md flex items-center justify-center z-[110] p-4">
+            <div className="bg-slate-900 border-2 border-emerald-500/30 p-8 rounded-[2rem] w-full max-w-sm shadow-2xl animate-in zoom-in duration-300">
+              <div className="text-emerald-400 font-black text-center mb-6 text-sm uppercase tracking-tighter">
+                <i className="fas fa-user-shield mr-2"></i> Hệ thống thi lẻ
+              </div>
+              
+              <div className="space-y-3">
+                <input 
+                  className="w-full p-4 rounded-xl bg-slate-800 text-white border border-slate-700 font-bold text-xs focus:ring-2 focus:ring-emerald-500 outline-none" 
+                  placeholder="MÃ GIÁO VIÊN (IDGV)..." 
+                  value={studentInfo.idgv} 
+                  onChange={e => setStudentInfo({...studentInfo, idgv: e.target.value})} 
+                />
+                
+                <input 
+                  className="w-full p-4 rounded-xl bg-slate-800 text-white border border-slate-700 font-bold text-xs focus:ring-2 focus:ring-emerald-500 outline-none" 
+                  placeholder="SỐ BÁO DANH (SBD)..." 
+                  value={studentInfo.sbd} 
+                  onChange={e => setStudentInfo({...studentInfo, sbd: e.target.value})} 
+                />
+                
+                <input 
+                  className="w-full p-4 rounded-xl bg-slate-800 text-emerald-400 border border-slate-700 font-black text-xs focus:ring-2 focus:ring-emerald-500 outline-none uppercase" 
+                  placeholder="MÃ ĐỀ THI (EXAMS)..." 
+                  value={studentInfo.examCode} 
+                  onChange={e => setStudentInfo({...studentInfo, examCode: e.target.value.toUpperCase()})} 
+                />
+                
+                <div className="grid grid-cols-2 gap-3 mt-6">
+                  <button onClick={() => setShowStudentLogin(false)} className="py-3 bg-slate-800 text-slate-400 rounded-xl font-bold text-[10px] hover:bg-slate-700 transition-colors">HỦY</button>
+                  <button onClick={handleStudentSubmit} className="py-3 bg-emerald-600 text-white rounded-xl font-black text-[10px] shadow-lg shadow-emerald-900/40 hover:bg-emerald-500 transition-all active:scale-95">VÀO THI</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 {/* GIAO DIỆN TRA CỨU LỜI GIẢI - BẢN FULL KHÔNG THIẾU THỨ GÌ */}
 
       {/* ICON FONTAWESOME */}
