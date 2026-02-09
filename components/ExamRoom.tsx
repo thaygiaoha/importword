@@ -1,11 +1,10 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 
 interface Question {
   id: string;
-  type: string; 
+  type: 'mcq' | 'true-false' | 'sa'; 
   question: string;
   o?: string[];
-  s?: { text: string; a: boolean }[];
   a?: string;
 }
 
@@ -22,91 +21,45 @@ interface ExamRoomProps {
   onFinish: () => void;
 }
 
-const formatContent = (text: any) => {
+// 1. HÀM DỌN DẸP NỘI DUNG (GIỮ LẠI PHÒNG THỦ)
+const formatContent = (text: string) => {
   if (!text) return "";
   let clean = text.toString().trim();
   if (clean.startsWith('/')) clean = clean.substring(1).trim();
+  
   return clean
     .replace(/\\\\/g, "\\")
     .replace(/\\left\s+([\(\[\{])/g, "\\left$1")
-    .replace(/\\right\s+([\)\}\]])/g, "\\right$1");
+    .replace(/\\right\s+([\)\}\]])/g, "\\right$1")
+    .replace(/\{\s*\\begin\{matrix\}/g, "\\begin{cases}") 
+    .replace(/\\end\{matrix\}\s*\}/g, "\\end{cases}")
+    .replace(/\\left\s*\(/g, "(")
+    .replace(/\\right\s*\)/g, ")")
+    .replace(/\\left\s*\[/g, "[")
+    .replace(/\\right\s*\]/g, "]")
+    .replace(/\\left\s*\\\{/g, "{")
+    .replace(/\\right\s*\\\}/g, "}");
 };
 
-export default function ExamRoom({ questions, studentInfo, duration, onFinish }: ExamRoomProps) {
-  const [timeLeft, setTimeLeft] = useState(duration * 60);
-  const [answers, setAnswers] = useState<Record<number, any>>({});
-
-  // Render MathJax an toàn
-  useEffect(() => {
-    if (typeof window !== 'undefined' && (window as any).MathJax?.typesetPromise) {
-      (window as any).MathJax.typesetPromise().catch((err: any) => console.log(err));
-    }
-  }, [questions, answers]);
-
-  // Timer
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
-
-  const handleAnswerChange = (idx: number, value: any, subIndex?: number) => {
-    setAnswers(prev => {
-      const newAnswers = { ...prev };
-      if (typeof subIndex === 'number') {
-        const currentArr = Array.isArray(prev[idx]) ? [...prev[idx]] : [null, null, null, null];
-        currentArr[subIndex] = value;
-        newAnswers[idx] = currentArr;
-      } else {
-        newAnswers[idx] = value;
-      }
-      return newAnswers;
-    });
-  };
-
-  const formatTime = (seconds: number) => {
-    const m = Math.floor(seconds / 60);
-    const s = seconds % 60;
-    return `${m}:${s < 10 ? '0' : ''}${s}`;
-  };
-
-  if (!questions || questions.length === 0) return <div className="p-10 text-white">Đang tải câu hỏi...</div>;
-
+// 2. COMPONENT CON CHO TỪNG CÂU HỎI (CHỐNG LAG)
+const QuestionCard = React.memo(({ q, idx, answer, onSelect }: any) => {
+  console.log(`Render câu: ${idx + 1}`); // Thầy xem log sẽ thấy chỉ câu nào chọn mới hiện log này
+  
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-200 p-4 pb-40">
-      {/* HEADER */}
-      <div className="sticky top-0 z-50 bg-slate-900/90 backdrop-blur-xl border-b-2 border-emerald-500/30 p-4 mb-8 flex justify-between items-center rounded-3xl shadow-2xl">
-        <div className="flex items-center gap-3">
-          <div className="bg-emerald-500/20 p-2 rounded-xl text-emerald-400 font-black text-xs">SBD: {studentInfo?.sbd}</div>
-          <div className="font-black text-white">{studentInfo?.name}</div>
-        </div>
-        <div className="text-2xl font-mono font-black text-white bg-slate-800 px-6 py-2 rounded-2xl">{formatTime(timeLeft)}</div>
-        <button onClick={() => onFinish()} className="bg-emerald-600 hover:bg-emerald-500 text-white px-8 py-3 rounded-2xl font-black">NỘP BÀI</button>
+    <div id={`q-${idx}`} className="bg-slate-900 border-2 border-slate-800 p-8 md:p-10 rounded-[2.5rem] shadow-xl relative overflow-hidden mb-10">
+      <div className="flex items-center gap-4 mb-8">
+        <span className="bg-emerald-600 text-white w-10 h-10 flex items-center justify-center rounded-xl font-black">{idx + 1}</span>
+        <span className="text-slate-500 font-black uppercase text-[10px] tracking-widest bg-slate-800 px-4 py-1 rounded-full">
+          {q.type === 'mcq' ? 'Phần I' : q.type === 'true-false' ? 'Phần II' : 'Phần III'}
+        </span>
       </div>
 
-      <div className="max-w-4xl mx-auto">
-        {questions.map((q, idx) => (
-          <div key={idx} className="bg-slate-900 border-2 border-slate-800 p-6 md:p-10 rounded-[2.5rem] shadow-xl mb-10">
-            <div className="flex items-center gap-4 mb-8">
-              <span className="bg-emerald-600 text-white w-10 h-10 flex items-center justify-center rounded-xl font-black">{idx + 1}</span>
-              <span className="text-slate-500 font-black uppercase text-[10px] tracking-widest bg-slate-800 px-4 py-1 rounded-full">
-                {q.type === 'mcq' ? 'Phần I' : q.type === 'true-false' ? 'Phần II' : 'Phần III'}
-              </span>
-            </div>
+      <div 
+        className="text-xl md:text-2xl leading-relaxed mb-10 font-bold text-slate-100"
+        dangerouslySetInnerHTML={{ __html: formatContent(q.question) }}
+      />
 
-            <div 
-              className="text-xl md:text-2xl leading-relaxed mb-10 font-bold text-slate-100"
-              dangerouslySetInnerHTML={{ __html: formatContent(q.question) }}
-            />
-
-            {/* PHẦN I: MCQ */}
+ {/* PHẦN I: MCQ */}
             {q.type === 'mcq' && q.o && (
               <div className="grid grid-cols-1 gap-4">
                 {q.o.map((opt, i) => {
@@ -167,8 +120,91 @@ export default function ExamRoom({ questions, studentInfo, duration, onFinish }:
                   onChange={(e) => handleAnswerChange(idx, e.target.value)}
                 />
               </div>
-            )}
-          </div>
+            )}    </div>
+  );
+}, (prev, next) => {
+  // Chỉ vẽ lại nếu đáp án của câu này thay đổi thực sự
+  return JSON.stringify(prev.answer) === JSON.stringify(next.answer);
+});
+
+// 3. COMPONENT CHÍNH
+export default function ExamRoom({ questions, studentInfo, duration, onFinish }: ExamRoomProps) {
+  const [timeLeft, setTimeLeft] = useState(duration * 60);
+  const [answers, setAnswers] = useState<Record<number, any>>({});
+  const [startTime] = useState(new Date());
+ const handleAnswerChange = (idx: number, value: any, subIndex?: number) => {
+    setAnswers(prev => {
+      const newAnswers = { ...prev };
+      if (typeof subIndex === 'number') {
+        const currentArr = Array.isArray(prev[idx]) ? [...prev[idx]] : [null, null, null, null];
+        currentArr[subIndex] = value;
+        newAnswers[idx] = currentArr;
+      } else {
+        newAnswers[idx] = value;
+      }
+      return newAnswers;
+    });
+  };
+
+  // Chỉ chạy MathJax khi load đề xong
+  useEffect(() => {
+    if (window.MathJax && window.MathJax.typesetPromise) {
+      window.MathJax.typesetPromise();
+    }
+  }, [questions]);
+
+  // Timer
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          handleFinish();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Hàm chọn đáp án tối ưu
+  const handleSelect = useCallback((idx: number, value: any) => {
+    setAnswers(prev => ({ ...prev, [idx]: value }));
+  }, []);
+
+  const formatTime = (seconds: number) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}:${s < 10 ? '0' : ''}${s}`;
+  };
+
+  const handleFinish = async () => {
+    alert(`Bài làm của ${studentInfo.name} đã được nộp!`);
+    onFinish();
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-950 text-slate-200 p-4 pb-40">
+      {/* HEADER CỐ ĐỊNH */}
+      <div className="sticky top-0 z-50 bg-slate-900/90 backdrop-blur-xl border-b-2 border-emerald-500/30 p-4 mb-8 flex justify-between items-center rounded-3xl shadow-2xl">
+        <div className="flex items-center gap-3">
+          <div className="bg-emerald-500/20 p-2 rounded-xl text-emerald-400 font-black text-xs">SBD: {studentInfo.sbd}</div>
+          <div className="font-black text-white">{studentInfo.name}</div>
+        </div>
+        <div className="text-2xl font-mono font-black text-white bg-slate-800 px-6 py-2 rounded-2xl">{formatTime(timeLeft)}</div>
+        <button onClick={handleFinish} className="bg-emerald-600 hover:bg-emerald-500 text-white px-8 py-3 rounded-2xl font-black">NỘP BÀI</button>
+      </div>
+
+      <div className="max-w-4xl mx-auto">
+        {questions.map((q, idx) => (
+          <QuestionCard 
+            key={q.id || idx} 
+            q={q} 
+            idx={idx} 
+            answer={answers[idx]} 
+            onSelect={handleSelect} 
+          />
         ))}
       </div>
     </div>
