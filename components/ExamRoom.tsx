@@ -21,7 +21,10 @@ interface ExamRoomProps {
   duration: number;
   minSubmitTime?: number; 
   maxTabSwitches?: number; 
-  deadline?: string;       
+  deadline?: string;  
+  scoreMCQ?: number; // Cột D
+  scoreTF?: number;  // Cột F
+  scoreSA?: number;  // Cột H
   onFinish: () => void;
 }
 
@@ -125,18 +128,41 @@ export default function ExamRoom({
   const [startTime] = useState(new Date());
   const [tabSwitches, setTabSwitches] = useState(0);
 
-  const handleFinish = useCallback((isAuto = false) => {
+ const handleFinish = useCallback((isAuto = false) => {
+    const timeNow = new Date().getTime();
+    const startTimeMs = startTime.getTime();
+    const timeSpentMin = Math.floor((timeNow - startTimeMs) / 60000);
+    const timeTakenSeconds = Math.floor((timeNow - startTimeMs) / 1000);
+
     if (!isAuto) {
-      const timeSpent = Math.floor((new Date().getTime() - startTime.getTime()) / 60000);
-      if (timeSpent < minSubmitTime) {
-        alert(`Cần tối thiểu ${minSubmitTime} phút để nộp. Còn ${minSubmitTime - timeSpent} phút.`);
+      if (timeSpentMin < minSubmitTime) {
+        alert(`Cần tối thiểu ${minSubmitTime} phút để nộp. Còn ${minSubmitTime - timeSpentMin} phút.`);
         return;
       }
     }
+
+    // 1. GỌI SCOREWORD ĐỂ CHẤM ĐIỂM NGAY TỨC THÌ
+    // Lấy điểm từ props: scoreMCQ (Cột D), scoreTF (Cột F), scoreSA (Cột H)
+    const result = scoreWord(
+      questions, 
+      answers, 
+      Number(scoreMCQ) || 0.25, 
+      Number(scoreTF) || 1.0, 
+      Number(scoreSA) || 0.5
+    );
+
     alert(isAuto ? "Tự động nộp bài!" : "Nộp bài thành công!");
-    onFinish();
-  }, [startTime, minSubmitTime, onFinish]);
-  // Render MathJax an toàn
+
+    // 2. GỬI DỮ LIỆU ĐÃ CHẤM VỀ HÀM CHA
+    onFinish({
+      tongdiem: result.totalScore.toString().replace('.', ','), // Chuyển dấu phẩy cho Sheets
+      time: timeTakenSeconds,                                  // Số giây cho cột G
+      timestamp: new Date().toLocaleString('vi-VN'),            // Cột A
+      details: result.details                                   // Chi tiết nếu cần
+    });
+  }, [startTime, minSubmitTime, questions, answers, scoreMCQ, scoreTF, scoreSA, onFinish]);
+
+  // 3. RENDER MATHJAX (Để công thức không bị lỗi "trơ" mã LaTeX)
   useEffect(() => {
     if (typeof window !== 'undefined' && (window as any).MathJax?.typesetPromise) {
       (window as any).MathJax.typesetPromise().catch((err: any) => console.log(err));
