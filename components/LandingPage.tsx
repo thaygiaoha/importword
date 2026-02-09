@@ -1370,7 +1370,7 @@ const handleRedirect = () => {
     </div>
   </div>
 )}
-      {/* 4. MODAL ĐĂNG NHẬP THI LẺ */}
+     {/* 4. MODAL ĐĂNG NHẬP THI LẺ */}
         {showStudentLogin && (
           <div className="fixed inset-0 bg-slate-950/90 backdrop-blur-md flex items-center justify-center z-[110] p-4">
             <div className="bg-slate-900 border-2 border-emerald-500/30 p-8 rounded-[2rem] w-full max-w-sm shadow-2xl animate-in zoom-in duration-300">
@@ -1408,13 +1408,9 @@ const handleRedirect = () => {
             </div>
           </div>
         )}
+      </div>
+    )}
 
-        {/* GIAO DIỆN TRA CỨU LỜI GIẢI VÀ CÁC PHẦN KHÁC CỦA THẦY Ở ĐÂY */}
-
-      </div> // Đóng div.min-h-screen (Trang chủ)
-    )} // Đóng ngoặc nhọn của logic {examStarted ? ... : ... }
-
-    {/* PHẦN NÀY NẰM NGOÀI LOGIC CHUYỂN TRANG ĐỂ LUÔN LOAD */}
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
 
     <style>{`
@@ -1435,8 +1431,8 @@ const handleRedirect = () => {
       .no-scrollbar::-webkit-scrollbar { display: none; }
       .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     `}</style>
-  </> // Kết thúc Fragment bao ngoài cùng
+  </>
   );
-};
+}
 
 export default LandingPage;
