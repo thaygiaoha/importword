@@ -118,49 +118,48 @@ export default function ExamRoom({
   questions, 
   studentInfo, 
   duration, 
-  minSubmitTime = 50, 
+  minSubmitTime = 15, 
   maxTabSwitches = 2, 
   deadline = "", 
+  scoreMCQ = 0.25, // Thêm giá trị mặc định nếu props không truyền
+  scoreTF = 1.0, 
+  scoreSA = 0.5, 
   onFinish 
 }: ExamRoomProps) {
-  const [timeLeft, setTimeLeft] = useState(duration * 60);
-  const [answers, setAnswers] = useState<Record<number, any>>({});
-  const [startTime] = useState(new Date());
-  const [tabSwitches, setTabSwitches] = useState(0);
 
- const handleFinish = useCallback((isAuto = false) => {
+  const handleFinish = useCallback((isAuto = false) => {
     const timeNow = new Date().getTime();
     const startTimeMs = startTime.getTime();
-    const timeSpentMin = Math.floor((timeNow - startTimeMs) / 60000);
     const timeTakenSeconds = Math.floor((timeNow - startTimeMs) / 1000);
+    const timeSpentMin = Math.floor(timeTakenSeconds / 60);
 
-    if (!isAuto) {
-      if (timeSpentMin < minSubmitTime) {
-        alert(`Cần tối thiểu ${minSubmitTime} phút để nộp. Còn ${minSubmitTime - timeSpentMin} phút.`);
-        return;
-      }
+    if (!isAuto && timeSpentMin < minSubmitTime) {
+      alert(`Cần tối thiểu ${minSubmitTime} phút để nộp. Còn ${minSubmitTime - timeSpentMin} phút.`);
+      return;
     }
 
-    // 1. GỌI SCOREWORD ĐỂ CHẤM ĐIỂM NGAY TỨC THÌ
-    // Lấy điểm từ props: scoreMCQ (Cột D), scoreTF (Cột F), scoreSA (Cột H)
+    // Chấm điểm bằng hàm scoreWord (thầy đảm bảo hàm này đã được import)
+    // Truyền đúng các hệ số điểm từ Props vào
     const result = scoreWord(
       questions, 
       answers, 
       Number(scoreMCQ) || 0.25, 
-      Number(scoreTF) || 1.0, 
+      Number(scoreTF) || 1, 
       Number(scoreSA) || 0.5
     );
 
-    alert(isAuto ? "Tự động nộp bài!" : "Nộp bài thành công!");
-
-    // 2. GỬI DỮ LIỆU ĐÃ CHẤM VỀ HÀM CHA
+    // DỮ LIỆU GỬI VỀ APP.TSX (Phải khớp với payload 7 cột)
     onFinish({
-      tongdiem: result.totalScore.toString().replace('.', ','), // Chuyển dấu phẩy cho Sheets
-      time: timeTakenSeconds,                                  // Số giây cho cột G
-      timestamp: new Date().toLocaleString('vi-VN'),            // Cột A
-      details: result.details                                   // Chi tiết nếu cần
+      score: result.totalScore, // Để hàm cha xử lý replace dấu phẩy
+      timeUsed: timeTakenSeconds,
+      // Ta không cần gửi timestamp hay exams ở đây, 
+      // vì hàm cha App.tsx sẽ lấy từ activeExam.code và Date()
     });
+
+    alert(isAuto ? "Hết giờ! Hệ thống tự động nộp bài." : "Nộp bài thành công!");
   }, [startTime, minSubmitTime, questions, answers, scoreMCQ, scoreTF, scoreSA, onFinish]);
+
+  // ... (phần còn lại của ExamRoom giữ nguyên)
 
   // 3. RENDER MATHJAX (Để công thức không bị lỗi "trơ" mã LaTeX)
   useEffect(() => {
