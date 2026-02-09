@@ -515,6 +515,8 @@ const handleRedirect = () => {
         <ExamRoom 
           questions={questions} 
           studentName={studentName} 
+          studentInfo={studentInfo}
+          duration={examDuration}
           duration={duration} 
           onFinish={() => setExamStarted(false)} 
         />
