@@ -22,30 +22,35 @@ interface ExamRoomProps {
 }
 
 // HÀM QUÉT DẤU / VÀ DỌN DẸP MATHJAX
-// Cập nhật lại hàm này trong ExamRoom.tsx của thầy
 const formatContent = (text: string) => {
   if (!text) return "";
   let clean = text.toString().trim();
   
-  // 1. Xóa dấu / ở đầu dòng (Do VBA)
+  // 1. Xóa dấu / ở đầu dòng (Lỗi do VBA nối chuỗi)
   if (clean.startsWith('/')) {
     clean = clean.substring(1).trim();
   }
 
-  // 2. Xử lý Double Backslash từ JSON thành Single Backslash cho MathJax
-  // Thay thế \\ thành \ để MathJax nhận diện đúng lệnh LaTeX
-  clean = clean.replace(/\\\\/g, "\\");
-
-  // 3. Sửa lỗi ngoặc \left \right bị lỗi delimiter
-  // Thay vì dùng \left( (kén chọn), ta đưa về dạng đơn giản hơn nếu gặp lỗi
-  return clean
+  // 2. Vá lỗi MathJax Delimiter & Double Backslash
+  clean = clean
+    .replace(/\\\\/g, "\\") // Đưa \\ về \ đơn để MathJax nhận diện đúng
+    .replace(/\\left\s+([\(\[\{])/g, "\\left$1") // Xóa dấu cách sau \left (Sửa lỗi ảnh 1, 5)
+    .replace(/\\right\s+([\)\}\]])/g, "\\right$1") // Xóa dấu cách sau \right
+    
+    // 3. Xử lý trường hợp hệ phương trình/hàm số cho ảnh 7
+    // Đảm bảo dấu { của hệ thức được hiểu đúng
+    .replace(/\{\s*\\begin\{matrix\}/g, "\\begin{cases}") 
+    .replace(/\\end\{matrix\}\s*\}/g, "\\end{cases}")
+    
+    // 4. Ép các ngoặc \left( về dạng an toàn nếu vẫn lỗi
     .replace(/\\left\s*\(/g, "(")
     .replace(/\\right\s*\)/g, ")")
     .replace(/\\left\s*\[/g, "[")
     .replace(/\\right\s*\]/g, "]")
-    .replace(/\\left\s*\{/g, "{")
-    .replace(/\\right\s*\}/g, "}")
-    .replace(/\\text\{\/\}/g, "/");
+    .replace(/\\left\s*\\\{/g, "{")
+    .replace(/\\right\s*\\\}/g, "}");
+
+  return clean;
 };
 
 export default function ExamRoom({ questions, studentInfo, duration, onFinish }: ExamRoomProps) {
