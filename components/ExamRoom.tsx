@@ -116,7 +116,7 @@ export default function ExamRoom({
   const duration = (settings?.duration || 60)*60;
   const minSubmitTime = (settings?.mintime || 10) * 60;
   const maxTabSwitches = settings?.tab || 3;
-  const deadline = parseCloseDate(settings.close);
+  const deadline = settings?.close ? new Date(settings.close) : null;
   
   const [timeLeft, setTimeLeft] = useState(duration);
   const [answers, setAnswers] = useState<Record<number, any>>({});
