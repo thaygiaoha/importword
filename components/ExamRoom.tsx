@@ -210,22 +210,41 @@ useEffect(() => {
   const handleSelect = useCallback((idx: number, val: any) => setAnswers(p => ({ ...p, [idx]: val })), []);
 
   return (  
+   <div className="flex flex-col gap-4 p-4 bg-slate-900 border-b border-slate-800 sticky top-0 z-50">
+  {/* Hàng 1: Thông tin thí sinh và Tab */}
+  <div className="flex items-center justify-between">
+    <div className="flex items-center gap-4">
+      <div className="flex flex-col">
+        <span className="text-white font-bold text-base leading-tight">
+          {studentInfo.name}
+        </span>
+        <div className="flex gap-3 text-[10px] uppercase tracking-wider font-semibold">
+          <span className="text-slate-400">Lớp: {studentInfo.className}</span>
+          <span className="text-emerald-400">SBD: {studentInfo.sbd}</span>
+          {/* Hiển thị Tab ngay đây - Đổi màu đỏ nếu vi phạm nhiều */}
+          <span className={`${tabSwitches >= maxTabSwitches ? 'text-red-500 animate-bounce' : 'text-amber-400'}`}>
+            Tab: {tabSwitches}/{maxTabSwitches}
+          </span>
+        </div>
+      </div>
+    </div>
 
-  {/* Header của ExamRoom */}
-<div className="flex items-center justify-between p-4 bg-slate-900 border-b border-slate-800">
-  <div className="flex flex-col">
-    <span className="text-white font-bold text-lg">{studentInfo.name}</span>
-    <div className="flex gap-3 text-xs">
-      <span className="text-emerald-400">SBD: {studentInfo.sbd}</span>
-      {/* Hiển thị số Tab đã dùng trên tổng số cho phép */}
-      <span className={`${tabSwitches >= maxTabSwitches ? 'text-red-500' : 'text-amber-400'} font-medium`}>
-        Tab: {tabSwitches}/{maxTabSwitches}
-      </span>
+    {/* Timer và Nút nộp bài */}
+    <div className="flex items-center gap-3">
+      <div className="bg-slate-800 px-3 py-1 rounded-lg font-mono text-xl text-emerald-400 border border-slate-700">
+        {formatTime(timeLeft)}
+      </div>
+      <button 
+        onClick={handleFinalSubmit}
+        className="bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-2 rounded-xl font-bold text-sm transition-all active:scale-95 shadow-lg shadow-emerald-900/20"
+      >
+        NỘP BÀI
+      </button>
     </div>
   </div>
 
-  {/* DANH SÁCH CÂU HỎI Ở GIỮA */}
-  <div className="hidden md:flex items-center gap-1.5 px-4 overflow-x-auto max-w-[50%] no-scrollbar">
+  {/* Hàng 2: Danh sách câu hỏi nổi xanh */}
+  <div className="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar justify-center border-t border-slate-800/50 pt-3">
     {questions.map((_, idx) => {
       const isDone = answers[idx] !== undefined && answers[idx] !== null;
       const isCurrent = currentIdx === idx;
@@ -234,12 +253,12 @@ useEffect(() => {
         <button
           key={idx}
           onClick={() => setCurrentIdx(idx)}
-          className={`flex-shrink-0 w-8 h-8 rounded-lg text-xs font-bold transition-all duration-200 ${
+          className={`flex-shrink-0 w-9 h-9 rounded-xl text-xs font-black transition-all duration-300 ${
             isCurrent 
-              ? 'bg-emerald-500 text-white ring-2 ring-emerald-400 ring-offset-2 ring-offset-slate-900' 
+              ? 'bg-emerald-500 text-white shadow-[0_0_15px_rgba(16,185,129,0.4)] scale-110' 
               : isDone 
-                ? 'bg-emerald-600/20 text-emerald-400 border border-emerald-500/40' 
-                : 'bg-slate-800 text-slate-500 border border-slate-700'
+                ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40' 
+                : 'bg-slate-800 text-slate-500 border border-slate-700 hover:border-slate-600'
           }`}
         >
           {idx + 1}
@@ -247,12 +266,9 @@ useEffect(() => {
       );
     })}
   </div>
-
-  <div className="flex items-center gap-4">
-    {/* Timer và Nút nộp bài của bạn */}
-    <div className="bg-slate-800 px-3 py-1.5 rounded-lg font-mono text-white">
-      {formatTime(timeLeft)}
-    </div>
-    <button onClick={handleFinalSubmit} className="...">NỘP BÀI</button>
-  </div>
 </div>
+  );
+}
+
+
+  
