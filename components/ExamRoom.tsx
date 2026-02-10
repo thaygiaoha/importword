@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 
+
 interface ExamRoomProps {
   questions: any[];
   studentInfo: any;
@@ -15,12 +16,18 @@ interface ExamRoomProps {
 
 // Hàm chuyển đổi dd/mm/yyyy thành đối tượng Date để so sánh
 const parseDate = (dateStr: string) => {
-  if (!dateStr) return null;
+  if (!dateStr || typeof dateStr !== 'string') return null;
+  // Tách chuỗi theo dấu "/"
   const parts = dateStr.split('/');
   if (parts.length !== 3) return null;
-  // Tạo date: năm, tháng (0-11), ngày
-  // Mặc định khóa vào lúc 23:59:59 của ngày đó nếu không có giờ
-  return new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]), 23, 59, 59);
+
+  const day = parseInt(parts[0], 10);
+  const month = parseInt(parts[1], 10);
+  const year = parseInt(parts[2], 10);
+
+  // Tạo đối tượng Date (tháng trong JS từ 0-11 nên phải -1)
+  // Đặt mặc định khóa vào cuối ngày 23:59:59
+  return new Date(year, month - 1, day, 23, 59, 59);
 };
 
 const formatContent = (text: any) => {
@@ -33,7 +40,7 @@ const formatContent = (text: any) => {
 export default function ExamRoom({ questions, studentInfo, settings, onFinish }: ExamRoomProps) {
   const duration = Number(settings?.duration) || 40;
   const minSubmit = Number(settings?.minSubmitTime) || 0;
-  const maxTabs = Number(settings?.limitTab) || 3;
+  const maxTabs = Number(studentInfo?.limittab) || Number(settings?.limitTab) || 3;
   const closeDate = parseDate(settings?.closeTime);
 
   const [timeLeft, setTimeLeft] = useState(duration * 60);
@@ -49,53 +56,57 @@ export default function ExamRoom({ questions, studentInfo, settings, onFinish }:
   }, [questions, answers]);
 
   useEffect(() => {
-    const timer = setInterval(() => {
-      const now = new Date();
-      
-      // KIỂM TRA KHÓA ĐỀ (Ngày dd/mm/yyyy)
-      if (closeDate && now > closeDate) {
-        clearInterval(timer);
+  const timer = setInterval(() => {
+    const now = new Date();
+    
+    // 1. KIỂM TRA KHÓA ĐỀ (Ngày dd/mm/yyyy)
+    if (closeDate && now > closeDate) {
+      clearInterval(timer);
+      if (!isClosed) { // Chỉ chạy nếu chưa đánh dấu đóng
         setIsClosed(true);
         alert("Hệ thống đã khóa đề thi (Hết hạn ngày " + settings.closeTime + "). Bài làm sẽ được nộp tự động!");
         handleFinish(tabCount, true);
-        return;
       }
+      return;
+    }
 
-      const elapsedSec = (duration * 60) - (timeLeft - 1);
-      if (elapsedSec >= minSubmit * 60) {
-        setIsSubmitDisabled(false);
+    // 2. Cập nhật trạng thái nút nộp bài (Dựa trên giây đã trôi qua)
+    const elapsedSec = (duration * 60) - timeLeft; 
+    if (elapsedSec >= minSubmit * 60) {
+      setIsSubmitDisabled(false);
+    }
+
+    // 3. Đếm ngược
+    setTimeLeft((prev) => {
+      if (prev <= 1) {
+        clearInterval(timer);
+        handleFinish(tabCount, true);
+        return 0;
       }
-
-      setTimeLeft((prev) => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          handleFinish(tabCount, true);
-          return 0;
+      return prev - 1;
+    });
+  }, 1000);
+  return () => clearInterval(timer);
+}, [timeLeft, closeDate, isClosed]); // Thêm isClosed vào dependency
+ useEffect(() => {
+  const handleVisibility = () => {
+    // Chỉ ghi nhận vi phạm nếu bài thi đang chạy và chưa bị khóa
+    if (document.hidden && !isClosed && timeLeft > 0) {
+      setTabCount(prev => {
+        const newCount = prev + 1;
+        if (newCount >= maxTabs) {
+          alert(`Vi phạm: Bạn đã chuyển tab ${newCount}/${maxTabs} lần. Hệ thống tự động nộp bài!`);
+          handleFinish(newCount, true); // Nộp tự động
+        } else {
+          alert(`Cảnh báo: Không được rời màn hình thi! (${newCount}/${maxTabs})`);
         }
-        return prev - 1;
+        return newCount;
       });
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [timeLeft, closeDate]);
-
-  useEffect(() => {
-    const handleVisibility = () => {
-      if (document.hidden && !isClosed) {
-        setTabCount(prev => {
-          const newCount = prev + 1;
-          if (newCount >= maxTabs) {
-            alert("Vi phạm chuyển tab! Tự động nộp bài.");
-            handleFinish(newCount, true);
-          } else {
-            alert(`Cảnh báo chuyển tab! (${newCount}/${maxTabs})`);
-          }
-          return newCount;
-        });
-      }
-    };
-    document.addEventListener("visibilitychange", handleVisibility);
-    return () => document.removeEventListener("visibilitychange", handleVisibility);
-  }, [maxTabs, isClosed]);
+    }
+  };
+  document.addEventListener("visibilitychange", handleVisibility);
+  return () => document.removeEventListener("visibilitychange", handleVisibility);
+}, [maxTabs, isClosed, timeLeft]);
 
   const handleAnswerChange = (idx: number, value: any, subIndex?: number) => {
     if (isClosed) return;
@@ -112,18 +123,22 @@ export default function ExamRoom({ questions, studentInfo, settings, onFinish }:
     });
   };
 
-  const handleFinish = (finalTabs?: number, auto?: boolean) => {
-    if (!auto) {
-      if (!window.confirm("Bạn muốn nộp bài?")) return;
+ const handleFinish = (finalTabs?: number, auto?: boolean) => {
+  if (!auto) {
+    // Kiểm tra thời gian tối thiểu khi nộp thủ công
+    const elapsedSec = (duration * 60) - timeLeft;
+    if (elapsedSec < minSubmit * 60) {
+      const waitMin = Math.ceil((minSubmit * 60 - elapsedSec) / 60);
+      alert(`Chưa đủ thời gian nộp bài theo quy định. Vui lòng làm thêm ít nhất ${waitMin} phút.`);
+      return;
     }
-    onFinish(answers, finalTabs ?? tabCount);
-  };
 
-  const formatTime = (s: number) => {
-    const min = Math.floor(s / 60);
-    const sec = s % 60;
-    return `${min}:${sec < 10 ? '0' : ''}${sec}`;
-  };
+    if (!window.confirm("Bạn muốn nộp bài?")) return;
+  }
+  
+  // Gửi kết quả
+  onFinish(answers, finalTabs ?? tabCount);
+};
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-200 p-4 pb-40">
