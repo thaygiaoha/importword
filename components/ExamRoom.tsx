@@ -27,29 +27,11 @@ interface ExamRoomProps {
   scoreSA?: number;  // Cột H
   onFinish: () => void;
 }
-
-const formatContent = (text: string) => {
+const formatContent = (text: any) => {
   if (!text) return "";
   let clean = text.toString().trim();
-
-  // BƯỚC 1: Nếu là chuỗi JSON (giống ảnh 1), bóc tách lấy trường 'question'
-  if (clean.startsWith('{') && clean.includes('"question"')) {
-    try {
-      const obj = JSON.parse(clean);
-      clean = obj.question || clean;
-    } catch (e) {
-      // Nếu parse lỗi thì bỏ qua, xử lý tiếp như chuỗi thường
-    }
-  }
-
-  // BƯỚC 2: Dọn dẹp các lỗi hiển thị
-  return clean
-    .replace(/\\+/g, '\\')               // Sửa lỗi dư thừa dấu gạch chéo
-    .replace(/left\s*\[/g, "\\left[")    // Sửa lỗi 'left[' dính chữ (Ảnh 1)
-    .replace(/right\s*\]/g, "\\right]")
-    .replace(/sin\s*x/g, "\\sin x")      // Sửa 'sinx' thành '\sin x'
-    .replace(/\n/g, "<br />")            // Chuyển xuống dòng
-    .trim();
+  if (clean.startsWith('/')) clean = clean.substring(1).trim();
+  return clean.replace(/\\\\/g, "\\").replace(/\\left\s+([\(\[\{])/g, "\\left$1").replace(/\\right\s+([\)\}\]])/g, "\\right$1");
 };
 
 const QuestionCard = React.memo(({ q, idx, answer, onSelect }: any) => {
