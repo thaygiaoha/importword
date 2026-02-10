@@ -111,7 +111,7 @@ export default function ExamRoom({
   scoreMCQ = 0.25, // THÊM DÒNG NÀY
   scoreTF = 1.0,   // THÊM DÒNG NÀY
   scoreSA = 0.5,   // THÊM DÒNG NÀY
-  onFinish: (answers: any, violations: number) => void;
+  onFinish
 }: ExamRoomProps) {
   const [timeLeft, setTimeLeft] = useState(duration * 60);
   const [answers, setAnswers] = useState<Record<number, any>>({});
