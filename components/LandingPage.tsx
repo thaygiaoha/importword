@@ -52,8 +52,6 @@ const LandingPage: React.FC<LandingPageProps> = ({
   const [studentName, setStudentName] = useState("");
   const [duration, setDuration] = useState(90);          
   const [examStarted, setExamStarted] = useState(false);
-  const [examSettings, setExamSettings] = useState(null);
-
  
  
   const [searchId, setSearchId] = useState('');
@@ -157,7 +155,7 @@ const [newsList, setNewsList] = useState<{t: string, l: string}[]>([]);
  // TRONG REACT - Hàm handleStudentSubmit
 // Thêm (e) vào đây thầy nhé
 const handleStudentSubmit = async (e) => {
-  if (e?.preventDefault) e.preventDefault();
+  if (e && typeof e.preventDefault === 'function') e.preventDefault();
 
   const currentIDGV = studentInfo.idgv.toString().trim();
   const targetUrl = API_ROUTING[currentIDGV];
@@ -182,26 +180,26 @@ const handleStudentSubmit = async (e) => {
     const result = await response.json();
 
     if (result.status === "success") {
-      // 1. Questions
-      setQuestions(result.data.questions || []);
-
-      // 2. Student name
+      // Cập nhật dữ liệu từ GAS vào State của LandingPage
+      if (result.data.questions) setQuestions(result.data.questions); 
+      
+      // Lưu tên học sinh và thời gian thi vào state để truyền cho ExamRoom
       const nameFromGas = result.data.studentName || "Thí sinh";
+      const timeFromGas = result.data.duration || 90;
+      
+      setStudentName(nameFromGas);
+      setDuration(timeFromGas);
 
-      // 3. SETTINGS (QUAN TRỌNG)
-      setExamSettings(result.data.settings);
-
-      // 4. Update studentInfo
-      setStudentInfo(prev => ({
-        ...prev,
+      // Cập nhật lại object studentInfo để có đủ tên (hiển thị trong ExamRoom)
+      setStudentInfo({
+        ...studentInfo,
         name: nameFromGas
-      }));
+      });
 
-      // 5. Chuyển màn
-      setExamStarted(true);
+      setExamStarted(true); 
       setShowStudentLogin(false);
-
-      alert(`Chúc mừng ${nameFromGas}. Bạn hãy bấm OK để vào thi nhé`);
+      
+      alert(`Chúc mừng ${nameFromGas}. Bạn hãy bấm Ok để vào thi nhé`);
     } else {
       alert("⚠️ " + result.message);
     }
@@ -210,7 +208,6 @@ const handleStudentSubmit = async (e) => {
     alert("❌ Không thể kết nối tới máy chủ.");
   }
 };
-
   // =================================================================================================================
 const handleSaveMatrix = async () => {
   if (!idgv) {
@@ -512,15 +509,11 @@ const handleRedirect = () => {
     {/* TRƯỜNG HỢP 1: ĐANG THI (Hiện phòng thi, ẩn toàn bộ Landing) */}
     {examStarted ? (
       <div className="animate-in slide-in-from-bottom duration-500">
-        <ExamRoom
-    questions={questions}
-    studentInfo={studentInfo}
-    settings={examSettings}
-    onFinish={(answers, violations) => {
-      console.log("Bài làm:", answers);
-      console.log("Vi phạm:", violations);
-      setExamStarted(false);
-    }}
+       <ExamRoom 
+    questions={questions} 
+    studentInfo={studentInfo} // Bây giờ studentInfo đã có idgv, sbd, examCode và name
+    duration={duration}      // Truyền biến duration đã lấy từ GAS (không phải examDuration)
+    onFinish={() => setExamStarted(false)} 
   />
       </div>
     ) : (
@@ -762,13 +755,6 @@ const handleRedirect = () => {
 >
   <i className="fas fa-user-edit text-[10px]"></i> 
   <span>Thi đề lẻ</span>
-</button>
-             <button 
-    onClick={() => setShowStudentLogin(true)} 
-  className="bg-emerald-600 text-white p-2.5 rounded-xl font-black text-[10px] uppercase border-b-4 border-emerald-800 transition-all active:scale-95 flex items-center justify-center gap-2"
->
-  <i className="fas fa-user-edit text-[10px]"></i> 
-  <span>Xem điểm</span>
 </button>
 
 {/* Nút Lời giải - Nằm bên dưới */}
