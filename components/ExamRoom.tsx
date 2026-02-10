@@ -113,9 +113,9 @@ export default function ExamRoom({
   scoreSA = 0.5,
   onFinish 
 }: ExamRoomProps) {  
-  const duration = settings.duration*60;
-  const minSubmitTime = settings.mintime * 60;
-  const maxTabSwitches = settings.tab;
+  const duration = (settings?.duration || 60)*60;
+  const minSubmitTime = (settings?.mintime || 10) * 60;
+  const maxTabSwitches = settings?.tab || 3;
   const deadline = parseCloseDate(settings.close);
   
   const [timeLeft, setTimeLeft] = useState(duration);
