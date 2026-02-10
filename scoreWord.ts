@@ -1,9 +1,9 @@
 export const scoreWord = (
   questions: any[], 
   answers: Record<number, any>,
-  scMCQ: number = 0.25, // Điểm mặc định nếu sheet trống
-  scTF: number = 1.0,   // Điểm tối đa câu Đúng/Sai
-  scSA: number = 0.5    // Điểm câu trả lời ngắn
+  scMCQ: number = 0.25, 
+  scTF: number = 1.0,   
+  scSA: number = 0.5    
 ) => {
   let totalScore = 0;
   const details: any[] = [];
@@ -13,42 +13,42 @@ export const scoreWord = (
     let point = 0;
     const qType = (q.type || "").toString().trim().toLowerCase();
 
-    // 1. PHẦN I: Trắc nghiệm (MCQ) - Lấy điểm từ cột D
+    // 1. MCQ
     if (qType === 'mcq') {
-      if (studentAns === q.a) {
-        point = scMCQ;
+      if (String(studentAns).trim().toUpperCase() === String(q.a).trim().toUpperCase()) {
+        point = Number(scMCQ);
       }
     }
 
-    // 2. PHẦN II: Đúng/Sai - Lấy điểm tối đa từ cột F và chia lũy tiến
+    // 2. TRUE-FALSE (Sửa chỗ này để khớp với sheet exam_data)
     else if (qType === 'true-false') {
-      const subQuestions = q.s || q.o || [];
+      const subQuestions = q.options || []; // Sheet dùng 'options'
       let correctCount = 0;
 
       subQuestions.forEach((sub: any, sIdx: number) => {
         const subLabel = String.fromCharCode(65 + sIdx);
-        const correctValue = (sub.a === true || sub.a === 'Đúng') ? 'Đúng' : 'Sai';
+        // Đáp án đúng từ sheet: true/false -> Chuyển về 'Đúng'/'Sai'
+        const correctValue = (sub.a === true || sub.a?.toString().toLowerCase() === 'true') ? 'Đúng' : 'Sai';
+        
         if (studentAns?.[subLabel] === correctValue) {
           correctCount++;
         }
       });
 
-      // Quy chế lũy tiến dựa trên mức điểm tối đa (scTF)
-      // Thường là: 1 ý (1/10 điểm tối đa), 2 ý (1/4), 3 ý (1/2), 4 ý (điểm tối đa)
       const progression: Record<number, number> = {
         1: Math.round(scTF * 0.1 * 100) / 100,
         2: Math.round(scTF * 0.25 * 100) / 100,
         3: Math.round(scTF * 0.5 * 100) / 100,
-        4: scTF
+        4: Number(scTF)
       };
       point = progression[correctCount] || 0;
     }
 
-    // 3. PHẦN III: Trả lời ngắn (SA) - Lấy điểm từ cột H
+    // 3. SHORT ANSWER
     else if (qType === 'sa' || qType === 'short-answer') {
-      const normalize = (val: any) => val?.toString().trim().replace(',', '.').toLowerCase() || "";
+      const normalize = (val: any) => val?.toString().trim().toLowerCase().replace(',', '.') || "";
       if (normalize(studentAns) !== "" && normalize(studentAns) === normalize(q.a)) {
-        point = scSA;
+        point = Number(scSA);
       }
     }
 
