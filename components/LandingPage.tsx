@@ -61,6 +61,7 @@ const LandingPage: React.FC<LandingPageProps> = ({
   const [studentName, setStudentName] = useState("");
   const [duration, setDuration] = useState(90);          
   const [examStarted, setExamStarted] = useState(false);
+  const [studentClass, setStudentClass] = useState("");
  
  
   const [searchId, setSearchId] = useState('');
@@ -193,11 +194,18 @@ const handleStudentSubmit = async (e) => {
       if (result.data.questions) setQuestions(result.data.questions); 
       
       // Lưu tên học sinh và thời gian thi vào state để truyền cho ExamRoom
+      const d = result.data;
+  
+      setQuestions(d.questions || []);
+      setDuration(Number(d.duration) || 90);
+      setMinSubmitTime(Number(d.minSubmitTime) || 0);    // Thêm State này
+      setMaxTabSwitches(Number(d.maxTabSwitches) || 99); // Thêm State này
       const nameFromGas = result.data.studentName || "Thí sinh";
       const timeFromGas = result.data.duration || 90;
       const classFromGas = result.data.studentClass || "HS Tự do";
       setStudentName(nameFromGas);
       setDuration(timeFromGas);
+      setStudentClass(classFromGas);
 
       // Cập nhật lại object studentInfo để có đủ tên (hiển thị trong ExamRoom)
       setStudentInfo({
