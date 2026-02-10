@@ -209,22 +209,16 @@ useEffect(() => {
 
   const handleSelect = useCallback((idx: number, val: any) => setAnswers(p => ({ ...p, [idx]: val })), []);
 
-  return (
-    <>
-    {tabWarning !== null && tabWarning < maxTabSwitches && (
-  <div className="max-w-4xl mx-auto mb-6">
-    <div className="bg-blue-600/20 border-2 border-red-500 text-red-200 px-6 py-4 rounded-2xl font-bold text-center animate-pulse">
-      ⚠️ Cảnh báo chuyển tab ({tabWarning}/{maxTabSwitches})
-    </div>
-  </div>
-)}
+  return (  
 
     <div className="min-h-screen bg-slate-950 text-slate-200 p-4 pb-40">
       <div className="sticky top-0 z-50 bg-slate-900/90 backdrop-blur-xl border-b-2 border-emerald-500/30 p-4 mb-8 flex justify-between items-center rounded-3xl shadow-2xl">
         <div className="flex flex-col">
           <span className="text-white font-black">{studentInfo?.name}</span>
           <span className="text-xs text-emerald-400">SBD: {studentInfo?.sbd}</span>
-        </div>
+          <span className={`${tabSwitches >= maxTabSwitches ? 'text-red-500' : 'text-amber-400'} font-medium`}>
+        Tab: {tabWarning}/{maxTabSwitches}</span>
+        </div>        
         <div className="flex items-center gap-4">
           <div className="text-2xl font-mono font-black text-white bg-slate-800 px-6 py-2 rounded-2xl">
             {Math.floor(timeLeft / 60)}:{String(timeLeft % 60).padStart(2, '0')}
@@ -236,6 +230,5 @@ useEffect(() => {
         {questions.map((q, idx) => <QuestionCard key={idx} q={q} idx={idx} answer={answers[idx]} onSelect={handleSelect} />)}
       </div>
     </div>
-       </>
   );
 }
