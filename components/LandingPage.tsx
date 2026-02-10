@@ -547,45 +547,41 @@ const handleRedirect = () => {
     <>
     {/* TRƯỜNG HỢP 1: ĐANG THI (Hiện phòng thi, ẩn toàn bộ Landing) */}
     {examStarted ? (
-      <div className="animate-in slide-in-from-bottom duration-500">
-      <ExamRoom 
-    questions={questions} 
-    studentInfo={studentInfo}
-    duration={duration} 
-    minSubmitTime={minSubmitTime}
-    maxTabSwitches={maxTabSwitches}
-    deadline={deadline}
-    scoreMCQ={scoreMCQ}
-    scoreTF={scoreTF}
-    scoreSA={scoreSA}
-    onFinish={async (resultData) => {
-      // 1. Tắt phòng thi
-      setExamStarted(false);
-
-      // 2. Gửi dữ liệu về GAS để ghi vào sheet
-      const targetUrl = API_ROUTING[studentInfo.idgv];
-      try {
-        await fetch(targetUrl, {
-          method: "POST",
-          headers: { "Content-Type": "text/plain" },
-          body: JSON.stringify({
-            action: "submitExam",
-            sbd: studentInfo.sbd,
-            examCode: studentInfo.examCode,
-            idgv: studentInfo.idgv,
-            name: studentInfo.name,
-            ...resultData // Chứa tongdiem, time, timestamp, details
-          }),
-        });
-        alert("Bài thi đã được nộp và lưu điểm thành công!");
-      } catch (e) {
-        console.error("Lỗi nộp bài:", e);
-        alert("Lỗi lưu điểm, bạn hãy báo giáo viên!");
-      }
-    }} 
-  />
-)}
-      </div>
+  <div className="animate-in slide-in-from-bottom duration-500">
+    <ExamRoom 
+      questions={questions} 
+      studentInfo={studentInfo}
+      duration={duration} 
+      minSubmitTime={minSubmitTime}
+      maxTabSwitches={maxTabSwitches}
+      deadline={deadline}
+      scoreMCQ={scoreMCQ}
+      scoreTF={scoreTF}
+      scoreSA={scoreSA}
+      onFinish={async (resultData) => {
+        setExamStarted(false);
+        const targetUrl = API_ROUTING[studentInfo.idgv];
+        try {
+          await fetch(targetUrl, {
+            method: "POST",
+            headers: { "Content-Type": "text/plain" },
+            body: JSON.stringify({
+              action: "submitExam",
+              sbd: studentInfo.sbd,
+              examCode: studentInfo.examCode,
+              idgv: studentInfo.idgv,
+              name: studentInfo.name,
+              ...resultData 
+            }),
+          });
+          alert("Bài thi đã được nộp và lưu điểm thành công!");
+        } catch (e) {
+          console.error("Lỗi nộp bài:", e);
+          alert("Lỗi lưu điểm, bạn hãy báo giáo viên!");
+        }
+      }} 
+    />
+  </div> // Đóng thẻ div này trước khi đóng dấu ngoặc nhọn
     ) : (
     <div className="min-h-screen bg-slate-50 font-sans pb-12 overflow-x-hidden">
       
