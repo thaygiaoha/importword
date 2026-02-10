@@ -285,23 +285,25 @@ useEffect(() => {
           <div className="text-center text-slate-500">Đang tải câu hỏi...</div>
         )}
 
-        {/* Nút điều hướng dưới chân */}
-        <div className="flex justify-between items-center mt-8">
-          <button 
-            disabled={currentIdx === 0}
-            onClick={() => setCurrentIdx(prev => prev - 1)}
-            className="px-6 py-3 rounded-2xl bg-slate-800 text-white font-bold disabled:opacity-30"
-          >
-            Câu trước
-          </button>
-          <button 
-            disabled={currentIdx === questions.length - 1}
-            onClick={() => setCurrentIdx(prev => prev + 1)}
-            className="px-6 py-3 rounded-2xl bg-emerald-600 text-white font-bold disabled:opacity-30"
-          >
-            Câu tiếp theo
-          </button>
-        </div>
+        {/* Nút điều hướng chân trang */}
+<div className="flex justify-between items-center mt-6">
+  <button 
+    disabled={currentIdx === 0}
+    onClick={() => setCurrentIdx(prev => prev - 1)}
+    className="px-6 py-3 rounded-2xl bg-slate-800 text-slate-100 font-bold disabled:opacity-20 transition-all hover:bg-slate-700"
+  >
+    ← Câu trước
+  </button>
+  
+  <button 
+    /* BỎ ĐIỀU KIỆN answers[currentIdx] Ở ĐÂY */
+    disabled={currentIdx === questions.length - 1} 
+    onClick={() => setCurrentIdx(prev => prev + 1)}
+    className="px-6 py-3 rounded-2xl bg-slate-800 text-slate-100 font-bold disabled:opacity-20 transition-all hover:bg-slate-700 border border-slate-700"
+  >
+    Câu tiếp →
+  </button>
+</div>
       </main>
     </div>
   );
