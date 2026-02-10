@@ -562,41 +562,33 @@ const handleRedirect = () => {
       scoreSA={scoreSA}
       onFinish={async (resultData) => {
   setExamStarted(false);
-  
-  // 1. Kiểm tra URL
   const targetUrl = API_ROUTING[studentInfo.idgv];
-  if (!targetUrl) return alert("Không tìm thấy URL máy chủ!");
 
-  // 2. Ép kiểu dữ liệu để đảm bảo không bao giờ bị rỗng (null/undefined)
-  // Nếu dữ liệu rỗng, nó sẽ ghi "N/A" thay vì để trống gây lệch hàng
+  // Hứng điểm an toàn: Kiểm tra cả totalScore và tongdiem để không bị undefined
+  const rawScore = resultData.totalScore ?? resultData.tongdiem ?? 0;
+  const diemHienThi = String(rawScore).replace('.', ',');
+
   const payload = {
     action: "submitExam",
     timestamp: new Date().toLocaleString('vi-VN'),
-    exams: String(studentInfo.examCode || "KHÔNG_MÃ"),
-    sbd: String(studentInfo.sbd || "0000"),
-    name: String(studentInfo.name || "N/A"),
-    class: String(studentInfo.className || "N/A"),
-    // Quan trọng: Đảm bảo lấy đúng totalScore từ resultData
-    tongdiem: (resultData.totalScore ?? 0).toString().replace('.', ','), 
+    exams: String(studentInfo.examCode || ""),
+    sbd: String(studentInfo.sbd || ""),
+    name: String(studentInfo.name || ""),
+    class: String(studentInfo.className || ""), // Đảm bảo key này khớp với GAS
+    tongdiem: diemHienThi, 
     time: resultData.time || 0,
     details: JSON.stringify(resultData.details || [])
   };
 
-  // 3. Log ra console để bạn tự soi trước khi gửi
-  console.log("Dữ liệu nộp bài:", payload);
-
   try {
-    const response = await fetch(targetUrl, {
+    await fetch(targetUrl, {
       method: "POST",
-      headers: { "Content-Type": "text/plain" }, // Dùng text/plain để tránh lỗi CORS
+      headers: { "Content-Type": "text/plain" },
       body: JSON.stringify(payload),
     });
-    
-    if(response.ok) {
-      alert(`Nộp bài thành công! Điểm của bạn: ${resultData.totalScore}`);
-    }
+    alert(`Nộp bài thành công! Điểm của bạn: ${diemHienThi}`);
   } catch (e) {
-    alert("Lỗi kết nối server, hãy chụp ảnh lại điểm số!");
+    console.error("Lỗi:", e);
   }
 }}
     />
