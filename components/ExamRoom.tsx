@@ -18,10 +18,13 @@ interface ExamRoomProps {
     className: string;
     examCode: string;
   };
-  duration: number;
-  minSubmitTime?: number; 
-  maxTabSwitches?: number; 
-  deadline?: string;  
+  settings: {
+    duration: number;       // phút
+    mintime: number;        // phút
+    tab: number;            // số lần đổi tab
+    close: string;          // yyyy-MM-dd
+  };
+  onFinish: (answers: any, violations: number) => void; 
   scoreMCQ?: number; // Cột D
   scoreTF?: number;  // Cột F
   scoreSA?: number;  // Cột H
@@ -95,20 +98,27 @@ const QuestionCard = React.memo(({ q, idx, answer, onSelect }: any) => {
     </div>
   );
 }, (prev, next) => JSON.stringify(prev.answer) === JSON.stringify(next.answer));
+const parseCloseDate = (s?: string) => {
+  if (!s) return null;
+  const d = new Date(s + "T23:59:59");
+  return isNaN(d.getTime()) ? null : d;
+};
 
 export default function ExamRoom({ 
   questions, 
   studentInfo, 
-  duration, 
-  minSubmitTime = 50, 
-  maxTabSwitches = 2, 
-  deadline = "", 
+  settings,  
   scoreMCQ = 0.25,
   scoreTF = 1.0,
   scoreSA = 0.5,
   onFinish 
-}: ExamRoomProps) {
-  const [timeLeft, setTimeLeft] = useState(duration * 60);
+}: ExamRoomProps) {  
+  const duration = settings.duration*60;
+  const minSubmitTime = settings.mintime * 60;
+  const maxTabSwitches = settings.tab;
+  const deadline = parseCloseDate(settings.close);
+  
+  const [timeLeft, setTimeLeft] = useState(duration);
   const [answers, setAnswers] = useState<Record<number, any>>({});
   const [startTime] = useState(new Date());
   const [tabSwitches, setTabSwitches] = useState(0);
