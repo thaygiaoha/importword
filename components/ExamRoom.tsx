@@ -211,24 +211,48 @@ useEffect(() => {
 
   return (  
 
-    <div className="min-h-screen bg-slate-950 text-slate-200 p-4 pb-40">
-      <div className="sticky top-0 z-50 bg-slate-900/90 backdrop-blur-xl border-b-2 border-emerald-500/30 p-4 mb-8 flex justify-between items-center rounded-3xl shadow-2xl">
-        <div className="flex flex-col">
-          <span className="text-white font-black">{studentInfo?.name}</span>
-          <span className="text-xs text-emerald-400">SBD: {studentInfo?.sbd}</span>
-          <span className={`${tabSwitches >= maxTabSwitches ? 'text-red-500' : 'text-amber-400'} font-medium`}>
-        Tab: {tabWarning}/{maxTabSwitches}</span>
-        </div>        
-        <div className="flex items-center gap-4">
-          <div className="text-2xl font-mono font-black text-white bg-slate-800 px-6 py-2 rounded-2xl">
-            {Math.floor(timeLeft / 60)}:{String(timeLeft % 60).padStart(2, '0')}
-          </div>
-          <button onClick={() => handleFinish(false)} className="bg-emerald-600 px-8 py-3 rounded-2xl font-black">NỘP BÀI</button>
-        </div>
-      </div>
-      <div className="max-w-4xl mx-auto">
-        {questions.map((q, idx) => <QuestionCard key={idx} q={q} idx={idx} answer={answers[idx]} onSelect={handleSelect} />)}
-      </div>
+  {/* Header của ExamRoom */}
+<div className="flex items-center justify-between p-4 bg-slate-900 border-b border-slate-800">
+  <div className="flex flex-col">
+    <span className="text-white font-bold text-lg">{studentInfo.name}</span>
+    <div className="flex gap-3 text-xs">
+      <span className="text-emerald-400">SBD: {studentInfo.sbd}</span>
+      {/* Hiển thị số Tab đã dùng trên tổng số cho phép */}
+      <span className={`${tabSwitches >= maxTabSwitches ? 'text-red-500' : 'text-amber-400'} font-medium`}>
+        Tab: {tabSwitches}/{maxTabSwitches}
+      </span>
     </div>
-  );
-}
+  </div>
+
+  {/* DANH SÁCH CÂU HỎI Ở GIỮA */}
+  <div className="hidden md:flex items-center gap-1.5 px-4 overflow-x-auto max-w-[50%] no-scrollbar">
+    {questions.map((_, idx) => {
+      const isDone = answers[idx] !== undefined && answers[idx] !== null;
+      const isCurrent = currentIdx === idx;
+      
+      return (
+        <button
+          key={idx}
+          onClick={() => setCurrentIdx(idx)}
+          className={`flex-shrink-0 w-8 h-8 rounded-lg text-xs font-bold transition-all duration-200 ${
+            isCurrent 
+              ? 'bg-emerald-500 text-white ring-2 ring-emerald-400 ring-offset-2 ring-offset-slate-900' 
+              : isDone 
+                ? 'bg-emerald-600/20 text-emerald-400 border border-emerald-500/40' 
+                : 'bg-slate-800 text-slate-500 border border-slate-700'
+          }`}
+        >
+          {idx + 1}
+        </button>
+      );
+    })}
+  </div>
+
+  <div className="flex items-center gap-4">
+    {/* Timer và Nút nộp bài của bạn */}
+    <div className="bg-slate-800 px-3 py-1.5 rounded-lg font-mono text-white">
+      {formatTime(timeLeft)}
+    </div>
+    <button onClick={handleFinalSubmit} className="...">NỘP BÀI</button>
+  </div>
+</div>
