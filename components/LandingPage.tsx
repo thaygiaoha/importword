@@ -527,6 +527,7 @@ const handleRedirect = () => {
         action: "submitExam", // Hành động ghi điểm
         sbd: studentInfo.sbd,
         examCode: studentInfo.examCode,
+        className: studentInfo.className,
         idgv: currentIDGV,
         name: studentInfo.name,
         ...resultData // Đẩy toàn bộ tongdiem, time... vào body
