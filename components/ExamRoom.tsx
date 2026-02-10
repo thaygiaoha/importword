@@ -16,6 +16,22 @@ interface ExamRoomProps {
   };
   onFinish: (answers: any, violations: number) => void;
 }
+const formatContent = (text: any) => {
+  if (!text) return "";
+
+  let clean = text.toString();
+
+  // Không phá nội dung gốc
+  clean = clean.replace(/\r\n/g, '\n');
+
+  // Chuẩn hóa MathJax
+  clean = clean
+    .replace(/\\\\/g, "\\")
+    .replace(/\\left\s*([\(\[\{])/g, "\\left$1")
+    .replace(/\\right\s*([\)\]\}])/g, "\\right$1");
+
+  return clean;
+};
 
 // parse ngày đóng đề
 const parseCloseDate = (str: string) => {
