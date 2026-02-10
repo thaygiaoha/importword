@@ -570,6 +570,7 @@ const handleRedirect = () => {
               action: "submitExam",
               sbd: studentInfo.sbd,
               examCode: studentInfo.examCode,
+              className: studentInfo.className,
               idgv: studentInfo.idgv,
               name: studentInfo.name,
               ...resultData 
