@@ -18,17 +18,14 @@ interface ExamRoomProps {
     className: string;
     examCode: string;
   };
-  settings: {
-    duration: number;       // phút
-    mintime: number;        // phút
-    tab: number;            // số lần đổi tab
-    close: string;          // yyyy-MM-dd
-  };
-  onFinish: (answers: any, violations: number) => void; 
+  duration: number;
+  minSubmitTime?: number; 
+  maxTabSwitches?: number; 
+  deadline?: string;  
   scoreMCQ?: number; // Cột D
   scoreTF?: number;  // Cột F
   scoreSA?: number;  // Cột H
-  
+  onFinish: () => void;
 }
 const formatContent = (text: any) => {
   if (!text) return "";
@@ -108,22 +105,15 @@ export default function ExamRoom({
   questions, 
   studentInfo, 
   duration, 
-  settings,  
-  scoreMCQ = 0.25,
-  scoreTF = 1.0,
-  scoreSA = 0.5,
+  minSubmitTime = 50, 
+  maxTabSwitches = 2, 
+  deadline = "", 
   onFinish 
-}: ExamRoomProps) {  
-  const minSubmitTime = settings?.mintime || 10;
-  const maxTabSwitches = settings?.tab || 3;
-  const deadline = settings?.close ? new Date(settings.close) : null;
-  
-  const [timeLeft, setTimeLeft] = useState(duration);
+}: ExamRoomProps) {
+  const [timeLeft, setTimeLeft] = useState(duration * 60);
   const [answers, setAnswers] = useState<Record<number, any>>({});
   const [startTime] = useState(new Date());
   const [tabSwitches, setTabSwitches] = useState(0);
-  const [tabWarning, setTabWarning] = useState<number | null>(null);
-  const [hasAutoSubmitted, setHasAutoSubmitted] = useState(false);
 
  const handleFinish = useCallback((isAuto = false) => {
     const timeNow = new Date().getTime();
