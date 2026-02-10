@@ -45,33 +45,74 @@ const formatContent = (text: any) => {
 };
 
 export default function ExamRoom({ questions, studentInfo, settings, onFinish }: ExamRoomProps) {
- // Lấy dữ liệu gọn từ settings (ưu tiên tên biến từ trang nhập của thầy)
- const duration = Number(settings?.duration) || 40; 
-  const minSubmit = Number(settings?.mintime) || 0;
-  
-  // Lấy MaxTabs: Ưu tiên tab riêng của HS (limittab), nếu không có mới lấy tab chung của đề
-  const maxTabs = Number(studentInfo?.limittab) || Number(settings?.tab) || 3;
-  
-  const closeDate = parseDate(settings?.close);
+ const { settings } = examData;
+
+ const EXAM_DURATION = settings.duration * 60; // giây
+ const MIN_TIME = settings.mintime * 60;
+ const TAB_LIMIT = settings.tab;
+
+ const CLOSE_DATE = settings.close
+  ? new Date(settings.close + "T23:59:59")
+  : null;
 
   // Khởi tạo timeLeft bằng duration mới lấy được
-  const [timeLeft, setTimeLeft] = useState(duration * 60);
+ const [timeLeft, setTimeLeft] = useState(EXAM_DURATION);
+  const [canSubmit, setCanSubmit] = useState(false);
   const [answers, setAnswers] = useState<Record<number, any>>({});
   const [tabCount, setTabCount] = useState(0);
   const [isSubmitDisabled, setIsSubmitDisabled] = useState(true);
   const [isClosed, setIsClosed] = useState(false);
   useEffect(() => {
-    if (settings?.duration) {
-      setTimeLeft(Number(settings.duration) * 60);
-    }
-  }, [settings?.duration]);
+  if (CLOSE_DATE && new Date() > CLOSE_DATE) {
+    alert("⛔ Đề thi đã đóng. Bạn không thể vào làm bài.");
+    window.location.href = "/";
+  }
+}, []);
+
+ useEffect(() => {
+  const timer = setInterval(() => {
+    setTimeLeft(prev => {
+      if (prev <= 1) {
+        clearInterval(timer);
+        handleAutoSubmit();
+        return 0;
+      }
+
+      const spent = EXAM_DURATION - prev;
+      if (spent >= MIN_TIME) {
+        setCanSubmit(true);
+      }
+
+      return prev - 1;
+    });
+  }, 1000);
+
+  return () => clearInterval(timer);
+}, []);
 
   useEffect(() => {
     if (typeof window !== 'undefined' && (window as any).MathJax?.typesetPromise) {
       (window as any).MathJax.typesetPromise().catch(() => {});
     }
   }, [questions, answers]);
+const TAB_KEY = `exam_tab_${examCode}_${studentId}`;
+  useEffect(() => {
+  let tabCount = Number(localStorage.getItem(TAB_KEY)) || 0;
 
+  const onBlur = () => {
+    tabCount++;
+    localStorage.setItem(TAB_KEY, tabCount.toString());
+
+    if (tabCount > TAB_LIMIT) {
+      alert("🚫 Bạn đã chuyển tab quá số lần cho phép!");
+      handleAutoSubmit();
+    }
+  };
+
+  window.addEventListener("blur", onBlur);
+
+  return () => window.removeEventListener("blur", onBlur);
+}, []);
  useEffect(() => {
     const timer = setInterval(() => {
       const now = new Date();
@@ -158,11 +199,12 @@ export default function ExamRoom({ questions, studentInfo, settings, onFinish }:
   // Gửi kết quả
   onFinish(answers, finalTabs ?? tabCount);
 };
-  const formatTime = (s: number) => {
-  const min = Math.floor(s / 60);
-  const sec = s % 60;
-  return `${min}:${sec < 10 ? '0' : ''}${sec}`;
+  const formatTime = (sec: number) => {
+  const m = Math.floor(sec / 60);
+  const s = sec % 60;
+  return `${m}:${s.toString().padStart(2, "0")}`;
 };
+
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-200 p-4 pb-40">
@@ -177,13 +219,13 @@ export default function ExamRoom({ questions, studentInfo, settings, onFinish }:
         
         <div className="flex items-center gap-3">
           <div className="text-xl font-mono font-black text-white bg-slate-800 px-4 py-2 rounded-xl border border-slate-700">{formatTime(timeLeft)}</div>
-          <button 
-            disabled={isSubmitDisabled || isClosed}
-            onClick={() => handleFinish()} 
-            className={`px-6 py-2 rounded-xl font-black transition-all ${isSubmitDisabled || isClosed ? 'bg-slate-800 text-slate-600' : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg'}`}
-          >
-            {isClosed ? 'ĐÃ KHÓA' : isSubmitDisabled ? 'CHỜ...' : 'NỘP BÀI'}
-          </button>
+         <button
+  disabled={!canSubmit}
+  onClick={handleSubmit}
+>
+  Nộp bài
+</button>
+
         </div>
       </div>
 
