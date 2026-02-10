@@ -1,6 +1,4 @@
 import React, { useState, useEffect, useCallback } from 'react';
-// Import hàm chấm điểm từ file của thầy
-import { scoreWord } from '../scoreWord'; 
 
 interface Question {
   id: string;
@@ -20,40 +18,44 @@ interface ExamRoomProps {
     className: string;
     examCode: string;
   };
-  duration: number;       // Thời gian làm bài (phút)
-  minSubmitTime?: number;  // miniTime từ sheet
-  maxTabSwitches?: number; // tabLimit từ sheet
+  duration: number;
+  minSubmitTime?: number; 
+  maxTabSwitches?: number; 
   deadline?: string;  
-  scoreMCQ?: number;
-  scoreTF?: number; 
-  scoreSA?: number; 
-  onFinish: (result: any) => void;
+  scoreMCQ?: number; // Cột D
+  scoreTF?: number;  // Cột F
+  scoreSA?: number;  // Cột H
+  onFinish: () => void;
 }
 
-// Hàm format nội dung hiển thị (Latex, Xuống dòng)
 const formatContent = (text: string) => {
   if (!text) return "";
   let clean = text.toString().trim();
+
+  // BƯỚC 1: Nếu là chuỗi JSON (giống ảnh 1), bóc tách lấy trường 'question'
   if (clean.startsWith('{') && clean.includes('"question"')) {
     try {
       const obj = JSON.parse(clean);
       clean = obj.question || clean;
-    } catch (e) {}
+    } catch (e) {
+      // Nếu parse lỗi thì bỏ qua, xử lý tiếp như chuỗi thường
+    }
   }
+
+  // BƯỚC 2: Dọn dẹp các lỗi hiển thị
   return clean
-    .replace(/\\+/g, '\\')
-    .replace(/left\s*\[/g, "\\left[")
+    .replace(/\\+/g, '\\')               // Sửa lỗi dư thừa dấu gạch chéo
+    .replace(/left\s*\[/g, "\\left[")    // Sửa lỗi 'left[' dính chữ (Ảnh 1)
     .replace(/right\s*\]/g, "\\right]")
-    .replace(/sin\s*x/g, "\\sin x")
-    .replace(/\n/g, "<br />")
+    .replace(/sin\s*x/g, "\\sin x")      // Sửa 'sinx' thành '\sin x'
+    .replace(/\n/g, "<br />")            // Chuyển xuống dòng
     .trim();
 };
 
-// Component thẻ câu hỏi
 const QuestionCard = React.memo(({ q, idx, answer, onSelect }: any) => {
   const qType = q.type ? q.type.toString().trim().toLowerCase() : "";
   return (
-    <div className="bg-slate-900 border-2 border-slate-800 p-6 md:p-10 rounded-[2.5rem] shadow-xl mb-10">
+    <div className="bg-slate-900 border-2 border-slate-800 p-8 md:p-10 rounded-[2.5rem] shadow-xl relative overflow-hidden mb-10">
       <div className="flex items-center gap-4 mb-8">
         <span className="bg-emerald-600 text-white w-10 h-10 flex items-center justify-center rounded-xl font-black">{idx + 1}</span>
         <span className="text-slate-500 font-black uppercase text-[10px] tracking-widest bg-slate-800 px-4 py-1 rounded-full">
@@ -62,7 +64,6 @@ const QuestionCard = React.memo(({ q, idx, answer, onSelect }: any) => {
       </div>
       <div className="text-xl md:text-2xl leading-relaxed mb-10 font-bold text-slate-100" dangerouslySetInnerHTML={{ __html: formatContent(q.question) }} />
       
-      {/* MCQ */}
       {qType === 'mcq' && q.o && (
         <div className="grid grid-cols-1 gap-4">
           {q.o.map((opt: any, i: number) => {
@@ -78,7 +79,6 @@ const QuestionCard = React.memo(({ q, idx, answer, onSelect }: any) => {
         </div>
       )}
 
-      {/* Đúng/Sai */}
       {qType === 'true-false' && (
         <div className="space-y-3">
           {(q.s || q.o || []).map((sub: any, sIdx: number) => {
@@ -104,81 +104,78 @@ const QuestionCard = React.memo(({ q, idx, answer, onSelect }: any) => {
         </div>
       )}
 
-      {/* Ngắn */}
       {(qType === 'sa' || qType === 'short-answer') && (
         <div className="mt-4 p-6 bg-slate-800/50 rounded-[2rem] border-2 border-slate-700 flex flex-col md:flex-row items-center gap-4">
           <span className="font-black text-emerald-400 shrink-0">ĐÁP ÁN:</span>
-          <input type="text" className="w-full bg-slate-900 border-2 border-slate-700 p-4 rounded-xl text-white font-bold focus:border-emerald-500 outline-none text-2xl font-mono" placeholder="..." value={answer || ''} onChange={(e) => onSelect(idx, e.target.value)} />
+          <input type="text" className="w-full bg-slate-900 border-2 border-slate-700 p-4 rounded-xl text-white font-bold focus:border-emerald-500 outline-none text-2xl font-mono" placeholder="Ví dụ: 6.32" value={answer || ''} onChange={(e) => onSelect(idx, e.target.value)} />
         </div>
       )}
     </div>
   );
 }, (prev, next) => JSON.stringify(prev.answer) === JSON.stringify(next.answer));
 
-// --- COMPONENT CHÍNH ---
 export default function ExamRoom({ 
-  questions, studentInfo, duration, 
-  minSubmitTime = 0, maxTabSwitches = 0, deadline = "", 
-  scoreMCQ = 0.25, scoreTF = 1.0, scoreSA = 0.5, onFinish 
+  questions, 
+  studentInfo, 
+  duration, 
+  minSubmitTime = 50, 
+  maxTabSwitches = 2, 
+  deadline = "", 
+  onFinish 
 }: ExamRoomProps) {
-
-  // KHAI BÁO STATE THEO THỨ TỰ
-  const [startTime] = useState(new Date()); 
+  const [timeLeft, setTimeLeft] = useState(duration * 60);
   const [answers, setAnswers] = useState<Record<number, any>>({});
-  const [timeLeft, setTimeLeft] = useState(Number(duration) * 60);
+  const [startTime] = useState(new Date());
   const [tabSwitches, setTabSwitches] = useState(0);
 
-  // HÀM NỘP BÀI (Chốt chặn cuối cùng)
-  const handleFinish = useCallback((isAuto = false) => {
+ const handleFinish = useCallback((isAuto = false) => {
     const timeNow = new Date().getTime();
     const startTimeMs = startTime.getTime();
+    const timeSpentMin = Math.floor((timeNow - startTimeMs) / 60000);
     const timeTakenSeconds = Math.floor((timeNow - startTimeMs) / 1000);
-    const timeSpentMin = Math.floor(timeTakenSeconds / 60);
 
-    // Chặn nộp sớm
-    if (!isAuto && Number(minSubmitTime) > 0 && timeSpentMin < Number(minSubmitTime)) {
-      alert(`Cần làm bài tối thiểu ${minSubmitTime} phút. Còn ${Number(minSubmitTime) - timeSpentMin} phút nữa mới được nộp.`);
-      return;
+    if (!isAuto) {
+      if (timeSpentMin < minSubmitTime) {
+        alert(`Cần tối thiểu ${minSubmitTime} phút để nộp. Còn ${minSubmitTime - timeSpentMin} phút.`);
+        return;
+      }
     }
 
-    // Chấm điểm
+    // 1. GỌI SCOREWORD ĐỂ CHẤM ĐIỂM NGAY TỨC THÌ
+    // Lấy điểm từ props: scoreMCQ (Cột D), scoreTF (Cột F), scoreSA (Cột H)
     const result = scoreWord(
       questions, 
       answers, 
-      Number(scoreMCQ), 
-      Number(scoreTF), 
-      Number(scoreSA)
+      Number(scoreMCQ) || 0.25, 
+      Number(scoreTF) || 1.0, 
+      Number(scoreSA) || 0.5
     );
 
-    // Đóng gói payload gửi về App.tsx
-    const finalPayload = {
-      score: result.totalScore || 0,
-      timeUsed: timeTakenSeconds,
-      details: result.details || [],
-      timestamp: new Date().toLocaleString('vi-VN')
-    };
+    alert(isAuto ? "Tự động nộp bài!" : "Nộp bài thành công!");
 
-    if (isAuto) alert("Hệ thống tự động nộp bài (do hết giờ hoặc vi phạm)!");
-    else alert("Nộp bài thành công!");
+    // 2. GỬI DỮ LIỆU ĐÃ CHẤM VỀ HÀM CHA
+    onFinish({
+      tongdiem: result.totalScore.toString().replace('.', ','), // Chuyển dấu phẩy cho Sheets
+      time: timeTakenSeconds,                                  // Số giây cho cột G
+      timestamp: new Date().toLocaleString('vi-VN'),            // Cột A
+      details: result.details                                   // Chi tiết nếu cần
+    });
+  }, [startTime, minSubmitTime, questions, answers, scoreMCQ, scoreTF, scoreSA, onFinish]);
 
-    onFinish(finalPayload);
-  }, [startTime, questions, answers, scoreMCQ, scoreTF, scoreSA, minSubmitTime, onFinish]);
-
-  // Effect: Chống chuyển tab (Lấy maxTabSwitches từ props/sheet)
+  // 3. RENDER MATHJAX (Để công thức không bị lỗi "trơ" mã LaTeX)
   useEffect(() => {
-    const limit = Number(maxTabSwitches);
-    if (limit <= 0) return;
+    if (typeof window !== 'undefined' && (window as any).MathJax?.typesetPromise) {
+      (window as any).MathJax.typesetPromise().catch((err: any) => console.log(err));
+    }
+  }, [questions, answers]);
 
+  useEffect(() => {
     const handleTab = () => {
-      if (document.hidden) {
+      if (document.hidden && maxTabSwitches > 0) {
         setTabSwitches(v => {
-          const nextCount = v + 1;
-          if (nextCount >= limit) {
-            handleFinish(true);
-            return nextCount;
-          }
-          alert(`CẢNH BÁO: Không chuyển tab! (${nextCount}/${limit}). Quá giới hạn bài sẽ tự nộp.`);
-          return nextCount;
+          if (v + 1 >= maxTabSwitches) { handleFinish(true); return v + 1; }
+          alert(`Cảnh báo chuyển Tab (${v + 1}/${maxTabSwitches})`);
+          return v + 1;
         });
       }
     };
@@ -186,23 +183,20 @@ export default function ExamRoom({
     return () => document.removeEventListener("visibilitychange", handleTab);
   }, [maxTabSwitches, handleFinish]);
 
-  // Effect: Đồng hồ đếm ngược
+  useEffect(() => {
+    if (deadline) {
+      const [d, m, y] = deadline.split(' ')[0].split('/');
+      const t = deadline.split(' ')[1] || "23:59";
+      if (new Date() > new Date(`${y}-${m}-${d}T${t}`)) { alert("Hết hạn!"); onFinish(); }
+    }
+  }, [deadline, onFinish]);
+
   useEffect(() => {
     const timer = setInterval(() => {
-      setTimeLeft(v => {
-        if (v <= 1) { clearInterval(timer); handleFinish(true); return 0; }
-        return v - 1;
-      });
+      setTimeLeft(v => { if (v <= 1) { clearInterval(timer); handleFinish(true); return 0; } return v - 1; });
     }, 1000);
     return () => clearInterval(timer);
   }, [handleFinish]);
-
-  // Effect: MathJax rendering
-  useEffect(() => {
-    if (typeof window !== 'undefined' && (window as any).MathJax?.typesetPromise) {
-      (window as any).MathJax.typesetPromise().catch(() => {});
-    }
-  }, [questions, answers]);
 
   const handleSelect = useCallback((idx: number, val: any) => setAnswers(p => ({ ...p, [idx]: val })), []);
 
@@ -211,13 +205,13 @@ export default function ExamRoom({
       <div className="sticky top-0 z-50 bg-slate-900/90 backdrop-blur-xl border-b-2 border-emerald-500/30 p-4 mb-8 flex justify-between items-center rounded-3xl shadow-2xl">
         <div className="flex flex-col">
           <span className="text-white font-black">{studentInfo?.name}</span>
-          <span className="text-xs text-emerald-400">SBD: {studentInfo?.sbd} | Vi phạm: {tabSwitches}/{maxTabSwitches}</span>
+          <span className="text-xs text-emerald-400">SBD: {studentInfo?.sbd}</span>
         </div>
         <div className="flex items-center gap-4">
-          <div className={`text-2xl font-mono font-black px-6 py-2 rounded-2xl bg-slate-800 ${timeLeft < 60 ? 'text-red-500 animate-pulse' : 'text-white'}`}>
+          <div className="text-2xl font-mono font-black text-white bg-slate-800 px-6 py-2 rounded-2xl">
             {Math.floor(timeLeft / 60)}:{String(timeLeft % 60).padStart(2, '0')}
           </div>
-          <button onClick={() => handleFinish(false)} className="bg-emerald-600 px-8 py-3 rounded-2xl font-black hover:bg-emerald-500 transition-all">NỘP BÀI</button>
+          <button onClick={() => handleFinish(false)} className="bg-emerald-600 px-8 py-3 rounded-2xl font-black">NỘP BÀI</button>
         </div>
       </div>
       <div className="max-w-4xl mx-auto">
