@@ -153,20 +153,24 @@ export default function ExamRoom({
       (window as any).MathJax.typesetPromise().catch((err: any) => console.log(err));
     }
   }, [questions, answers]);
-
   useEffect(() => {
-    const handleTab = () => {
-      if (document.hidden && maxTabSwitches > 0) {
-        setTabSwitches(v => {
-          if (v + 1 >= maxTabSwitches) { handleFinish(true); return v + 1; }
-          alert(`Cảnh báo chuyển Tab (${v + 1}/${maxTabSwitches})`);
-          return v + 1;
-        });
+  if (tabSwitches >= maxTabSwitches && maxTabSwitches > 0) {
+    handleFinish(true);
+  }
+}, [tabSwitches, maxTabSwitches, handleFinish]);
+  const handleTab = () => {
+  if (document.hidden && maxTabSwitches > 0) {
+    setTabSwitches(v => {
+      const next = v + 1;
+      if (next < maxTabSwitches) {
+        alert(`Cảnh báo chuyển Tab (${next}/${maxTabSwitches})`);
       }
-    };
-    document.addEventListener("visibilitychange", handleTab);
-    return () => document.removeEventListener("visibilitychange", handleTab);
-  }, [maxTabSwitches, handleFinish]);
+      return next;
+    });
+  }
+};
+
+ 
 
   useEffect(() => {
     if (deadline) {
