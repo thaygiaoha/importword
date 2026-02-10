@@ -562,30 +562,41 @@ const handleRedirect = () => {
       scoreSA={scoreSA}
       onFinish={async (resultData) => {
   setExamStarted(false);
+  
+  // 1. Kiểm tra URL
   const targetUrl = API_ROUTING[studentInfo.idgv];
+  if (!targetUrl) return alert("Không tìm thấy URL máy chủ!");
 
-  // 1. Đóng gói dữ liệu ĐÚNG VÀ ĐỦ các cột trên Sheet
+  // 2. Ép kiểu dữ liệu để đảm bảo không bao giờ bị rỗng (null/undefined)
+  // Nếu dữ liệu rỗng, nó sẽ ghi "N/A" thay vì để trống gây lệch hàng
   const payload = {
     action: "submitExam",
-    timestamp: new Date().toLocaleString('vi-VN'), // Cột A
-    exams: studentInfo.examCode || "N/A",          // Cột B (Phải có để không lệch cột)
-    sbd: studentInfo.sbd || "0000",                // Cột C
-    name: studentInfo.name || "N/A",               // Cột D
-    class: studentInfo.className || "N/A",         // Cột E (Phải có để không lệch cột)
-    tongdiem: resultData.totalScore.toString().replace('.', ','), // Cột F
-    time: resultData.time,                         // Cột G
-    details: JSON.stringify(resultData.details)    // Cột H
+    timestamp: new Date().toLocaleString('vi-VN'),
+    exams: String(studentInfo.examCode || "KHÔNG_MÃ"),
+    sbd: String(studentInfo.sbd || "0000"),
+    name: String(studentInfo.name || "N/A"),
+    class: String(studentInfo.className || "N/A"),
+    // Quan trọng: Đảm bảo lấy đúng totalScore từ resultData
+    tongdiem: (resultData.totalScore ?? 0).toString().replace('.', ','), 
+    time: resultData.time || 0,
+    details: JSON.stringify(resultData.details || [])
   };
 
+  // 3. Log ra console để bạn tự soi trước khi gửi
+  console.log("Dữ liệu nộp bài:", payload);
+
   try {
-    await fetch(targetUrl, {
+    const response = await fetch(targetUrl, {
       method: "POST",
-      headers: { "Content-Type": "text/plain" },
+      headers: { "Content-Type": "text/plain" }, // Dùng text/plain để tránh lỗi CORS
       body: JSON.stringify(payload),
     });
-    alert(`Nộp bài xong! Điểm: ${resultData.totalScore}`);
+    
+    if(response.ok) {
+      alert(`Nộp bài thành công! Điểm của bạn: ${resultData.totalScore}`);
+    }
   } catch (e) {
-    alert("Lỗi kết nối server!");
+    alert("Lỗi kết nối server, hãy chụp ảnh lại điểm số!");
   }
 }}
     />
