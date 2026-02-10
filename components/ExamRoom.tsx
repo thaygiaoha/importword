@@ -118,6 +118,10 @@ export default function ExamRoom({
     const startTimeMs = startTime.getTime();
     const timeSpentMin = Math.floor((timeNow - startTimeMs) / 60000);
     const timeTakenSeconds = Math.floor((timeNow - startTimeMs) / 1000);
+   const [tabSwitches, setTabSwitches] = useState(0);
+const [tabWarning, setTabWarning] = useState<number | null>(null);
+const [hasAutoSubmitted, setHasAutoSubmitted] = useState(false);
+
 
     if (!isAuto) {
       if (timeSpentMin < minSubmitTime) {
@@ -153,24 +157,33 @@ export default function ExamRoom({
       (window as any).MathJax.typesetPromise().catch((err: any) => console.log(err));
     }
   }, [questions, answers]);
-  useEffect(() => {
-  if (tabSwitches >= maxTabSwitches && maxTabSwitches > 0) {
+ useEffect(() => {
+  const handleTab = () => {
+    if (document.hidden && maxTabSwitches > 0) {
+      setTabSwitches(v => {
+        const next = v + 1;
+        if (next < maxTabSwitches) {
+          setTabWarning(next);
+        }
+        return next;
+      });
+    }
+  };
+
+  document.addEventListener("visibilitychange", handleTab);
+  return () => document.removeEventListener("visibilitychange", handleTab);
+}, [maxTabSwitches]);
+useEffect(() => {
+  if (
+    maxTabSwitches > 0 &&
+    tabSwitches >= maxTabSwitches &&
+    !hasAutoSubmitted
+  ) {
+    setHasAutoSubmitted(true);
     handleFinish(true);
   }
-}, [tabSwitches, maxTabSwitches, handleFinish]);
-  const handleTab = () => {
-  if (document.hidden && maxTabSwitches > 0) {
-    setTabSwitches(v => {
-      const next = v + 1;
-      if (next < maxTabSwitches) {
-        alert(`Cảnh báo chuyển Tab (${next}/${maxTabSwitches})`);
-      }
-      return next;
-    });
-  }
-};
+}, [tabSwitches, maxTabSwitches, hasAutoSubmitted, handleFinish]);
 
- 
 
   useEffect(() => {
     if (deadline) {
@@ -190,6 +203,14 @@ export default function ExamRoom({
   const handleSelect = useCallback((idx: number, val: any) => setAnswers(p => ({ ...p, [idx]: val })), []);
 
   return (
+    {tabWarning !== null && tabWarning < maxTabSwitches && (
+  <div className="max-w-4xl mx-auto mb-6">
+    <div className="bg-red-600/20 border-2 border-red-500 text-red-200 px-6 py-4 rounded-2xl font-bold text-center animate-pulse">
+      ⚠️ Cảnh báo chuyển tab ({tabWarning}/{maxTabSwitches})
+    </div>
+  </div>
+)}
+
     <div className="min-h-screen bg-slate-950 text-slate-200 p-4 pb-40">
       <div className="sticky top-0 z-50 bg-slate-900/90 backdrop-blur-xl border-b-2 border-emerald-500/30 p-4 mb-8 flex justify-between items-center rounded-3xl shadow-2xl">
         <div className="flex flex-col">
