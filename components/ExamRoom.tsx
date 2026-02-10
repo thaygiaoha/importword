@@ -55,39 +55,41 @@ export default function ExamRoom({ questions, studentInfo, settings, onFinish }:
     }
   }, [questions, answers]);
 
-  useEffect(() => {
-  const timer = setInterval(() => {
-    const now = new Date();
-    
-    // 1. KIỂM TRA KHÓA ĐỀ (Ngày dd/mm/yyyy)
-    if (closeDate && now > closeDate) {
-      clearInterval(timer);
-      if (!isClosed) { // Chỉ chạy nếu chưa đánh dấu đóng
-        setIsClosed(true);
-        alert("Hệ thống đã khóa đề thi (Hết hạn ngày " + settings.closeTime + "). Bài làm sẽ được nộp tự động!");
-        handleFinish(tabCount, true);
-      }
-      return;
-    }
-
-    // 2. Cập nhật trạng thái nút nộp bài (Dựa trên giây đã trôi qua)
-    const elapsedSec = (duration * 60) - timeLeft; 
-    if (elapsedSec >= minSubmit * 60) {
-      setIsSubmitDisabled(false);
-    }
-
-    // 3. Đếm ngược
-    setTimeLeft((prev) => {
-      if (prev <= 1) {
+ useEffect(() => {
+    const timer = setInterval(() => {
+      const now = new Date();
+      
+      // 1. Kiểm tra khóa đề
+      if (closeDate && now > closeDate) {
         clearInterval(timer);
-        handleFinish(tabCount, true);
-        return 0;
+        if (!isClosed) {
+          setIsClosed(true);
+          alert("Hệ thống đã khóa đề thi. Bài làm sẽ được nộp tự động!");
+          handleFinish(tabCount, true);
+        }
+        return;
       }
-      return prev - 1;
-    });
-  }, 1000);
-  return () => clearInterval(timer);
-}, [timeLeft, closeDate, isClosed]); // Thêm isClosed vào dependency
+
+      // 2. Đếm ngược (Dùng functional update để không phụ thuộc timeLeft)
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          handleFinish(tabCount, true);
+          return 0;
+        }
+        
+        // 3. Cập nhật nút nộp bài (Khi đã trôi qua đủ minSubmit)
+        const elapsedSec = (duration * 60) - (prev - 1);
+        if (elapsedSec >= minSubmit * 60) {
+          setIsSubmitDisabled(false);
+        }
+        
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [closeDate, isClosed, duration, minSubmit]); // Bỏ timeLeft ra khỏi đây
  useEffect(() => {
   const handleVisibility = () => {
     // Chỉ ghi nhận vi phạm nếu bài thi đang chạy và chưa bị khóa
