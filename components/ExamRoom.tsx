@@ -112,15 +112,16 @@ export default function ExamRoom({
   const [answers, setAnswers] = useState<Record<number, any>>({});
   const [startTime] = useState(new Date());
   const [tabSwitches, setTabSwitches] = useState(0);
+  const [tabWarning, setTabWarning] = useState<number | null>(null);
+  const [hasAutoSubmitted, setHasAutoSubmitted] = useState(false);
 
  const handleFinish = useCallback((isAuto = false) => {
     const timeNow = new Date().getTime();
     const startTimeMs = startTime.getTime();
     const timeSpentMin = Math.floor((timeNow - startTimeMs) / 60000);
     const timeTakenSeconds = Math.floor((timeNow - startTimeMs) / 1000);
-   const [tabSwitches, setTabSwitches] = useState(0);
-const [tabWarning, setTabWarning] = useState<number | null>(null);
-const [hasAutoSubmitted, setHasAutoSubmitted] = useState(false);
+  
+
 
 
     if (!isAuto) {
@@ -203,6 +204,7 @@ useEffect(() => {
   const handleSelect = useCallback((idx: number, val: any) => setAnswers(p => ({ ...p, [idx]: val })), []);
 
   return (
+    <>
     {tabWarning !== null && tabWarning < maxTabSwitches && (
   <div className="max-w-4xl mx-auto mb-6">
     <div className="bg-red-600/20 border-2 border-red-500 text-red-200 px-6 py-4 rounded-2xl font-bold text-center animate-pulse">
@@ -228,5 +230,6 @@ useEffect(() => {
         {questions.map((q, idx) => <QuestionCard key={idx} q={q} idx={idx} answer={answers[idx]} onSelect={handleSelect} />)}
       </div>
     </div>
+       </>
   );
 }
