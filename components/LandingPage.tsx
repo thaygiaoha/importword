@@ -28,6 +28,15 @@ const LandingPage: React.FC<LandingPageProps> = ({
 }) => {
   // --- GIỮ NGUYÊN TOÀN BỘ LOGIC DỮ LIỆU CỦA THẦY ---
   const REDIRECT_LINKS: Record<string, string> = { "default": "https://www.facebook.com/hoctoanthayha.bg" };
+  
+
+  const [minSubmitTime, setMinSubmitTime] = useState(0);
+  const [maxTabSwitches, setMaxTabSwitches] = useState(3);
+  const [deadline, setDeadline] = useState("");
+  const [scoreMCQ, setScoreMCQ] = useState(0.25);
+  const [scoreTF, setScoreTF] = useState(1.0);
+  const [scoreSA, setScoreSA] = useState(0.5);
+  
   const [showAppList, setShowAppList] = useState(false);
   const [isOtherBank, setIsOtherBank] = useState(false);
   const [quizMode, setQuizMode] = useState<'free' | 'gift' | null>(null);
@@ -503,18 +512,79 @@ const handleRedirect = () => {
   
   setShowSubjectModal(false);
 };
+  const handleFinishExam = async (resultData) => {
+  // resultData chứa { tongdiem, time, timestamp, details } truyền từ ExamRoom sang
+  setExamStarted(false); 
+
+  const currentIDGV = studentInfo.idgv.toString().trim();
+  const targetUrl = API_ROUTING[currentIDGV];
+
+  try {
+    const response = await fetch(targetUrl, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain" },
+      body: JSON.stringify({
+        action: "submitExam", // Hành động ghi điểm
+        sbd: studentInfo.sbd,
+        examCode: studentInfo.examCode,
+        idgv: currentIDGV,
+        name: studentInfo.name,
+        ...resultData // Đẩy toàn bộ tongdiem, time... vào body
+      }),
+    });
+
+    const finalRes = await response.json();
+    if (finalRes.status === "success") {
+      alert("✅ Đã lưu kết quả vào hệ thống!");
+    }
+  } catch (error) {
+    console.error("Lỗi gửi điểm:", error);
+    alert("❌ Lỗi kết nối, không thể lưu điểm. Hãy chụp màn hình kết quả!");
+  }
+};
 
   return (
     <>
     {/* TRƯỜNG HỢP 1: ĐANG THI (Hiện phòng thi, ẩn toàn bộ Landing) */}
     {examStarted ? (
       <div className="animate-in slide-in-from-bottom duration-500">
-       <ExamRoom 
+      <ExamRoom 
     questions={questions} 
-    studentInfo={studentInfo} // Bây giờ studentInfo đã có idgv, sbd, examCode và name
-    duration={duration}      // Truyền biến duration đã lấy từ GAS (không phải examDuration)
-    onFinish={() => setExamStarted(false)} 
+    studentInfo={studentInfo}
+    duration={duration} 
+    minSubmitTime={minSubmitTime}
+    maxTabSwitches={maxTabSwitches}
+    deadline={deadline}
+    scoreMCQ={scoreMCQ}
+    scoreTF={scoreTF}
+    scoreSA={scoreSA}
+    onFinish={async (resultData) => {
+      // 1. Tắt phòng thi
+      setExamStarted(false);
+
+      // 2. Gửi dữ liệu về GAS để ghi vào sheet
+      const targetUrl = API_ROUTING[studentInfo.idgv];
+      try {
+        await fetch(targetUrl, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain" },
+          body: JSON.stringify({
+            action: "submitExam",
+            sbd: studentInfo.sbd,
+            examCode: studentInfo.examCode,
+            idgv: studentInfo.idgv,
+            name: studentInfo.name,
+            ...resultData // Chứa tongdiem, time, timestamp, details
+          }),
+        });
+        alert("Bài thi đã được nộp và lưu điểm thành công!");
+      } catch (e) {
+        console.error("Lỗi nộp bài:", e);
+        alert("Lỗi lưu điểm, bạn hãy báo giáo viên!");
+      }
+    }} 
   />
+)}
       </div>
     ) : (
     <div className="min-h-screen bg-slate-50 font-sans pb-12 overflow-x-hidden">
