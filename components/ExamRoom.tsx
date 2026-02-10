@@ -191,13 +191,15 @@ useEffect(() => {
 }, [tabSwitches, maxTabSwitches, hasAutoSubmitted, handleFinish]);
 
 
- useEffect(() => {
-  if (deadline && new Date() > deadline) { 
-    alert("Hết hạn!"); 
-    onFinish(); 
+useEffect(() => {
+  if (deadline) {
+    const deadlineDate = new Date(deadline + "T23:59:59");
+    if (new Date() > deadlineDate) {
+      alert("Đề thi này đã đóng rồi bạn nhé! Hãy tìm đề khác để thi");
+      onFinish();
+    }
   }
 }, [deadline, onFinish]);
-
   useEffect(() => {
     const timer = setInterval(() => {
       setTimeLeft(v => { if (v <= 1) { clearInterval(timer); handleFinish(true); return 0; } return v - 1; });
