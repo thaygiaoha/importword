@@ -38,11 +38,11 @@ const formatContent = (text: any) => {
 };
 
 export default function ExamRoom({ questions, studentInfo, settings, onFinish }: ExamRoomProps) {
+ // Lấy dữ liệu gọn từ settings (ưu tiên tên biến từ trang nhập của thầy)
   const duration = Number(settings?.duration) || 40;
-  const minSubmit = Number(settings?.minSubmitTime) || 0;
-  const maxTabs = Number(studentInfo?.limittab) || Number(settings?.limitTab) || 3;
-  const closeDate = parseDate(settings?.closeTime);
-
+  const minSubmit = Number(settings?.mintime) || Number(settings?.minSubmitTime) || 0;
+  const maxTabs = Number(studentInfo?.limittab) || Number(settings?.tab) || Number(settings?.limitTab) || 3;
+  const closeDate = parseDate(settings?.close || settings?.closeTime);
   const [timeLeft, setTimeLeft] = useState(duration * 60);
   const [answers, setAnswers] = useState<Record<number, any>>({});
   const [tabCount, setTabCount] = useState(0);
