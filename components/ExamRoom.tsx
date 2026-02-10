@@ -11,22 +11,16 @@ interface Question {
 
 interface ExamRoomProps {
   questions: Question[];
-  studentInfo: {
-    idgv: string;
-    sbd: string;
-    name: string;
-    className: string;
-    examCode: string;
+  studentInfo: any;
+  duration?: number; // Cho phép nhận trực tiếp hoặc qua settings
+  settings?: {
+    duration: number;
+    minSubmitTime: number;
+    limitTab: number;
+    closeTime: string;
+    antiLag: boolean;
   };
-  // Các thông số lấy từ sheet (exams)
-  settings: {
-    duration: number;        // Thời gian làm bài (phút)
-    minSubmitTime: number;   // Thời gian tối thiểu để nộp bài (phút)
-    limitTab: number;        // Số lần chuyển tab tối đa
-    closeTime: string;       // Thời gian đóng đề (Y-m-d H:i:s)
-    antiLag: boolean;        // Chế độ chống lag
-  };
-  onFinish: (finalAnswers: any, tabViolations: number) => void;
+  onFinish: (answers: any, violations: number) => void;
 }
 
 const formatContent = (text: any) => {
@@ -36,43 +30,47 @@ const formatContent = (text: any) => {
   return clean.replace(/\\\\/g, "\\").replace(/\\left\s+([\(\[\{])/g, "\\left$1").replace(/\\right\s+([\)\}\]])/g, "\\right$1");
 };
 
-export default function ExamRoom({ questions, studentInfo, settings, onFinish }: ExamRoomProps) {
-  const [timeLeft, setTimeLeft] = useState(settings.duration * 60);
+export default function ExamRoom({ questions, studentInfo, duration, settings, onFinish }: ExamRoomProps) {
+  // Ưu tiên lấy từ settings, nếu không có thì lấy từ duration, cuối cùng là mặc định 40p
+  const finalDuration = settings?.duration || duration || 40;
+  const minSubmit = settings?.minSubmitTime || 0;
+  const maxTabs = settings?.limitTab || 999;
+  const isAntiLag = settings?.antiLag || false;
+
+  const [timeLeft, setTimeLeft] = useState(finalDuration * 60);
   const [answers, setAnswers] = useState<Record<number, any>>({});
   const [tabCount, setTabCount] = useState(0);
-  const [isSubmitDisabled, setIsSubmitDisabled] = useState(true);
-  const startTimeRef = useRef(new Date());
+  const [isSubmitDisabled, setIsSubmitDisabled] = useState(minSubmit > 0);
 
-  // 1. Quản lý MathJax & Chống lag
+  // 1. MathJax & Chống lag
   useEffect(() => {
     if (typeof window !== 'undefined' && (window as any).MathJax?.typesetPromise) {
-      // Nếu bật antiLag, ta có thể delay việc render hoặc tối giản hiệu ứng
       const timeout = setTimeout(() => {
-        (window as any).MathJax.typesetPromise().catch((err: any) => console.log(err));
-      }, settings.antiLag ? 500 : 0);
+        (window as any).MathJax.typesetPromise().catch(() => {});
+      }, isAntiLag ? 600 : 100);
       return () => clearTimeout(timeout);
     }
-  }, [questions, answers, settings.antiLag]);
+  }, [questions, answers, isAntiLag]);
 
-  // 2. Timer & Kiểm tra thời gian nộp bài / Đóng đề
+  // 2. Timer & Logic nộp bài
   useEffect(() => {
     const timer = setInterval(() => {
-      const now = new Date();
-      
-      // Kiểm tra thời gian đóng đề
-      if (settings.closeTime && now > new Date(settings.closeTime)) {
-        clearInterval(timer);
-        alert("Đã hết giờ đóng đề, hệ thống tự động nộp bài!");
-        handleFinish();
+      // Kiểm tra thời gian tối thiểu nộp bài
+      const elapsedSec = (finalDuration * 60) - (timeLeft - 1);
+      if (elapsedSec >= minSubmit * 60) {
+        setIsSubmitDisabled(false);
+      }
+
+      // Kiểm tra đóng đề (nếu có settings.closeTime)
+      if (settings?.closeTime) {
+        if (new Date() > new Date(settings.closeTime)) {
+          clearInterval(timer);
+          alert("Hết giờ đóng đề!");
+          handleFinish();
+        }
       }
 
       setTimeLeft((prev) => {
-        // Kiểm tra thời gian tối thiểu nộp bài
-        const elapsedMinutes = (settings.duration * 60 - prev) / 60;
-        if (elapsedMinutes >= settings.minSubmitTime) {
-          setIsSubmitDisabled(false);
-        }
-
         if (prev <= 1) {
           clearInterval(timer);
           handleFinish();
@@ -82,122 +80,123 @@ export default function ExamRoom({ questions, studentInfo, settings, onFinish }:
       });
     }, 1000);
     return () => clearInterval(timer);
-  }, [settings]);
+  }, [timeLeft]);
 
-  // 3. Chống gian lận: Theo dõi số lần chuyển Tab
+  // 3. Theo dõi chuyển Tab
   useEffect(() => {
-    const handleVisibilityChange = () => {
+    const handleVisibility = () => {
       if (document.hidden) {
         setTabCount(prev => {
           const newCount = prev + 1;
-          if (newCount >= settings.limitTab) {
-            alert(`Bạn đã chuyển tab ${newCount} lần. Vi phạm quy chế và bài sẽ bị nộp tự động!`);
+          if (newCount >= maxTabs) {
+            alert("Vi phạm số lần chuyển Tab. Hệ thống tự động nộp bài!");
             handleFinish(newCount);
           } else {
-            alert(`Cảnh báo: Bạn không được rời khỏi trang làm bài! (Lần ${newCount}/${settings.limitTab})`);
+            alert(`Cảnh báo chuyển Tab (${newCount}/${maxTabs})`);
           }
           return newCount;
         });
       }
     };
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-    return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
-  }, [settings.limitTab]);
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => document.removeEventListener("visibilitychange", handleVisibility);
+  }, [maxTabs]);
 
   const handleAnswerChange = (idx: number, value: any, subIndex?: number) => {
     setAnswers(prev => {
-      const newAnswers = { ...prev };
+      const news = { ...prev };
       if (typeof subIndex === 'number') {
-        const currentArr = Array.isArray(prev[idx]) ? [...prev[idx]] : [null, null, null, null];
-        currentArr[subIndex] = value;
-        newAnswers[idx] = currentArr;
+        const arr = Array.isArray(prev[idx]) ? [...prev[idx]] : [null, null, null, null];
+        arr[subIndex] = value;
+        news[idx] = arr;
       } else {
-        newAnswers[idx] = value;
+        news[idx] = value;
       }
-      return newAnswers;
+      return news;
     });
   };
 
-  const handleFinish = (finalTabCount?: number) => {
-    onFinish(answers, finalTabCount ?? tabCount);
+  const handleFinish = (finalTabs?: number) => {
+    onFinish(answers, finalTabs ?? tabCount);
   };
 
-  const formatTime = (seconds: number) => {
-    const m = Math.floor(seconds / 60);
-    const s = seconds % 60;
-    return `${m}:${s < 10 ? '0' : ''}${s}`;
+  const formatTime = (s: number) => {
+    const min = Math.floor(s / 60);
+    const sec = s % 60;
+    return `${min}:${sec < 10 ? '0' : ''}${sec}`;
   };
+
+  if (!questions || questions.length === 0) return <div className="p-10 text-white">Đang tải...</div>;
 
   return (
-    <div className={`min-h-screen bg-slate-950 text-slate-200 p-4 pb-40 ${settings.antiLag ? 'transition-none' : 'transition-all'}`}>
+    <div className={`min-h-screen bg-slate-950 text-slate-200 p-4 pb-40 ${isAntiLag ? '' : 'transition-all'}`}>
       {/* HEADER */}
       <div className="sticky top-0 z-50 bg-slate-900/95 backdrop-blur-md border-b-2 border-emerald-500/40 p-4 mb-8 flex justify-between items-center rounded-3xl shadow-2xl">
         <div className="flex flex-col">
           <div className="flex items-center gap-3">
             <span className="bg-emerald-500/20 text-emerald-400 font-black text-xs px-2 py-1 rounded-lg border border-emerald-500/30">SBD: {studentInfo?.sbd}</span>
-            <span className="font-bold text-white">{studentInfo?.name}</span>
+            <span className="font-bold text-white uppercase">{studentInfo?.name}</span>
           </div>
-          <div className="text-[10px] text-red-400 mt-1 uppercase font-bold tracking-tighter">
-            Số lần rời tab: {tabCount} / {settings.limitTab}
-          </div>
+          <div className="text-[9px] text-red-400 mt-1 font-bold">LỖI TAB: {tabCount}/{maxTabs}</div>
         </div>
         
-        <div className="flex items-center gap-4">
-          <div className="text-2xl font-mono font-black text-white bg-slate-800 px-5 py-2 rounded-2xl border border-slate-700 shadow-inner">
-            {formatTime(timeLeft)}
-          </div>
+        <div className="flex items-center gap-3">
+          <div className="text-xl font-mono font-black text-white bg-slate-800 px-4 py-2 rounded-xl border border-slate-700">{formatTime(timeLeft)}</div>
           <button 
             disabled={isSubmitDisabled}
             onClick={() => handleFinish()} 
-            className={`px-6 py-3 rounded-2xl font-black transition-all ${isSubmitDisabled ? 'bg-slate-700 text-slate-500 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg'}`}
+            className={`px-6 py-2 rounded-xl font-black transition-all ${isSubmitDisabled ? 'bg-slate-800 text-slate-600' : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-900/40'}`}
           >
-            {isSubmitDisabled ? `Mở nộp sau ${Math.ceil(settings.minSubmitTime - (settings.duration * 60 - timeLeft)/60)}p` : 'NỘP BÀI'}
+            {isSubmitDisabled ? 'KHÓA' : 'NỘP BÀI'}
           </button>
         </div>
       </div>
 
       <div className="max-w-4xl mx-auto">
         {questions.map((q, idx) => (
-          <div key={idx} className="bg-slate-900 border-2 border-slate-800 p-6 md:p-10 rounded-[2.5rem] shadow-xl mb-12">
-            <div className="flex items-center gap-4 mb-8">
-              <span className="bg-emerald-600 text-white w-10 h-10 flex items-center justify-center rounded-xl font-black">{idx + 1}</span>
-              <span className="text-slate-400 font-black uppercase text-[10px] tracking-widest bg-slate-800 px-4 py-1.5 rounded-full border border-slate-700">
+          <div key={idx} className="bg-slate-900 border-2 border-slate-800 p-6 md:p-10 rounded-[2rem] shadow-xl mb-8">
+            <div className="flex items-center gap-4 mb-6">
+              <span className="bg-emerald-600 text-white w-8 h-8 flex items-center justify-center rounded-lg font-black">{idx + 1}</span>
+              <span className="text-slate-500 font-black text-[10px] tracking-widest bg-slate-800 px-3 py-1 rounded-full border border-slate-700">
                 {q.type === 'mcq' ? 'PHẦN I' : q.type === 'true-false' ? 'PHẦN II' : 'PHẦN III'}
               </span>
             </div>
 
-            <div className="text-xl md:text-2xl leading-relaxed mb-10 font-medium text-slate-100" dangerouslySetInnerHTML={{ __html: formatContent(q.question) }} />
+            <div className="text-lg md:text-xl leading-relaxed mb-8 font-medium text-slate-100" dangerouslySetInnerHTML={{ __html: formatContent(q.question) }} />
 
-            {/* PHẦN I: MCQ */}
+            {/* PHẦN I */}
             {q.type === 'mcq' && q.o && (
-              <div className="grid grid-cols-1 gap-4">
+              <div className="grid grid-cols-1 gap-3">
                 {q.o.map((opt, i) => {
                   const label = String.fromCharCode(65 + i);
                   const isSelected = answers[idx] === label;
                   return (
-                    <button key={i} onClick={() => handleAnswerChange(idx, label)} className={`p-5 rounded-3xl text-left border-2 flex items-center gap-6 ${isSelected ? 'border-emerald-500 bg-emerald-500/10' : 'border-slate-800 bg-slate-800/40 hover:border-slate-700'}`}>
-                      <span className={`w-12 h-12 flex-shrink-0 flex items-center justify-center rounded-2xl font-black ${isSelected ? 'bg-emerald-500 text-white' : 'bg-slate-700 text-slate-400'}`}>{label}</span>
-                      <div className="text-lg font-medium text-slate-200" dangerouslySetInnerHTML={{ __html: formatContent(opt) }} />
+                    <button key={i} onClick={() => handleAnswerChange(idx, label)} className={`p-4 rounded-2xl text-left border-2 flex items-center gap-4 transition-all ${isSelected ? 'border-emerald-500 bg-emerald-500/10' : 'border-slate-800 bg-slate-800/40 hover:border-slate-700'}`}>
+                      <span className={`w-10 h-10 flex-shrink-0 flex items-center justify-center rounded-xl font-black ${isSelected ? 'bg-emerald-500 text-white' : 'bg-slate-700 text-slate-400'}`}>{label}</span>
+                      <div className="text-md font-medium text-slate-200" dangerouslySetInnerHTML={{ __html: formatContent(opt) }} />
                     </button>
                   );
                 })}
               </div>
             )}
 
-            {/* PHẦN II: TRUE-FALSE */}
+            {/* PHẦN II */}
             {q.type === 'true-false' && q.s && (
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {q.s.map((sub, sIdx) => (
-                  <div key={sIdx} className="flex items-center justify-between p-4 border border-slate-800 rounded-[1.5rem] bg-slate-800/20">
-                    <div className="flex-1 pr-6 text-slate-200 text-lg">
-                      <span className="font-bold text-emerald-500 mr-3">{String.fromCharCode(97 + sIdx)}.</span>
+                  <div key={sIdx} className="flex items-center justify-between p-4 border border-slate-800 rounded-2xl bg-slate-800/20">
+                    <div className="flex-1 pr-4 text-slate-200 text-md">
+                      <span className="font-bold text-emerald-500 mr-2">{String.fromCharCode(97 + sIdx)}.</span>
                       <span dangerouslySetInnerHTML={{ __html: formatContent(sub.text) }} />
                     </div>
                     <div className="flex gap-2 shrink-0">
-                      {[{l:'Đúng', v:true, c:'bg-blue-600'}, {l:'Sai', v:false, c:'bg-red-600'}].map((btn) => {
-                        const isSelected = Array.isArray(answers[idx]) && answers[idx][sIdx] === btn.v;
+                      {[
+                        {l:'Đúng', v:true, c:'bg-blue-600 border-blue-500'}, 
+                        {l:'Sai', v:false, c:'bg-red-600 border-red-500'}
+                      ].map((btn) => {
+                        const isSel = Array.isArray(answers[idx]) && answers[idx][sIdx] === btn.v;
                         return (
-                          <button key={btn.l} onClick={() => handleAnswerChange(idx, btn.v, sIdx)} className={`w-16 py-2 rounded-xl font-bold border-2 text-sm ${isSelected ? `${btn.c} border-transparent text-white` : 'bg-slate-700 border-slate-600 text-slate-400'}`}>
+                          <button key={btn.l} onClick={() => handleAnswerChange(idx, btn.v, sIdx)} className={`w-14 py-1.5 rounded-lg font-bold border-2 text-xs transition-all ${isSel ? `${btn.c} text-white` : 'bg-slate-700 border-slate-600 text-slate-400'}`}>
                             {btn.l}
                           </button>
                         );
@@ -208,13 +207,13 @@ export default function ExamRoom({ questions, studentInfo, settings, onFinish }:
               </div>
             )}
 
-            {/* PHẦN III: SHORT ANSWER */}
+            {/* PHẦN III */}
             {(q.type === 'short-answer' || q.type === 'sa') && (
-              <div className="mt-4 p-6 bg-slate-800/30 rounded-[2rem] border-2 border-dashed border-slate-700 flex flex-col md:flex-row md:items-center gap-4">
-                <span className="font-black text-emerald-400">ĐÁP ÁN:</span>
+              <div className="mt-2 p-4 bg-slate-800/30 rounded-2xl border-2 border-dashed border-slate-700 flex flex-col md:flex-row md:items-center gap-4">
+                <span className="font-black text-emerald-400 text-sm">ĐÁP ÁN:</span>
                 <input
                   type="text"
-                  className="flex-1 bg-slate-950 border-2 border-slate-700 p-4 rounded-2xl text-white font-bold text-xl focus:border-emerald-500 outline-none"
+                  className="flex-1 bg-slate-950 border-2 border-slate-700 p-3 rounded-xl text-white font-bold focus:border-emerald-500 outline-none"
                   placeholder="Nhập kết quả..."
                   value={answers[idx] || ''}
                   onChange={(e) => handleAnswerChange(idx, e.target.value)}
