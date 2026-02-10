@@ -114,7 +114,7 @@ export default function ExamRoom({
   onFinish 
 }: ExamRoomProps) {  
   const duration = (settings?.duration || 60)*60;
-  const minSubmitTime = (settings?.mintime || 10) * 60;
+  const minSubmitTime = settings?.mintime || 10;
   const maxTabSwitches = settings?.tab || 3;
   const deadline = settings?.close ? new Date(settings.close) : null;
   
