@@ -16,7 +16,7 @@ import { fetchQuestionsBank } from '@/questions';
 import { fetchQuestionsBankW } from '@/questionsWord';
 const App: React.FC = () => {
   // 1. Quản lý các màn hình (Views)
-  const [currentView, setCurrentView] = useState<'landing' | 'portal' | 'quiz' | 'result' | 'admin' | 'teacher_task'>('landing');
+ const [currentView, setCurrentView] = useState<'landing' | 'portal' | 'quiz' | 'result' | 'admin' | 'teacher_task' | 'exam'>('landing');
   
   // 2. Quản lý chế độ (Mode) cho Admin hoặc Giáo viên
   const [adminMode, setAdminMode] = useState<'matran' | 'cauhoi' | 'word'>('matran'); 
@@ -103,6 +103,40 @@ const App: React.FC = () => {
     setActiveStudent(null);
     setExamResult(null);
   };
+  // Thi từ word
+  const handleFinishWord = async (result: any) => {
+  // 1. result ở đây là { score, timeUsed } nhận từ ExamRoom gửi lên
+  setExamResult(result);
+  setCurrentView('result');
+
+  // 2. Routing: Dùng studentInfo.idgv (ID Giáo viên) để tìm link Script
+  // Lưu ý: Trong ExamRoomProps thầy đặt là idgv, nên ở đây ta dùng đúng tên đó
+  const targetUrl = (activeStudent && API_ROUTING[activeStudent.idgv]) 
+                    ? API_ROUTING[activeStudent.idgv] 
+                    : DEFAULT_API_URL;
+
+  // 3. Đóng gói 7 cột CHUẨN ĐÉT cho sheet(ketqua)
+  const payload = {
+    timestamp: new Date().toLocaleString('vi-VN'),    // Cột A
+    exams: activeStudent?.examCode || "KHONG_MA",    // Cột B: Mã đề biến đổi (601, 1201...)
+    sbd: activeStudent?.sbd,                         // Cột C
+    name: activeStudent?.name,                       // Cột D
+    class: activeStudent?.className,                  // Cột E (Khớp với className trong props)
+    tongdiem: result.score.toString().replace('.', ','), // Cột F
+    time: result.timeUsed                             // Cột G
+  };
+
+  try {
+    await fetch(targetUrl, { 
+      method: 'POST', 
+      mode: 'no-cors', 
+      body: JSON.stringify(payload) 
+    });
+    console.log("🚀 Đã nộp bài về Sheet của IDGV:", activeStudent?.idgv);
+  } catch (e) { 
+    console.error("❌ Lỗi nộp bài:", e); 
+  }
+};
 
   return (
     <AppProvider>
@@ -167,7 +201,26 @@ const App: React.FC = () => {
                 isQuizMode={activeExam.id === 'QUIZ'} 
               />
             )}
-
+            {/* 5. Giao diện làm bài CHÍNH THỨC (Dành cho học sinh làm đề Word) */}
+{currentView === 'exam' && activeExam && activeStudent && (
+  <ExamRoom 
+    questions={questions}
+    studentInfo={{
+      idgv: activeStudent.idgv, 
+      sbd: activeStudent.sbd,
+      name: activeStudent.name,
+      className: activeStudent.class,
+      examCode: activeExam.code // Mã đề biến đổi 601, 1001...
+    }}
+    duration={activeExam.fullTime}
+    minSubmitTime={activeExam.miniTime}
+    maxTabSwitches={activeExam.tabLimit}
+    scoreMCQ={activeExam.scoreMCQ}
+    scoreTF={activeExam.scoreTF}
+    scoreSA={activeExam.scoreSA}
+    onFinish={handleFinishWord} // Nộp về sheet(ketqua) 7 cột
+  />
+)}
             {/* 6. Kết quả bài thi */}
             {currentView === 'result' && examResult && (
               <ResultView result={examResult} questions={questions} onBack={goHome} />
@@ -205,44 +258,6 @@ const AuthModal = ({ onClose, onSuccess }: { onClose: () => void, onSuccess: (u:
       setLoading(false);
     }
   };
-  // HÀM MỚI: Xử lý nộp bài cho đề thi Import từ Word
-  const handleFinishWord = async (result: any) => {
-    // 1. Chuyển màn hình sang xem kết quả
-    setExamResult(result);
-    setCurrentView('result');
-
-    // 2. Lấy URL từ hệ thống Routing dựa trên mã đề lẻ (601.1, 1201...)
-    const targetUrl = (activeStudent && API_ROUTING[activeStudent.idnumber]) 
-                      ? API_ROUTING[activeStudent.idnumber] 
-                      : DEFAULT_API_URL;
-
-    // 3. Đóng gói 7 cột chuẩn cho sheet(ketqua)
-    const payload = {
-      timestamp: new Date().toLocaleString('vi-VN'), // Cột A: Thời gian
-      exams: activeExam?.code || "WORD_DE",  // Cột B: Mã đề biến đổi (ID 601, 1001, 1201...)
-      sbd: activeStudent?.sbd,                      // Cột C: SBD
-      name: activeStudent?.name,                    // Cột D: Họ tên
-      class: activeStudent?.class,                  // Cột E: Lớp
-      // Cột F: Tổng điểm (đổi sang dấu phẩy để thầy dễ tính toán trong Excel/Sheets)
-      tongdiem: result.score.toString().replace('.', ','), 
-      time: result.timeUsed                          // Cột G: Thời gian làm (giây)
-    };
-
-    // 4. Bắn dữ liệu về Sheet
-    try {
-      await fetch(targetUrl, { 
-        method: 'POST', 
-        mode: 'no-cors', 
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload) 
-      });
-      console.log("🚀 [Word] Đã gửi kết quả mã đề:", payload.exams);
-    } catch (e) { 
-      console.error("❌ [Word] Lỗi nộp bài:", e); 
-    }
-  };
-
-
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm">
       <div className="bg-white w-full max-w-md rounded-[2.5rem] overflow-hidden shadow-2xl relative animate-fade-in border border-slate-100">
