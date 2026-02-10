@@ -569,16 +569,16 @@ const handleRedirect = () => {
   if (!targetUrl) return;
 
   // Tạo một payload tường minh để GAS không bị nhận nhầm
-  const payload = {
-    action: "submitExam",
-    timestamp: resultData.timestamp, // Cột A
-    examCode: studentInfo.examCode,   // Cột B
-    sbd: studentInfo.sbd,            // Cột C
-    name: studentInfo.name,          // Cột D
-    className: studentInfo.className,// Cột E
-    tongdiem: resultData.tongdiem,   // Cột F
-    time: resultData.time,           // Cột G
-    details: JSON.stringify(resultData.details) // Cột H
+ const payload = {
+  action: "submitExam",
+  timestamp: new Date().toLocaleString('vi-VN'),
+  exams: studentInfo.examCode, // Đổi tên key cho khớp với cột 'exams' trên sheet
+  sbd: studentInfo.sbd,
+  name: studentInfo.name,
+  class: studentInfo.className, // Khớp với cột 'class'
+  tongdiem: resultData.totalScore,
+  time: resultData.time,
+  details: JSON.stringify(resultData.details)
   };
 
   try {
