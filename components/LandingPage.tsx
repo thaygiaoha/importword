@@ -202,7 +202,8 @@ const handleStudentSubmit = async (e) => {
       // Cập nhật lại object studentInfo để có đủ tên (hiển thị trong ExamRoom)
       setStudentInfo({
         ...studentInfo,
-        name: nameFromGas
+        name: nameFromGas,
+        className: d.studentClass || "N/A"
       });
 
       setExamStarted(true); 
