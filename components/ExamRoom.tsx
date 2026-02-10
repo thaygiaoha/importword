@@ -17,16 +17,23 @@ interface ExamRoomProps {
 // Hàm chuyển đổi dd/mm/yyyy thành đối tượng Date để so sánh
 const parseDate = (dateStr: string) => {
   if (!dateStr || typeof dateStr !== 'string') return null;
-  // Tách chuỗi theo dấu "/"
-  const parts = dateStr.split('/');
-  if (parts.length !== 3) return null;
+  
+  let day, month, year;
+  
+  if (dateStr.includes('-')) {
+    // Định dạng yyyy-mm-dd (từ input date)
+    const parts = dateStr.split('-');
+    year = parseInt(parts[0], 10);
+    month = parseInt(parts[1], 10);
+    day = parseInt(parts[2], 10);
+  } else {
+    // Định dạng dd/mm/yyyy (từ sheet thủ công)
+    const parts = dateStr.split('/');
+    day = parseInt(parts[0], 10);
+    month = parseInt(parts[1], 10);
+    year = parseInt(parts[2], 10);
+  }
 
-  const day = parseInt(parts[0], 10);
-  const month = parseInt(parts[1], 10);
-  const year = parseInt(parts[2], 10);
-
-  // Tạo đối tượng Date (tháng trong JS từ 0-11 nên phải -1)
-  // Đặt mặc định khóa vào cuối ngày 23:59:59
   return new Date(year, month - 1, day, 23, 59, 59);
 };
 
