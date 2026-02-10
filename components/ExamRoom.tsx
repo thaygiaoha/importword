@@ -207,7 +207,7 @@ useEffect(() => {
     <>
     {tabWarning !== null && tabWarning < maxTabSwitches && (
   <div className="max-w-4xl mx-auto mb-6">
-    <div className="bg-red-600/20 border-2 border-red-500 text-green-200 px-6 py-4 rounded-2xl font-bold text-center animate-pulse">
+    <div className="bg-blue-600/20 border-2 border-red-500 text-red-200 px-6 py-4 rounded-2xl font-bold text-center animate-pulse">
       ⚠️ Cảnh báo chuyển tab ({tabWarning}/{maxTabSwitches})
     </div>
   </div>
