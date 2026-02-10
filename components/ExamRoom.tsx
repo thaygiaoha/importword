@@ -212,6 +212,28 @@ useEffect(() => {
   }, [handleFinish]);
 
   const handleSelect = useCallback((idx: number, val: any) => setAnswers(p => ({ ...p, [idx]: val })), []);
+  
+  const handleFinalSubmit = () => {
+    const timeWorkedSeconds = (Number(duration) * 60) - timeLeft;
+    const minTimeSeconds = (Number(minSubmitTime) || 0) * 60;
+
+    if (timeWorkedSeconds < minTimeSeconds) {
+      alert(`⚠️ Bạn chưa thể nộp bài! Cần làm ít nhất ${minSubmitTime} phút.`);
+      return;
+    }
+
+    if (window.confirm("Bạn có chắc chắn muốn nộp bài không?")) {
+      // Giả sử hàm scoreWord đã được import hoặc khai báo
+      // @ts-ignore
+      const resultData = scoreWord(questions, answers, scoreMCQ, scoreTF, scoreSA);
+
+      onFinish({
+        ...resultData,
+        time: timeWorkedSeconds,
+        timestamp: new Date().toLocaleString('vi-VN')
+      });
+    }
+  };
 
   return (  
    <div className="flex flex-col gap-4 p-4 bg-slate-900 border-b border-slate-800 sticky top-0 z-50">
