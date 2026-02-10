@@ -562,35 +562,30 @@ const handleRedirect = () => {
       scoreSA={scoreSA}
       onFinish={async (resultData) => {
   setExamStarted(false);
-  
-  const currentIDGV = studentInfo.idgv?.toString().trim();
-  const targetUrl = API_ROUTING[currentIDGV];
+  const targetUrl = API_ROUTING[studentInfo.idgv];
 
-  if (!targetUrl) return;
-
-  // Tạo một payload tường minh để GAS không bị nhận nhầm
- const payload = {
-  action: "submitExam",
-  timestamp: new Date().toLocaleString('vi-VN'),
-  exams: studentInfo.examCode, // Đổi tên key cho khớp với cột 'exams' trên sheet
-  sbd: studentInfo.sbd,
-  name: studentInfo.name,
-  class: studentInfo.className, // Khớp với cột 'class'
-  tongdiem: resultData.totalScore,
-  time: resultData.time,
-  details: JSON.stringify(resultData.details)
+  // 1. Đóng gói dữ liệu ĐÚNG VÀ ĐỦ các cột trên Sheet
+  const payload = {
+    action: "submitExam",
+    timestamp: new Date().toLocaleString('vi-VN'), // Cột A
+    exams: studentInfo.examCode || "N/A",          // Cột B (Phải có để không lệch cột)
+    sbd: studentInfo.sbd || "0000",                // Cột C
+    name: studentInfo.name || "N/A",               // Cột D
+    class: studentInfo.className || "N/A",         // Cột E (Phải có để không lệch cột)
+    tongdiem: resultData.totalScore.toString().replace('.', ','), // Cột F
+    time: resultData.time,                         // Cột G
+    details: JSON.stringify(resultData.details)    // Cột H
   };
 
   try {
     await fetch(targetUrl, {
       method: "POST",
       headers: { "Content-Type": "text/plain" },
-      body: JSON.stringify(payload), // Gửi payload đã đóng gói
+      body: JSON.stringify(payload),
     });
-    alert(`Nộp bài thành công! Điểm của bạn là: ${resultData.tongdiem}`);
+    alert(`Nộp bài xong! Điểm: ${resultData.totalScore}`);
   } catch (e) {
-    console.error("Lỗi nộp bài:", e);
-    alert("Có lỗi khi lưu điểm, vui lòng chụp ảnh màn hình!");
+    alert("Lỗi kết nối server!");
   }
 }}
     />
