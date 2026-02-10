@@ -57,6 +57,7 @@ const LandingPage: React.FC<LandingPageProps> = ({
   const [searchId, setSearchId] = useState('');
   const [foundLG, setFoundLG] = useState(null);
   const [showModal, setShowModal] = useState(false); 
+  const [studentSettings, setStudentSettings] = useState(null);
 
  const [loadingLG, setLoadingLG] = useState(false); // Để hiện trạng thái đang tìm
 
@@ -512,6 +513,7 @@ const handleRedirect = () => {
        <ExamRoom 
     questions={questions} 
     studentInfo={studentInfo} // Bây giờ studentInfo đã có idgv, sbd, examCode và name
+    settings = {studentSettings}
     duration={duration}      // Truyền biến duration đã lấy từ GAS (không phải examDuration)
     onFinish={() => setExamStarted(false)} 
   />
