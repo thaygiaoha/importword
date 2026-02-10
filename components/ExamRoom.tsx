@@ -139,6 +139,11 @@ export default function ExamRoom({ questions, studentInfo, settings, onFinish }:
   // Gửi kết quả
   onFinish(answers, finalTabs ?? tabCount);
 };
+  const formatTime = (s: number) => {
+  const min = Math.floor(s / 60);
+  const sec = s % 60;
+  return `${min}:${sec < 10 ? '0' : ''}${sec}`;
+};
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-200 p-4 pb-40">
