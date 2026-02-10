@@ -75,12 +75,13 @@ export default function ExamRoom({
   const tabCountRef = useRef(0);
   useEffect(() => { answersRef.current = answers; }, [answers]);
 
-  // --- MATHJAX LOGIC (BỔ SUNG) ---
-  const triggerMathJax = useCallback(() => {
+   // 3. RENDER MATHJAX (Để công thức không bị lỗi "trơ" mã LaTeX)
+  useEffect(() => {
     if (typeof window !== 'undefined' && (window as any).MathJax?.typesetPromise) {
-      (window as any).MathJax.typesetPromise().catch((err: any) => console.log('MathJax error:', err));
+      (window as any).MathJax.typesetPromise().catch((err: any) => console.log(err));
     }
-  }, []);
+  }, [questions, answers]);
+
 
   useEffect(() => {
     triggerMathJax();
