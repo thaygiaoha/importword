@@ -53,6 +53,12 @@ export default function ExamRoom({
   const [tabCount, setTabCount] = useState(0);
   const [canSubmit, setCanSubmit] = useState(false);
   const finishedRef = useRef(false);
+// 3. Render công thức Toán
+  useEffect(() => {
+    if (typeof window !== 'undefined' && (window as any).MathJax?.typesetPromise) {
+      (window as any).MathJax.typesetPromise().catch(() => {});
+    }
+  }, [questions, answers]);
 
   // ====== KIỂM TRA ĐÓNG ĐỀ NGAY KHI VÀO ======
   useEffect(() => {
