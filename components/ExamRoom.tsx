@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-
+import { scoreWord } from '../scoreWord';
 interface Question {
   id: string;
   type: 'mcq' | 'true-false' | 'sa' | 'short-answer'; 
