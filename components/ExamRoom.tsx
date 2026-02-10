@@ -102,20 +102,25 @@ const parseCloseDate = (s?: string) => {
 };
 
 export default function ExamRoom({ 
-  questions, 
+  questions = [], 
   studentInfo, 
   duration, 
-  minSubmitTime = 50, 
-  maxTabSwitches = 2, 
+  minSubmitTime = 0, // Để mặc định là 0 để test cho dễ
+  maxTabSwitches = 3, 
   deadline = "", 
-  onFinish 
+  scoreMCQ = 0.25, // THÊM DÒNG NÀY
+  scoreTF = 1.0,   // THÊM DÒNG NÀY
+  scoreSA = 0.5,   // THÊM DÒNG NÀY
+  onFinish: (answers: any, violations: number) => void;
 }: ExamRoomProps) {
   const [timeLeft, setTimeLeft] = useState(duration * 60);
   const [answers, setAnswers] = useState<Record<number, any>>({});
   const [startTime] = useState(new Date());
   const [tabSwitches, setTabSwitches] = useState(0);
+  const [tabWarning, setTabWarning] = useState<number | null>(null);
+  const [hasAutoSubmitted, setHasAutoSubmitted] = useState(false);
 
- const handleFinish = useCallback((isAuto = false) => {
+  const handleFinish = useCallback((isAuto = false) => {
     const timeNow = new Date().getTime();
     const startTimeMs = startTime.getTime();
     const timeSpentMin = Math.floor((timeNow - startTimeMs) / 60000);
