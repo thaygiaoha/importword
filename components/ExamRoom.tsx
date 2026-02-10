@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 // Import hàm chấm điểm từ file của thầy
-import { scoreWord } from './scoreWord'; 
+import { scoreWord } from '../scoreWord'; 
 
 interface Question {
   id: string;
