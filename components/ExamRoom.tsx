@@ -60,6 +60,11 @@ export default function ExamRoom({ questions, studentInfo, settings, onFinish }:
   const [tabCount, setTabCount] = useState(0);
   const [isSubmitDisabled, setIsSubmitDisabled] = useState(true);
   const [isClosed, setIsClosed] = useState(false);
+  useEffect(() => {
+    if (settings?.duration) {
+      setTimeLeft(Number(settings.duration) * 60);
+    }
+  }, [settings?.duration]);
 
   useEffect(() => {
     if (typeof window !== 'undefined' && (window as any).MathJax?.typesetPromise) {
