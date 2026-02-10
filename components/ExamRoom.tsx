@@ -107,13 +107,13 @@ const parseCloseDate = (s?: string) => {
 export default function ExamRoom({ 
   questions, 
   studentInfo, 
+  duration, 
   settings,  
   scoreMCQ = 0.25,
   scoreTF = 1.0,
   scoreSA = 0.5,
   onFinish 
 }: ExamRoomProps) {  
-  const duration = (settings?.duration || 60)*60;
   const minSubmitTime = settings?.mintime || 10;
   const maxTabSwitches = settings?.tab || 3;
   const deadline = settings?.close ? new Date(settings.close) : null;
