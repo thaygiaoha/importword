@@ -121,6 +121,9 @@ export default function ExamRoom({
   minSubmitTime = 50, 
   maxTabSwitches = 2, 
   deadline = "", 
+  scoreMCQ = 0.25,
+  scoreTF = 1.0,
+  scoreSA = 0.5,
   onFinish 
 }: ExamRoomProps) {
   const [timeLeft, setTimeLeft] = useState(duration * 60);
