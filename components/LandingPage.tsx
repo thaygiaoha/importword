@@ -561,28 +561,38 @@ const handleRedirect = () => {
       scoreTF={scoreTF}
       scoreSA={scoreSA}
       onFinish={async (resultData) => {
-        setExamStarted(false);
-        const targetUrl = API_ROUTING[studentInfo.idgv];
-        try {
-          await fetch(targetUrl, {
-            method: "POST",
-            headers: { "Content-Type": "text/plain" },
-            body: JSON.stringify({
-              action: "submitExam",
-              sbd: studentInfo.sbd,
-              examCode: studentInfo.examCode,
-              className: studentInfo.className,
-              idgv: studentInfo.idgv,
-              name: studentInfo.name,
-              ...resultData 
-            }),
-          });
-          alert("Bài thi đã được nộp và lưu điểm thành công!");
-        } catch (e) {
-          console.error("Lỗi nộp bài:", e);
-          alert("Lỗi lưu điểm, bạn hãy báo giáo viên!");
-        }
-      }} 
+  setExamStarted(false);
+  
+  const currentIDGV = studentInfo.idgv?.toString().trim();
+  const targetUrl = API_ROUTING[currentIDGV];
+
+  if (!targetUrl) return;
+
+  // Tạo một payload tường minh để GAS không bị nhận nhầm
+  const payload = {
+    action: "submitExam",
+    timestamp: resultData.timestamp, // Cột A
+    examCode: studentInfo.examCode,   // Cột B
+    sbd: studentInfo.sbd,            // Cột C
+    name: studentInfo.name,          // Cột D
+    className: studentInfo.className,// Cột E
+    tongdiem: resultData.tongdiem,   // Cột F
+    time: resultData.time,           // Cột G
+    details: JSON.stringify(resultData.details) // Cột H
+  };
+
+  try {
+    await fetch(targetUrl, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain" },
+      body: JSON.stringify(payload), // Gửi payload đã đóng gói
+    });
+    alert(`Nộp bài thành công! Điểm của bạn là: ${resultData.tongdiem}`);
+  } catch (e) {
+    console.error("Lỗi nộp bài:", e);
+    alert("Có lỗi khi lưu điểm, vui lòng chụp ảnh màn hình!");
+  }
+}}
     />
   </div> // Đóng thẻ div này trước khi đóng dấu ngoặc nhọn
     ) : (
