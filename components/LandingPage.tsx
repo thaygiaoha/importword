@@ -195,7 +195,7 @@ const handleStudentSubmit = async (e) => {
       // Lưu tên học sinh và thời gian thi vào state để truyền cho ExamRoom
       const nameFromGas = result.data.studentName || "Thí sinh";
       const timeFromGas = result.data.duration || 90;
-      const studentClass = result.data.studentClass || "HS Tự do";
+      const classFromGas = result.data.studentClass || "HS Tự do";
       setStudentName(nameFromGas);
       setDuration(timeFromGas);
 
@@ -203,7 +203,7 @@ const handleStudentSubmit = async (e) => {
       setStudentInfo({
         ...studentInfo,
         name: nameFromGas,
-        className: studentClass || "N/A"
+        className: classFromGas
       });
 
       setExamStarted(true); 
