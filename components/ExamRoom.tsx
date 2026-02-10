@@ -100,7 +100,11 @@ const parseCloseDate = (s?: string) => {
   const d = new Date(s + "T23:59:59");
   return isNaN(d.getTime()) ? null : d;
 };
-
+const formatTime = (seconds: number) => {
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+};
 export default function ExamRoom({ 
   questions = [], 
   studentInfo, 
