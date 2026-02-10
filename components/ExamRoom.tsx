@@ -28,7 +28,7 @@ interface ExamRoomProps {
   scoreMCQ?: number; // Cột D
   scoreTF?: number;  // Cột F
   scoreSA?: number;  // Cột H
-  onFinish: () => void;
+  
 }
 const formatContent = (text: any) => {
   if (!text) return "";
@@ -196,13 +196,12 @@ useEffect(() => {
 }, [tabSwitches, maxTabSwitches, hasAutoSubmitted, handleFinish]);
 
 
-  useEffect(() => {
-    if (deadline) {
-      const [d, m, y] = deadline.split(' ')[0].split('/');
-      const t = deadline.split(' ')[1] || "23:59";
-      if (new Date() > new Date(`${y}-${m}-${d}T${t}`)) { alert("Hết hạn!"); onFinish(); }
-    }
-  }, [deadline, onFinish]);
+ useEffect(() => {
+  if (deadline && new Date() > deadline) { 
+    alert("Hết hạn!"); 
+    onFinish(); 
+  }
+}, [deadline, onFinish]);
 
   useEffect(() => {
     const timer = setInterval(() => {
