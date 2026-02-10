@@ -167,7 +167,15 @@ export default function ExamRoom({
       <div className="max-w-4xl mx-auto mt-6 space-y-6">
         {questions.map((q, i) => (
           <div key={i} className="bg-slate-900 p-6 rounded-xl">
-            <div className="font-bold mb-3">Câu {i + 1}</div>
+            <div className="font-bold mb-2">Câu {i + 1}</div>
+
+        {q.text && (
+          <div
+          className="mb-4 leading-relaxed"
+            dangerouslySetInnerHTML={{ __html: q.text }}
+          />
+            )}
+
 
             {/* MCQ */}
             {q.type === "mcq" &&
