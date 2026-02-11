@@ -334,31 +334,14 @@ if (action === "getRouting") {
         JSON.stringify({ status, message, data: payload || null })
       ).setMimeType(ContentService.MimeType.JSON);
 
-      // Gửi điểm đề thi từ word
-      // 1. Phân loại dựa trên dữ liệu gửi lên
-    // Nếu có trường 'sbd' và 'tongdiem' -> Đây là kết quả thi
-    if (data.sbd && data.tongdiem) {
-      var sheetKetQua = ss.getSheetByName("ketqua");
-      sheetKetQua.appendRow([
-        data.timestamp, 
-        data.exams,     
-        data.sbd,       
-        data.name,      
-        data.class,     
-        data.tongdiem,  
-        data.time       
-      ]);
-      return ContentService.createTextOutput("Đã ghi điểm thành công");
-    }
-
-    // 2. Nếu sau này thầy gửi dữ liệu đăng ký (có pass, phone...)
+      // 2. Nếu sau này thầy gửi dữ liệu đăng ký (có pass, phone...)
     if (data.type === 'register') {
       var sheetUser = ss.getSheetByName("users");
       sheetUser.appendRow([new Date(), data.phone, data.pass]);
       return ContentService.createTextOutput("Đã đăng ký thành công");
     }
 
-   // Ghi kết quả thi lẻ
+    // Ghi kết quả thi lẻ
    if (data.action === "submitExam") {
   try {
     
@@ -369,15 +352,15 @@ if (action === "getRouting") {
     const sheetKq = ss.getSheetByName("ketqua") || sheetExams; 
 
     sheetKq.appendRow([
-      data.timestamp,   // Cột A
-      data.examCode,    // Cột B (Kiểm tra xem biến này có nhận từ React chưa)
-      data.sbd,         // Cột C
-      data.name,        // Cột D
-      data.className,   // Cột E (Lớp)
-      data.tongdiem,    // Cột F
-      data.time,        // Cột G
-      data.details      // Cột H
-    ]);
+  data.timestamp,                                // Cột A
+  data.examCode || data.exams || "",             // Cột B: Nhận cả 2 tên biến
+  data.sbd || "",                                // Cột C
+  data.name || "",                               // Cột D
+  data.className || data.class || "",            // Cột E: Nhận cả 2 tên biến
+  data.tongdiem || 0,                            // Cột F
+  data.time || 0,                                // Cột G
+  data.details || ""                             // Cột H
+]);
 
     return ContentService.createTextOutput(JSON.stringify({status: "success"}))
       .setMimeType(ContentService.MimeType.JSON);
@@ -386,6 +369,7 @@ if (action === "getRouting") {
       .setMimeType(ContentService.MimeType.JSON);
   }
 }
+
 
     
 
@@ -464,9 +448,7 @@ if (action === "getRouting") {
       scoreMCQ: toFloat(exRow[3], 0),
       scoreTF: toFloat(exRow[5], 0),
       scoreSA: toFloat(exRow[7], 0),
-      studentName: student[1],
-      studentClass: student[2]
-     
+           
       questions: filteredQuestions // Gửi hết về xem có đủ không
     });
 
