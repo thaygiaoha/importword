@@ -579,7 +579,7 @@ const handleRedirect = () => {
   const payload = {
     action: "submitExam",
     timestamp: new Date().toLocaleString('vi-VN'),
-    exams: String(studentInfo.examCode || ""),
+    exams: String(studentInfo.examCode || "").toUpperCase(),
     sbd: String(studentInfo.sbd || ""),
     name: String(studentInfo.name || ""),
     class: String(studentInfo.className || ""), // Đảm bảo key này khớp với GAS
