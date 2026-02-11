@@ -167,10 +167,16 @@ export default function ExamRoom({ 
 
   // 3. RENDER MATHJAX (Để công thức không bị lỗi "trơ" mã LaTeX)
   useEffect(() => {
-    if (typeof window !== 'undefined' && (window as any).MathJax?.typesetPromise) {
-      (window as any).MathJax.typesetPromise().catch((err: any) => console.log(err));
-    }
-  }, [questions, answers]);
+    if (typeof window !== 'undefined' && (window as any).MathJax?.typesetPromise) {
+      // Chờ một chút để HTML render xong rồi mới gọi MathJax quét lại
+      setTimeout(() => {
+        (window as any).MathJax.typesetPromise().catch((err: any) => console.error(err));
+      }, 50); 
+    }
+  }, [currentIdx, questions, answers]); // Thêm currentIdx vào đây
+
+  const [currentIdx, setCurrentIdx] = useState(0); 
+  
  useEffect(() => {
   const handleTab = () => {
     if (document.hidden && maxTabSwitches > 0) {
