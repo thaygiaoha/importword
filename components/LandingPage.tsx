@@ -836,7 +836,7 @@ const handleRedirect = () => {
 {/* Nút Thi đề lẻ - Chốt ngay sau Lớp 12 */}
 <button 
   onClick={() => setShowStudentLogin(true)} 
-  className="bg-emerald-600 text-white p-2.5 rounded-xl font-black text-[10px] uppercase border-b-4 border-emerald-800 transition-all active:scale-95 flex items-center justify-center gap-2"
+  className="bg-orange-500 text-white p-2.5 rounded-xl font-black text-[10px] uppercase border-b-4 border-emerald-800 transition-all active:scale-95 flex items-center justify-center gap-2"
 >
   <i className="fas fa-user-edit text-[10px]"></i> 
   <span>Thi đề lẻ</span>
@@ -844,7 +844,7 @@ const handleRedirect = () => {
              {/* Nút xem điểm */}
 <button 
   onClick={() => setShowStudentLogin(true)} 
-  className="bg-emerald-600 text-white p-2.5 rounded-xl font-black text-[10px] uppercase border-b-4 border-emerald-800 transition-all active:scale-95 flex items-center justify-center gap-2"
+  className="bg-orange-500 text-white p-2.5 rounded-xl font-black text-[10px] uppercase border-b-4 border-emerald-800 transition-all active:scale-95 flex items-center justify-center gap-2"
 >
   <i className="fas fa-user-edit text-[10px]"></i> 
   <span>Xem điểm</span>
