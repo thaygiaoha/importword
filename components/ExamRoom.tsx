@@ -222,8 +222,7 @@ useEffect(() => {
       <header className="flex flex-col gap-4 p-4 bg-slate-900 border-b border-slate-800 sticky top-0 z-50 shadow-2xl">
         <div className="flex items-center justify-between max-w-7xl mx-auto w-full">
           <div className="flex flex-col">
-            <span className="text-white font-bold text-base leading-tight">
-              {studentInfo.name}
+            <span className="text-white font-bold text-base leading-tight">Name: {studentInfo.name}
             </span>
             <div className="flex gap-3 text-[10px] uppercase tracking-wider font-semibold">
               <span className="text-slate-400">Lớp: {studentInfo.className}</span>
