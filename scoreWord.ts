@@ -13,14 +13,20 @@ export const scoreWord = (
     let point = 0;
 
     // 🔥 PARSE JSON GỐC
-    let original = {};
-    try {
-      original = JSON.parse(q.question);
-    } catch (e) {
-      console.error("Lỗi parse question JSON:", q.question);
-    }
+    let original: any = q;
 
-    const qType = (original.type || "").toString().trim().toLowerCase();
+try {
+  if (typeof q.question === "string") {
+    const parsed = JSON.parse(q.question);
+
+    // Nếu parse ra object có type thì dùng
+    if (parsed && typeof parsed === "object" && parsed.type) {
+      original = parsed;
+    }
+  }
+} catch (e) {
+  console.warn("Không parse được question:", q.question);
+}
 
     // =======================
     // 1️⃣ MCQ
