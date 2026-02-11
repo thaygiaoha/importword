@@ -42,7 +42,39 @@ export const fetchQuestionsBankW = async (
     const result = await response.json();
 
     if (result.status === "success" && Array.isArray(result.data)) {
-      questionsBankW = shuffleArray(result.data);
+      const data = result.data;
+
+// 1️⃣ Parse để lấy part thật
+const parsed = data.map((q: any) => {
+  let original = q;
+
+  if (typeof q.question === "string") {
+    try {
+      const p = JSON.parse(q.question);
+      if (p && typeof p === "object") {
+        original = { ...q, ...p };
+      }
+    } catch {}
+  }
+
+  return original;
+});
+
+// 2️⃣ Chia theo phần
+const part1 = parsed.filter(q => q.part?.includes("PHẦN I"));
+const part2 = parsed.filter(q => q.part?.includes("PHẦN II"));
+const part3 = parsed.filter(q => q.part?.includes("PHẦN III"));
+
+// 3️⃣ Trộn nội bộ từng phần
+const shuffled =
+  [
+    ...shuffleArray(part1),
+    ...shuffleArray(part2),
+    ...shuffleArray(part3)
+  ];
+
+// 4️⃣ Gán lại
+questionsBankW = shuffled;
       return questionsBankW;
     } 
     return [];
