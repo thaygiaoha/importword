@@ -164,7 +164,7 @@ export default function ExamRoom({ 
       details: result.details                                   // Chi tiết nếu cần
     });
   }, [startTime, minSubmitTime, questions, answers, scoreMCQ, scoreTF, scoreSA, onFinish]);
-
+   const [currentIdx, setCurrentIdx] = useState(0); 
   // 3. RENDER MATHJAX (Để công thức không bị lỗi "trơ" mã LaTeX)
   useEffect(() => {
     if (typeof window !== 'undefined' && (window as any).MathJax?.typesetPromise) {
@@ -175,7 +175,7 @@ export default function ExamRoom({ 
     }
   }, [currentIdx, questions, answers]); // Thêm currentIdx vào đây
 
-  const [currentIdx, setCurrentIdx] = useState(0); 
+ 
   
  useEffect(() => {
   const handleTab = () => {
@@ -221,8 +221,7 @@ useEffect(() => {
     return () => clearInterval(timer);
   }, [handleFinish]);
 
-  const handleSelect = useCallback((idx: number, val: any) => setAnswers(p => ({ ...p, [idx]: val })), []);
-  const [currentIdx, setCurrentIdx] = useState(0);
+  const handleSelect = useCallback((idx: number, val: any) => setAnswers(p => ({ ...p, [idx]: val })), []); 
   const currentQuestion = questions[currentIdx];
   
   return (  
