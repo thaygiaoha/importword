@@ -1,4 +1,3 @@
-Chào bạn, vẫn chưa chuyển được câu nhé
 import React, { useState, useEffect, useCallback } from 'react';
 import { scoreWord } from '../scoreWord';
 interface Question {
