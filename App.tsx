@@ -123,7 +123,7 @@ const App: React.FC = () => {
     sbd: activeStudent?.sbd,                         // Cột C
     name: activeStudent?.name,                       // Cột D
     class: activeStudent?.class || activeStudent?.className,                 // Cột E (Khớp với className trong props)
-    result.tongdiem, // Cột F
+    tongdiem: result.tongdiem, // Cột F
     time: result.timeUsed                             // Cột G
   };
 
