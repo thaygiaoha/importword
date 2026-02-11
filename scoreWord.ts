@@ -32,45 +32,52 @@ export const scoreWord = (
     // =======================
     // 1️⃣ MCQ
     // =======================
-    if (qType === "mcq") {
-      if (
-        String(studentAns).trim().toUpperCase() ===
-        String(original.a).trim().toUpperCase()
-      ) {
-        point = Number(scMCQ);
-      }
+   if (qType === "mcq") {
+  const labels = ["A", "B", "C", "D"];
+  const selectedIndex = labels.indexOf(studentAns);
+
+  if (selectedIndex !== -1 && original.o) {
+    const selectedContent = original.o[selectedIndex];
+
+    if (
+      selectedContent?.toString().trim() ===
+      original.a?.toString().trim()
+    ) {
+      point = Number(scMCQ);
     }
+  }
+}
+
 
     // =======================
     // 2️⃣ TRUE FALSE
     // =======================
-    else if (qType === "true-false") {
-      let correctCount = 0;
-      const labels = ["A", "B", "C", "D"];
+   else if (qType === "true-false") {
+  let correctCount = 0;
 
-      labels.forEach((label) => {
-        const studentChoice = studentAns?.[label];
-        const correctVal = original.sub_answers?.[label];
+  if (Array.isArray(original.s)) {
+    original.s.forEach((sub: any, i: number) => {
+      const label = String.fromCharCode(65 + i); // A B C D
+      const studentChoice = studentAns?.[label]; // "Đúng" / "Sai"
 
-        if (
-          studentChoice &&
-          correctVal &&
-          studentChoice.toString().trim() ===
-            correctVal.toString().trim()
-        ) {
-          correctCount++;
-        }
-      });
+      const correctVal = sub.a === true ? "Đúng" : "Sai";
 
-      const progression: Record<number, number> = {
-        1: Number((scTF * 0.1).toFixed(2)),
-        2: Number((scTF * 0.25).toFixed(2)),
-        3: Number((scTF * 0.5).toFixed(2)),
-        4: Number(scTF),
-      };
+      if (studentChoice === correctVal) {
+        correctCount++;
+      }
+    });
+  }
 
-      point = progression[correctCount] || 0;
-    }
+  const progression: Record<number, number> = {
+    1: Number((scTF * 0.1).toFixed(2)),
+    2: Number((scTF * 0.25).toFixed(2)),
+    3: Number((scTF * 0.5).toFixed(2)),
+    4: Number(scTF),
+  };
+
+  point = progression[correctCount] || 0;
+}
+
 
     // =======================
     // 3️⃣ SHORT ANSWER
