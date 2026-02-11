@@ -27,6 +27,10 @@ if (typeof q.question === "string") {
     // Không làm gì cả, giữ nguyên q
   }
 }
+const qType = (original.type || "")
+  .toString()
+  .trim()
+  .toLowerCase();
 
     // =======================
     // 1️⃣ MCQ
