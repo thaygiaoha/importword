@@ -215,10 +215,10 @@ const App: React.FC = () => {
     duration={activeExam.fullTime}
     minSubmitTime={activeExam.miniTime}
     maxTabSwitches={activeExam.tabLimit}
-    scoreMCQ={activeExam.scoreMCQ}
-    scoreTF={activeExam.scoreTF}
-    scoreSA={activeExam.scoreSA}
-    onFinish={handleFinishWord} // Nộp về sheet(ketqua) 7 cột
+   scoreMCQ={Number(activeExam.scoreMCQ) || 0.25}
+   scoreTF={Number(activeExam.scoreTF) || 1.0}
+   scoreSA={Number(activeExam.scoreSA) || 0.5}
+   onFinish={handleFinishWord} // Nộp về sheet(ketqua) 7 cột
   />
 )}
             {/* 6. Kết quả bài thi */}
