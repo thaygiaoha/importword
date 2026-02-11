@@ -1,9 +1,10 @@
 export const scoreWord = (
   questions: any[], 
   answers: Record<number, any>,
-  scMCQ: number = 0.25, 
-  scTF: number = 1.0,   
-  scSA: number = 0.5    
+  // Truyền trực tiếp scoreMCQ, scoreTF, scoreSA từ hàng dữ liệu của đề thi đó trong sheet exams
+  scMCQ: number,  
+  scTF: number,   
+  scSA: number    
 ) => {
   let totalScore = 0;
   const details: any[] = [];
@@ -13,28 +14,29 @@ export const scoreWord = (
     let point = 0;
     const qType = (q.type || "").toString().trim().toLowerCase();
 
-    // 1. MCQ
+    // 1. MCQ (Trắc nghiệm 1 đáp án)
     if (qType === 'mcq') {
       if (String(studentAns).trim().toUpperCase() === String(q.a).trim().toUpperCase()) {
         point = Number(scMCQ);
       }
     }
 
-    // 2. TRUE-FALSE (Sửa chỗ này để khớp với sheet exam_data)
+    // 2. TRUE-FALSE (Trắc nghiệm Đúng/Sai nhiều ý)
     else if (qType === 'true-false') {
-      const subQuestions = q.options || []; // Sheet dùng 'options'
+      const subQuestions = q.options || []; 
       let correctCount = 0;
 
       subQuestions.forEach((sub: any, sIdx: number) => {
         const subLabel = String.fromCharCode(65 + sIdx);
-        // Đáp án đúng từ sheet: true/false -> Chuyển về 'Đúng'/'Sai'
-        const correctValue = (sub.a === true || sub.a?.toString().toLowerCase() === 'true') ? 'Đúng' : 'Sai';
+        // Chuẩn hóa đáp án từ sheet và từ học sinh để so sánh
+        const correctValue = (sub.a === true || sub.a?.toString().toLowerCase() === 'true' || sub.a?.toString() === 'Đúng') ? 'Đúng' : 'Sai';
         
         if (studentAns?.[subLabel] === correctValue) {
           correctCount++;
         }
       });
 
+      // Tính điểm theo quy định của Bộ (0.1 - 0.25 - 0.5 - 1.0 hệ số với scTF)
       const progression: Record<number, number> = {
         1: Math.round(scTF * 0.1 * 100) / 100,
         2: Math.round(scTF * 0.25 * 100) / 100,
@@ -44,7 +46,7 @@ export const scoreWord = (
       point = progression[correctCount] || 0;
     }
 
-    // 3. SHORT ANSWER
+    // 3. SHORT ANSWER (Trả lời ngắn)
     else if (qType === 'sa' || qType === 'short-answer') {
       const normalize = (val: any) => val?.toString().trim().toLowerCase().replace(',', '.') || "";
       if (normalize(studentAns) !== "" && normalize(studentAns) === normalize(q.a)) {
@@ -58,6 +60,6 @@ export const scoreWord = (
 
   return {
     totalScore: Math.round(totalScore * 100) / 100,
-    details
+    details: JSON.stringify(details) // Chuyển sang string để lưu vào sheet dễ dàng hơn
   };
 };
