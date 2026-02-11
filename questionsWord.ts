@@ -22,21 +22,29 @@ export const fetchQuestionsBankW = async (
 
     // 🔥 Parse + trộn đáp án
     const parsed = result.data.map((q: any) => {
-      let obj = q;
+  let obj = q;
 
-      if (typeof q.question === "string") {
-        try {
-          obj = JSON.parse(q.question);
-        } catch {}
-      }
+  if (typeof q.question === "string") {
+    try {
+      obj = JSON.parse(q.question);
+    } catch {}
+  }
 
-      // 👉 Trộn đáp án MCQ
-      if (obj.type === "mcq" && Array.isArray(obj.o)) {
-        obj.o = shuffleArray(obj.o);
-      }
+  // 🔥 TRỘN MCQ nhưng giữ đáp án đúng
+  if (obj.type === "mcq" && Array.isArray(obj.o)) {
+    const correctText = obj.a; // lưu đáp án đúng (text)
 
-      return obj;
-    });
+    const shuffled = shuffleArray(obj.o);
+
+    obj.o = shuffled;
+
+    // Nếu đáp án đang lưu dạng TEXT → giữ nguyên
+    obj.a = correctText;
+  }
+
+  return obj;
+});
+
 
     // 🔥 Chia phần
     const part1 = parsed.filter(q => q.part?.includes("PHẦN I"));
