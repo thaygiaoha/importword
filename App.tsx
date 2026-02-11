@@ -50,12 +50,13 @@ const App: React.FC = () => {
   }, []);
 
   // Xử lý bắt đầu thi (Portal)
-  const handleStartExam = (config: any, student: Student, selectedQuestions: Question[]) => {
-    setActiveExam(config);
-    setActiveStudent(student);
-    setQuestions(selectedQuestions);
-    setCurrentView('quiz');
-  };
+ const handleStartExam = (config: any, student: Student, selectedQuestions: Question[]) => {
+  console.log("Học sinh bắt đầu thi, IDGV là:", student.idgv); // Log để check
+  setActiveExam(config);
+  setActiveStudent(student);
+  setQuestions(selectedQuestions);
+  setCurrentView('exam'); // Đảm bảo chuyển sang view 'exam' để dùng ExamRoom
+};
 
   // Xử lý bắt đầu Quiz nhanh (Landing)
   const handleStartQuizMode = (num: number, pts: number, quizStudent: any) => {
@@ -84,7 +85,7 @@ const App: React.FC = () => {
     setCurrentView('quiz');
   };
 
-  // Kết thúc bài thi và gửi dữ liệu
+  // Kết thúc bài thi và gửi dữ liệu từ đề ma trận
   const handleFinishExam = async (result: ExamResult) => {
     setExamResult(result);
     setCurrentView('result');
@@ -121,7 +122,7 @@ const App: React.FC = () => {
     exams: activeStudent?.examCode || "KHONG_MA",    // Cột B: Mã đề biến đổi (601, 1201...)
     sbd: activeStudent?.sbd,                         // Cột C
     name: activeStudent?.name,                       // Cột D
-    class: activeStudent?.className,                  // Cột E (Khớp với className trong props)
+    class: activeStudent?.class || activeStudent?.className,                 // Cột E (Khớp với className trong props)
     tongdiem: result.score.toString().replace('.', ','), // Cột F
     time: result.timeUsed                             // Cột G
   };
