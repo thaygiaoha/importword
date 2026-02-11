@@ -83,3 +83,16 @@ questionsBankW = shuffled;
     return [];
   }
 };
+parsed.forEach((q: any) => {
+  if (q.type === "mcq" && Array.isArray(q.o)) {
+    const correctAnswer = q.a;
+
+    const shuffledOptions = shuffleArray(q.o);
+
+    q.o = shuffledOptions;
+
+    // Cập nhật lại đáp án đúng
+    q.a = correctAnswer;
+  }
+});
+
