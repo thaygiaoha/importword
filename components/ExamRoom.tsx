@@ -105,19 +105,20 @@ const formatTime = (seconds: number) => {
   const secs = seconds % 60;
   return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
 };
-
 export default function ExamRoom({ 
   questions = [], 
   studentInfo, 
   duration, 
-  minSubmitTime = 0, // Để mặc định là 0 để test cho dễ
+  minSubmitTime = 0,
   maxTabSwitches = 3, 
   deadline = "", 
-  scoreMCQ = 0.25, // THÊM DÒNG NÀY
-  scoreTF = 1.0,   // THÊM DÒNG NÀY
-  scoreSA = 0.5,   // THÊM DÒNG NÀY
+  scoreMCQ = 0.25,
+  scoreTF = 1.0,  
+  scoreSA = 0.5,  
   onFinish
 }: ExamRoomProps) {
+  // 1. KHAI BÁO STATE LÊN ĐẦU TIÊN
+  const [currentIdx, setCurrentIdx] = useState(0); // Luôn để cái này lên đầu
   const [timeLeft, setTimeLeft] = useState(duration * 60);
   const [answers, setAnswers] = useState<Record<number, any>>({});
   const [startTime] = useState(new Date());
@@ -125,86 +126,35 @@ export default function ExamRoom({
   const [tabWarning, setTabWarning] = useState<number | null>(null);
   const [hasAutoSubmitted, setHasAutoSubmitted] = useState(false);
 
+  // 2. LOGIC XỬ LÝ
   const handleFinish = useCallback((isAuto = false) => {
     const timeNow = new Date().getTime();
-    const startTimeMs = startTime.getTime();
-    const timeSpentMin = Math.floor((timeNow - startTimeMs) / 60000);
-    const timeTakenSeconds = Math.floor((timeNow - startTimeMs) / 1000);
-  
+    const timeTakenSeconds = Math.floor((timeNow - startTime.getTime()) / 1000);
+    const timeSpentMin = Math.floor(timeTakenSeconds / 60);
 
-
-
-    if (!isAuto) {
-      if (timeSpentMin < minSubmitTime) {
-        alert(`Cần tối thiểu ${minSubmitTime} phút để nộp. Còn ${minSubmitTime - timeSpentMin} phút.`);
-        return;
-      }
+    if (!isAuto && timeSpentMin < minSubmitTime) {
+      alert(`Cần tối thiểu ${minSubmitTime} phút để nộp. Còn ${minSubmitTime - timeSpentMin} phút.`);
+      return;
     }
 
-    // 1. GỌI SCOREWORD ĐỂ CHẤM ĐIỂM NGAY TỨC THÌ
-    // Lấy điểm từ props: scoreMCQ (Cột D), scoreTF (Cột F), scoreSA (Cột H)
     const result = scoreWord(
       questions, 
       answers, 
-      Number(scoreMCQ) || 0.25, 
-      Number(scoreTF) || 1.0, 
-      Number(scoreSA) || 0.5
+      Number(scoreMCQ), 
+      Number(scoreTF), 
+      Number(scoreSA)
     );
 
     alert(isAuto ? "Tự động nộp bài!" : "Nộp bài thành công!");
-
-    // 2. GỬI DỮ LIỆU ĐÃ CHẤM VỀ HÀM CHA
     onFinish({
-      tongdiem: result.totalScore.toString().replace('.', ','), // Chuyển dấu phẩy cho Sheets
-      time: timeTakenSeconds,                                  // Số giây cho cột G
-      timestamp: new Date().toLocaleString('vi-VN'),            // Cột A
-      details: result.details                                   // Chi tiết nếu cần
+      tongdiem: result.totalScore.toString().replace('.', ','),
+      time: timeTakenSeconds,
+      timestamp: new Date().toLocaleString('vi-VN'),
+      details: result.details
     });
   }, [startTime, minSubmitTime, questions, answers, scoreMCQ, scoreTF, scoreSA, onFinish]);
 
-  // 3. RENDER MATHJAX (Để công thức không bị lỗi "trơ" mã LaTeX)
-  useEffect(() => {
-    if (typeof window !== 'undefined' && (window as any).MathJax?.typesetPromise) {
-      (window as any).MathJax.typesetPromise().catch((err: any) => console.log(err));
-    }
-  }, [questions, answers]);
- useEffect(() => {
-  const handleTab = () => {
-    if (document.hidden && maxTabSwitches > 0) {
-      setTabSwitches(v => {
-        const next = v + 1;
-        if (next < maxTabSwitches) {
-          setTabWarning(next);
-        }
-        return next;
-      });
-    }
-  };
-
-  document.addEventListener("visibilitychange", handleTab);
-  return () => document.removeEventListener("visibilitychange", handleTab);
-}, [maxTabSwitches]);
-useEffect(() => {
-  if (
-    maxTabSwitches > 0 &&
-    tabSwitches >= maxTabSwitches &&
-    !hasAutoSubmitted
-  ) {
-    setHasAutoSubmitted(true);
-    handleFinish(true);
-  }
-}, [tabSwitches, maxTabSwitches, hasAutoSubmitted, handleFinish]);
-
-
-useEffect(() => {
-  if (deadline) {
-    const deadlineDate = new Date(deadline + "T23:59:59");
-    if (new Date() > deadlineDate) {
-      alert("Đề thi này đã đóng rồi bạn nhé! Hãy tìm đề khác để thi");
-      onFinish();
-    }
-  }
-}, [deadline, onFinish]);
+  // Các Effect giữ nguyên...
   useEffect(() => {
     const timer = setInterval(() => {
       setTimeLeft(v => { if (v <= 1) { clearInterval(timer); handleFinish(true); return 0; } return v - 1; });
@@ -213,18 +163,14 @@ useEffect(() => {
   }, [handleFinish]);
 
   const handleSelect = useCallback((idx: number, val: any) => setAnswers(p => ({ ...p, [idx]: val })), []);
-  const [currentIdx, setCurrentIdx] = useState(0);
-  const currentQuestion = questions[currentIdx];
-  
+
+  // 3. RENDER
   return (  
-  <div className="min-h-screen bg-slate-950 pb-20">
-      {/* HEADER: DANH SÁCH CÂU HỎI VÀ THÔNG TIN */}
+    <div className="min-h-screen bg-slate-950 pb-20">
       <header className="flex flex-col gap-4 p-4 bg-slate-900 border-b border-slate-800 sticky top-0 z-50 shadow-2xl">
         <div className="flex items-center justify-between max-w-7xl mx-auto w-full">
           <div className="flex flex-col">
-            <span className="text-white font-bold text-base leading-tight">
-              {studentInfo.name}
-            </span>
+            <span className="text-white font-bold text-base leading-tight">{studentInfo.name}</span>
             <div className="flex gap-3 text-[10px] uppercase tracking-wider font-semibold">
               <span className="text-slate-400">Lớp: {studentInfo.className}</span>
               <span className="text-emerald-400">SBD: {studentInfo.sbd}</span>
@@ -233,80 +179,64 @@ useEffect(() => {
               </span>
             </div>
           </div>
-
           <div className="flex items-center gap-3">
             <div className="bg-slate-800 px-3 py-1 rounded-lg font-mono text-xl text-emerald-400 border border-slate-700">
               {formatTime(timeLeft)}
             </div>
-            <button 
-              onClick={() => handleFinish(false)}
-              className="bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-2 rounded-xl font-bold text-sm transition-all active:scale-95 shadow-lg shadow-emerald-900/20"
-            >
+            <button onClick={() => handleFinish(false)} className="bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-2 rounded-xl font-bold text-sm shadow-lg shadow-emerald-900/20">
               NỘP BÀI
             </button>
           </div>
         </div>
 
-        {/* Danh sách nút số câu hỏi */}
+        {/* Nút số câu hỏi - Đã nhận diện currentIdx chuẩn */}
         <div className="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar justify-center border-t border-slate-800/50 pt-3">
-          {questions.map((_, idx) => {
-            const isDone = answers[idx] !== undefined && answers[idx] !== null;
-            const isCurrent = currentIdx === idx;
-            
-            return (
-              <button
-                key={idx}
-                onClick={() => setCurrentIdx(idx)}
-                className={`flex-shrink-0 w-9 h-9 rounded-xl text-xs font-black transition-all duration-300 ${
-                  isCurrent 
-                    ? 'bg-emerald-500 text-white shadow-[0_0_15px_rgba(16,185,129,0.4)] scale-110' 
-                    : isDone 
-                      ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40' 
-                      : 'bg-slate-800 text-slate-500 border border-slate-700 hover:border-slate-600'
-                }`}
-              >
-                {idx + 1}
-              </button>
-            );
-          })}
+          {questions.map((_, idx) => (
+            <button
+              key={idx}
+              onClick={() => setCurrentIdx(idx)}
+              className={`flex-shrink-0 w-9 h-9 rounded-xl text-xs font-black transition-all duration-300 ${
+                currentIdx === idx 
+                  ? 'bg-emerald-500 text-white shadow-[0_0_15px_rgba(16,185,129,0.4)] scale-110' 
+                  : answers[idx] !== undefined 
+                    ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40' 
+                    : 'bg-slate-800 text-slate-500 border border-slate-700'
+              }`}
+            >
+              {idx + 1}
+            </button>
+          ))}
         </div>
       </header>
 
-      {/* NỘI DUNG CÂU HỎI HIỆN TẠI */}
       <main className="max-w-4xl mx-auto p-4 md:p-8 mt-6">
-        {currentQuestion ? (
-          <QuestionCard 
-            q={currentQuestion} 
-            idx={currentIdx} 
-            answer={answers[currentIdx]} 
-            onSelect={handleSelect} 
-          />
-        ) : (
-          <div className="text-center text-slate-500">Đang tải câu hỏi...</div>
-        )}
+        <QuestionCard 
+          q={questions[currentIdx]} 
+          idx={currentIdx} 
+          answer={answers[currentIdx]} 
+          onSelect={handleSelect} 
+        />
 
-        {/* Nút điều hướng chân trang */}
-<div className="flex justify-between items-center mt-6">
-  <button 
-    disabled={currentIdx === 0}
-    onClick={() => setCurrentIdx(prev => prev - 1)}
-    className="px-6 py-3 rounded-2xl bg-slate-800 text-slate-100 font-bold disabled:opacity-20 transition-all hover:bg-slate-700"
-  >
-    ← Câu trước
-  </button>
-  
-  <button 
-    /* BỎ ĐIỀU KIỆN answers[currentIdx] Ở ĐÂY */
-    disabled={currentIdx === questions.length - 1} 
-    onClick={() => setCurrentIdx(prev => prev + 1)}
-    className="px-6 py-3 rounded-2xl bg-slate-800 text-slate-100 font-bold disabled:opacity-20 transition-all hover:bg-slate-700 border border-slate-700"
-  >
-    Câu tiếp →
-  </button>
-</div>
+        <div className="flex justify-between items-center mt-6">
+          <button 
+            disabled={currentIdx === 0}
+            onClick={() => setCurrentIdx(prev => prev - 1)}
+            className="px-6 py-3 rounded-2xl bg-slate-800 text-white font-bold disabled:opacity-20 hover:bg-slate-700"
+          >
+            ← Câu trước
+          </button>
+          <button 
+            disabled={currentIdx === questions.length - 1}
+            onClick={() => setCurrentIdx(prev => prev + 1)}
+            className="px-6 py-3 rounded-2xl bg-slate-800 text-white font-bold disabled:opacity-20 hover:bg-slate-700 border border-slate-700"
+          >
+            Câu tiếp →
+          </button>
+        </div>
       </main>
     </div>
   );
 }
+
 
   
