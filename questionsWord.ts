@@ -10,9 +10,10 @@ export const fetchQuestionsBankW = async (
       ? API_ROUTING[idgv]
       : DANHGIA_URL;
 
-    const finalUrl = examCode
-      ? `${targetUrl}?action=getQuestionsByCode&examCode=${examCode}`
-      : `${targetUrl}?action=getQuestions`;
+   const finalUrl = examCode
+  ? `${targetUrl}?action=getQuestionsByCode&examCode=${examCode}&t=${Date.now()}`
+  : `${targetUrl}?action=getQuestions&t=${Date.now()}`;
+
 
     const res = await fetch(finalUrl);
     const result = await res.json();
