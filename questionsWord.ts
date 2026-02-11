@@ -20,50 +20,38 @@ export const fetchQuestionsBankW = async (
     if (result.status !== "success" || !Array.isArray(result.data))
       return [];
 
-    // 🔥 Parse + trộn đáp án
     const parsed = result.data.map((q: any) => {
-  let obj = q;
+      let obj = typeof q.question === "string"
+        ? JSON.parse(q.question)
+        : q;
 
-  if (typeof q.question === "string") {
-    try {
-      obj = JSON.parse(q.question);
-    } catch {}
-  }
+      // 🔥 TRỘN MCQ
+      if (obj.type === "mcq" && Array.isArray(obj.o)) {
+        obj.o = shuffleArray([...obj.o]); // clone trước khi trộn
+      }
 
-  // 🔥 TRỘN MCQ nhưng giữ đáp án đúng
-  if (obj.type === "mcq" && Array.isArray(obj.o)) {
-    const correctText = obj.a; // lưu đáp án đúng (text)
-
-    const shuffled = shuffleArray(obj.o);
-
-    obj.o = shuffled;
-
-    // Nếu đáp án đang lưu dạng TEXT → giữ nguyên
-    obj.a = correctText;
-  }
-
-  return obj;
-});
-
+      return obj;
+    });
 
     // 🔥 Chia phần
     const part1 = parsed.filter(q => q.part?.includes("PHẦN I"));
     const part2 = parsed.filter(q => q.part?.includes("PHẦN II"));
     const part3 = parsed.filter(q => q.part?.includes("PHẦN III"));
 
-    // 🔥 Trộn nội bộ từng phần
     const final = [
       ...shuffleArray(part1),
       ...shuffleArray(part2),
       ...shuffleArray(part3),
     ];
 
-    // 🔥 stringify lại để giữ tương thích scoreWord
+    // 🔥 LƯU LUÔN JSON ĐÃ TRỘN
     questionsBankW = final.map(q => ({
       id: q.id,
       type: q.type,
       question: JSON.stringify(q),
     }));
+
+    console.log("🎲 Đã trộn xong:", final);
 
     return questionsBankW;
   } catch (err) {
