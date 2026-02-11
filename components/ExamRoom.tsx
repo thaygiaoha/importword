@@ -54,7 +54,8 @@ const QuestionCard = React.memo(({ q, idx, answer, onSelect }: any) => {
             return (
               <button key={i} onClick={() => onSelect(idx, label)} className={`p-5 rounded-3xl text-left border-2 transition-all flex items-center gap-6 ${isSelected ? 'border-emerald-500 bg-emerald-500/10' : 'border-slate-800 bg-slate-800/50 hover:border-slate-700'}`}>
                 <span className={`w-10 h-10 flex-shrink-0 flex items-center justify-center rounded-xl font-black ${isSelected ? 'bg-emerald-500 text-white' : 'bg-slate-700 text-slate-400'}`}>{label}</span>
-                <div className="text-lg font-bold" dangerouslySetInnerHTML={{ __html: formatContent(opt) }} />
+                <div className="text-lg font-bold text-white shadow-sm" // Đổi text-slate-400 thành text-white dangerouslySetInnerHTML={{ __html: formatContent(opt) }}
+                  />
               </button>
             );
           })}
@@ -226,12 +227,13 @@ export default function ExamRoom({
             ← Câu trước
           </button>
           <button 
-            disabled={currentIdx === questions.length - 1}
-            onClick={() => setCurrentIdx(prev => prev + 1)}
-            className="px-6 py-3 rounded-2xl bg-slate-800 text-white font-bold disabled:opacity-20 hover:bg-slate-700 border border-slate-700"
-          >
-            Câu tiếp →
-          </button>
+  type="button" // Thêm type để tránh submit nhầm
+  disabled={currentIdx === questions.length - 1} 
+  onClick={() => setCurrentIdx(prev => prev + 1)} // Đảm bảo dùng prev => prev + 1
+  className="px-6 py-3 rounded-2xl bg-slate-800 text-white font-bold disabled:opacity-20 hover:bg-slate-700 border border-slate-700"
+>
+  Câu tiếp →
+</button>
         </div>
       </main>
     </div>
