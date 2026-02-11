@@ -1,10 +1,3 @@
-console.log("===== DEBUG CHẤM ĐIỂM =====");
-console.log("Questions:", questions);
-console.log("Answers:", answers);
-console.log("ScoreMCQ:", scoreMCQ);
-console.log("ScoreTF:", scoreTF);
-console.log("ScoreSA:", scoreSA);
-
 export const scoreWord = (
   questions: any[],
   answers: Record<number, any>,
