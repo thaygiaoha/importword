@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { scoreWord } from '../scoreWord';
+
 interface Question {
   id: string;
   type: 'mcq' | 'true-false' | 'sa' | 'short-answer'; 
@@ -22,11 +23,12 @@ interface ExamRoomProps {
   minSubmitTime?: number; 
   maxTabSwitches?: number; 
   deadline?: string;  
-  scoreMCQ?: number; // Cột D
-  scoreTF?: number;  // Cột F
-  scoreSA?: number;  // Cột H
-  onFinish: () => void;
+  scoreMCQ?: number;
+  scoreTF?: number; 
+  scoreSA?: number; 
+  onFinish: (data: any) => void;
 }
+
 const formatContent = (text: any) => {
   if (!text) return "";
   let clean = text.toString().trim();
@@ -53,9 +55,8 @@ const QuestionCard = React.memo(({ q, idx, answer, onSelect }: any) => {
             const isSelected = answer === label;
             return (
               <button key={i} onClick={() => onSelect(idx, label)} className={`p-5 rounded-3xl text-left border-2 transition-all flex items-center gap-6 ${isSelected ? 'border-emerald-500 bg-emerald-500/10' : 'border-slate-800 bg-slate-800/50 hover:border-slate-700'}`}>
-                <span className={`w-10 h-10 flex-shrink-0 flex items-center justify-center rounded-xl font-black ${isSelected ? 'bg-emerald-500 text-white' : 'bg-slate-700 text-slate-400'}`}>{label}</span>
-                <div className="text-lg font-bold text-white shadow-sm" // Đổi text-slate-400 thành text-white dangerouslySetInnerHTML={{ __html: formatContent(opt) }}
-                  />
+                <span className={`w-10 h-10 flex-shrink-0 flex items-center justify-center rounded-xl font-black ${isSelected ? 'bg-emerald-500 text-white' : 'bg-slate-700 text-slate-200'}`}>{label}</span>
+                <div className="text-lg font-bold text-slate-100" dangerouslySetInnerHTML={{ __html: formatContent(opt) }} />
               </button>
             );
           })}
@@ -69,7 +70,7 @@ const QuestionCard = React.memo(({ q, idx, answer, onSelect }: any) => {
             const content = typeof sub === 'string' ? sub : (sub.text || "");
             return (
               <div key={sIdx} className="flex flex-col md:flex-row md:items-center justify-between p-4 border border-slate-800 rounded-2xl bg-slate-800/30 gap-4">
-                <div className="flex-1 text-slate-200">
+                <div className="flex-1 text-slate-100">
                   <span className="font-bold text-emerald-500 mr-2">{subLabel}.</span>
                   <span dangerouslySetInnerHTML={{ __html: formatContent(content) }} />
                 </div>
@@ -77,7 +78,7 @@ const QuestionCard = React.memo(({ q, idx, answer, onSelect }: any) => {
                   {['Đúng', 'Sai'].map((label) => {
                     const isSelected = answer?.[subLabel] === label;
                     return (
-                      <button key={label} onClick={() => onSelect(idx, { ...(answer || {}), [subLabel]: label })} className={`px-6 py-2 rounded-xl font-bold border-2 transition-all ${isSelected ? (label === 'Đúng' ? 'bg-blue-600 border-blue-500 text-white' : 'bg-red-600 border-red-500 text-white') : 'bg-slate-700 border-slate-600 text-slate-400'}`}>{label}</button>
+                      <button key={label} onClick={() => onSelect(idx, { ...(answer || {}), [subLabel]: label })} className={`px-6 py-2 rounded-xl font-bold border-2 transition-all ${isSelected ? (label === 'Đúng' ? 'bg-blue-600 border-blue-500 text-white' : 'bg-red-600 border-red-500 text-white') : 'bg-slate-700 border-slate-600 text-slate-200'}`}>{label}</button>
                     );
                   })}
                 </div>
@@ -96,56 +97,34 @@ const QuestionCard = React.memo(({ q, idx, answer, onSelect }: any) => {
     </div>
   );
 }, (prev, next) => JSON.stringify(prev.answer) === JSON.stringify(next.answer));
-const parseCloseDate = (s?: string) => {
-  if (!s) return null;
-  const d = new Date(s + "T23:59:59");
-  return isNaN(d.getTime()) ? null : d;
-};
+
 const formatTime = (seconds: number) => {
   const mins = Math.floor(seconds / 60);
   const secs = seconds % 60;
   return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
 };
+
 export default function ExamRoom({ 
-  questions = [], 
-  studentInfo, 
-  duration, 
-  minSubmitTime = 0,
-  maxTabSwitches = 3, 
-  deadline = "", 
-  scoreMCQ = 0.25,
-  scoreTF = 1.0,  
-  scoreSA = 0.5,  
-  onFinish
+  questions = [], studentInfo, duration, minSubmitTime = 0, maxTabSwitches = 3, deadline = "", scoreMCQ = 0.25, scoreTF = 1.0, scoreSA = 0.5, onFinish 
 }: ExamRoomProps) {
-  // 1. KHAI BÁO STATE LÊN ĐẦU TIÊN
-  const [currentIdx, setCurrentIdx] = useState(0); // Luôn để cái này lên đầu
   const [timeLeft, setTimeLeft] = useState(duration * 60);
   const [answers, setAnswers] = useState<Record<number, any>>({});
   const [startTime] = useState(new Date());
   const [tabSwitches, setTabSwitches] = useState(0);
-  const [tabWarning, setTabWarning] = useState<number | null>(null);
   const [hasAutoSubmitted, setHasAutoSubmitted] = useState(false);
+  const [currentIdx, setCurrentIdx] = useState(0);
 
-  // 2. LOGIC XỬ LÝ
   const handleFinish = useCallback((isAuto = false) => {
     const timeNow = new Date().getTime();
     const timeTakenSeconds = Math.floor((timeNow - startTime.getTime()) / 1000);
     const timeSpentMin = Math.floor(timeTakenSeconds / 60);
 
     if (!isAuto && timeSpentMin < minSubmitTime) {
-      alert(`Cần tối thiểu ${minSubmitTime} phút để nộp. Còn ${minSubmitTime - timeSpentMin} phút.`);
+      alert(`Cần tối thiểu ${minSubmitTime} phút để nộp.`);
       return;
     }
 
-    const result = scoreWord(
-      questions, 
-      answers, 
-      Number(scoreMCQ), 
-      Number(scoreTF), 
-      Number(scoreSA)
-    );
-
+    const result = scoreWord(questions, answers, Number(scoreMCQ), Number(scoreTF), Number(scoreSA));
     alert(isAuto ? "Tự động nộp bài!" : "Nộp bài thành công!");
     onFinish({
       tongdiem: result.totalScore.toString().replace('.', ','),
@@ -155,7 +134,33 @@ export default function ExamRoom({
     });
   }, [startTime, minSubmitTime, questions, answers, scoreMCQ, scoreTF, scoreSA, onFinish]);
 
-  // Các Effect giữ nguyên...
+  // MathJax Effect
+  useEffect(() => {
+    if (typeof window !== 'undefined' && (window as any).MathJax?.typesetPromise) {
+      (window as any).MathJax.typesetPromise().catch((err: any) => console.log(err));
+    }
+  }, [currentIdx, questions]);
+
+  // Tab Switch Effect
+  useEffect(() => {
+    const handleTab = () => {
+      if (document.hidden && maxTabSwitches > 0) {
+        setTabSwitches(v => v + 1);
+      }
+    };
+    document.addEventListener("visibilitychange", handleTab);
+    return () => document.removeEventListener("visibilitychange", handleTab);
+  }, [maxTabSwitches]);
+
+  // Auto Submit Effect
+  useEffect(() => {
+    if (maxTabSwitches > 0 && tabSwitches >= maxTabSwitches && !hasAutoSubmitted) {
+      setHasAutoSubmitted(true);
+      handleFinish(true);
+    }
+  }, [tabSwitches, maxTabSwitches, hasAutoSubmitted, handleFinish]);
+
+  // Timer Effect
   useEffect(() => {
     const timer = setInterval(() => {
       setTimeLeft(v => { if (v <= 1) { clearInterval(timer); handleFinish(true); return 0; } return v - 1; });
@@ -165,80 +170,29 @@ export default function ExamRoom({
 
   const handleSelect = useCallback((idx: number, val: any) => setAnswers(p => ({ ...p, [idx]: val })), []);
 
-  // 3. RENDER
   return (  
-    <div className="min-h-screen bg-slate-950 pb-20">
-      <header className="flex flex-col gap-4 p-4 bg-slate-900 border-b border-slate-800 sticky top-0 z-50 shadow-2xl">
-        <div className="flex items-center justify-between max-w-7xl mx-auto w-full">
-          <div className="flex flex-col">
-            <span className="text-white font-bold text-base leading-tight">{studentInfo.name}</span>
-            <div className="flex gap-3 text-[10px] uppercase tracking-wider font-semibold">
-              <span className="text-slate-400">Lớp: {studentInfo.className}</span>
-              <span className="text-emerald-400">SBD: {studentInfo.sbd}</span>
-              <span className={`${tabSwitches >= maxTabSwitches ? 'text-red-500 animate-bounce' : 'text-amber-400'}`}>
-                Tab: {tabSwitches}/{maxTabSwitches}
-              </span>
-            </div>
+    <div className="min-h-screen bg-slate-950 text-white">
+      <header className="sticky top-0 z-50 bg-slate-900 border-b border-slate-800 p-4">
+        <div className="flex justify-between items-center max-w-7xl mx-auto">
+          <div>
+            <div className="font-bold">{studentInfo.name}</div>
+            <div className="text-xs text-slate-400">TAB: {tabSwitches}/{maxTabSwitches}</div>
           </div>
-          <div className="flex items-center gap-3">
-            <div className="bg-slate-800 px-3 py-1 rounded-lg font-mono text-xl text-emerald-400 border border-slate-700">
-              {formatTime(timeLeft)}
-            </div>
-            <button onClick={() => handleFinish(false)} className="bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-2 rounded-xl font-bold text-sm shadow-lg shadow-emerald-900/20">
-              NỘP BÀI
-            </button>
+          <div className="flex items-center gap-4">
+            <div className="text-2xl font-mono text-emerald-400">{formatTime(timeLeft)}</div>
+            <button onClick={() => handleFinish(false)} className="bg-emerald-600 px-4 py-2 rounded-lg font-bold">NỘP BÀI</button>
           </div>
-        </div>
-
-        {/* Nút số câu hỏi - Đã nhận diện currentIdx chuẩn */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar justify-center border-t border-slate-800/50 pt-3">
-          {questions.map((_, idx) => (
-            <button
-              key={idx}
-              onClick={() => setCurrentIdx(idx)}
-              className={`flex-shrink-0 w-9 h-9 rounded-xl text-xs font-black transition-all duration-300 ${
-                currentIdx === idx 
-                  ? 'bg-emerald-500 text-white shadow-[0_0_15px_rgba(16,185,129,0.4)] scale-110' 
-                  : answers[idx] !== undefined 
-                    ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40' 
-                    : 'bg-slate-800 text-slate-500 border border-slate-700'
-              }`}
-            >
-              {idx + 1}
-            </button>
-          ))}
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto p-4 md:p-8 mt-6">
-        <QuestionCard 
-          q={questions[currentIdx]} 
-          idx={currentIdx} 
-          answer={answers[currentIdx]} 
-          onSelect={handleSelect} 
-        />
-
-        <div className="flex justify-between items-center mt-6">
-          <button 
-            disabled={currentIdx === 0}
-            onClick={() => setCurrentIdx(prev => prev - 1)}
-            className="px-6 py-3 rounded-2xl bg-slate-800 text-white font-bold disabled:opacity-20 hover:bg-slate-700"
-          >
-            ← Câu trước
-          </button>
-          <button 
-  type="button" // Thêm type để tránh submit nhầm
-  disabled={currentIdx === questions.length - 1} 
-  onClick={() => setCurrentIdx(prev => prev + 1)} // Đảm bảo dùng prev => prev + 1
-  className="px-6 py-3 rounded-2xl bg-slate-800 text-white font-bold disabled:opacity-20 hover:bg-slate-700 border border-slate-700"
->
-  Câu tiếp →
-</button>
+      <main className="max-w-4xl mx-auto p-6">
+        <QuestionCard q={questions[currentIdx]} idx={currentIdx} answer={answers[currentIdx]} onSelect={handleSelect} />
+        
+        <div className="flex justify-between mt-6">
+          <button disabled={currentIdx === 0} onClick={() => setCurrentIdx(v => v - 1)} className="px-6 py-2 bg-slate-800 rounded-lg disabled:opacity-30">Câu trước</button>
+          <button disabled={currentIdx === questions.length - 1} onClick={() => setCurrentIdx(v => v + 1)} className="px-6 py-2 bg-slate-800 rounded-lg disabled:opacity-30">Câu tiếp</button>
         </div>
       </main>
     </div>
   );
 }
-
-
-  
