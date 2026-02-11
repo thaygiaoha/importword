@@ -133,10 +133,6 @@ export default function ExamRoom({ 
     const startTimeMs = startTime.getTime();
     const timeSpentMin = Math.floor((timeNow - startTimeMs) / 60000);
     const timeTakenSeconds = Math.floor((timeNow - startTimeMs) / 1000);
-  
-
-
-
     if (!isAuto) {
       if (timeSpentMin < minSubmitTime) {
         alert(`Cần tối thiểu ${minSubmitTime} phút để nộp. Còn ${minSubmitTime - timeSpentMin} phút.`);
