@@ -54,7 +54,10 @@ const QuestionCard = React.memo(({ q, idx, answer, onSelect }: any) => {
             return (
               <button key={i} onClick={() => onSelect(idx, label)} className={`p-5 rounded-3xl text-left border-2 transition-all flex items-center gap-6 ${isSelected ? 'border-emerald-500 bg-emerald-500/10' : 'border-slate-800 bg-slate-800/50 hover:border-slate-700'}`}>
                 <span className={`w-10 h-10 flex-shrink-0 flex items-center justify-center rounded-xl font-black ${isSelected ? 'bg-emerald-500 text-white' : 'bg-slate-700 text-slate-400'}`}>{label}</span>
-                <div className="text-lg font-bold" dangerouslySetInnerHTML={{ __html: formatContent(opt) }} />
+                <div 
+  className="text-lg font-bold text-white shadow-sm" // Thay text-slate-400 bằng text-white hoặc text-slate-100
+  dangerouslySetInnerHTML={{ __html: formatContent(opt) }} 
+/>
               </button>
             );
           })}
