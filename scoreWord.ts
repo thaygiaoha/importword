@@ -13,19 +13,19 @@ export const scoreWord = (
     let point = 0;
 
     // 🔥 PARSE JSON GỐC
-    let original: any = q;
+   let original: any = q;
 
-try {
-  if (typeof q.question === "string") {
+// Nếu question là string thì thử parse
+if (typeof q.question === "string") {
+  try {
     const parsed = JSON.parse(q.question);
 
-    // Nếu parse ra object có type thì dùng
-    if (parsed && typeof parsed === "object" && parsed.type) {
+    if (parsed && typeof parsed === "object") {
       original = parsed;
     }
+  } catch (e) {
+    // Không làm gì cả, giữ nguyên q
   }
-} catch (e) {
-  console.warn("Không parse được question:", q.question);
 }
 
     // =======================
