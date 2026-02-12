@@ -1,5 +1,5 @@
 export const scoreWord = (
-  questions: any[],
+  questionsW: any[],
   answers: Record<number, any>,
   scMCQ: number,
   scTF: number,
@@ -8,7 +8,7 @@ export const scoreWord = (
   let totalScore = 0;
   const details: any[] = [];
 
-  questions.forEach((q, idx) => {
+  questionsW.forEach((q, idx) => {
     const studentAns = answers[idx];
     let point = 0;
 
