@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { scoreWord } from '../scoreWord';
-interface Question {
+interface QuestionW {
   id: string;
   type: 'mcq' | 'true-false' | 'sa' | 'short-answer'; 
-  question: string;
+  questionW: string;
   o?: string[];
   s?: any[];
   a?: string;
@@ -218,7 +218,7 @@ useEffect(() => {
   }, [handleFinish]);
 
   const handleSelect = useCallback((idx: number, val: any) => setAnswers(p => ({ ...p, [idx]: val })), []); 
-  const currentQuestion = questionsW[currentIdx];
+  const currentQuestionW = questionsW[currentIdx];
   
   return (  
   <div className="min-h-screen bg-slate-950 pb-20">
