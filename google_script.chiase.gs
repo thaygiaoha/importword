@@ -48,7 +48,7 @@ function doGet(e) {
 
  // Thêm vào trong function doGet(e)
 if (action === 'getQuestionsByCode') {
-  const examCodeW = params.examCodeW;
+  const examCode = params.examCode;
   const sheet = ss.getSheetByName("exam_data");
   if (!sheet) return createResponse("error", "Chưa có dữ liệu exam_data");
   
@@ -57,7 +57,7 @@ if (action === 'getQuestionsByCode') {
   
   for (let i = 1; i < data.length; i++) {
     // Cột A là mã đề
-    if (data[i][0].toString() === examCodeW.toString()) {
+    if (data[i][0].toString() === examCode.toString()) {
       try {
         // Cột C chứa JSON câu hỏi
         results.push(JSON.parse(data[i][2])); 
@@ -353,7 +353,7 @@ if (action === "getRouting") {
 
     sheetKq.appendRow([
   data.timestamp,                                // Cột A
-  data.examCodeW || data.exams || "",             // Cột B: Nhận cả 2 tên biến
+  data.examCode || data.exams || "",             // Cột B: Nhận cả 2 tên biến
   data.sbd || "",                                // Cột C
   data.name || "",                               // Cột D
   data.className || data.class || "",            // Cột E: Nhận cả 2 tên biến
@@ -378,7 +378,7 @@ if (action === "getRouting") {
    if (action === "studentGetExam") {
   try {
     const sbd = data.sbd?.toString().trim();
-    const examCodeW = data.examCodeW?.toString().trim();
+    const examCode = data.examCode?.toString().trim();
     const idgv = data.idgv?.toString().trim();
 
     const sheetDS = ss.getSheetByName("danhsach");
@@ -389,8 +389,8 @@ if (action === "getRouting") {
     const student = sheetDS.getDataRange().getValues().find(r => r[0].toString() == sbd && r[5].toString() == idgv);
     if (!student) return createResponseW("error", "SBD hoặc IDGV không đúng!");
 
-    const exRow = sheetExam.getDataRange().getValues().find(r => r[0].toString() == examCodeW);
-    if (!exRow) return createResponseW("error", "Không tìm thấy mã đề: " + examCodeW);
+    const exRow = sheetExam.getDataRange().getValues().find(r => r[0].toString() == examCode);
+    if (!exRow) return createResponseW("error", "Không tìm thấy mã đề: " + examCode);
     // chuẩn hóa
     const toInt = (v, def = 0) => {
       const n = parseInt(v?.toString().trim(), 10);
@@ -414,8 +414,8 @@ if (action === "getRouting") {
 
     // 2. Lấy câu hỏi - ĐOẠN NÀY QUAN TRỌNG
     const allRows = sheetData.getDataRange().getValues();
-    const filteredQuestionsW = allRows.slice(1)
-      .filter(r => r[0].toString().trim() === examCodeW)
+    const filteredQuestions = allRows.slice(1)
+      .filter(r => r[0].toString().trim() === examCode)
       .map(r => {
         let rawContent = r[4];
         if (!rawContent) return null;
@@ -449,7 +449,7 @@ if (action === "getRouting") {
       scoreTF: toFloat(exRow[5], 0),
       scoreSA: toFloat(exRow[7], 0),
            
-      questionsW: filteredQuestionsW // Gửi hết về xem có đủ không
+      questions: filteredQuestions // Gửi hết về xem có đủ không
     });
 
   } catch (error) {
@@ -467,7 +467,7 @@ if (action === "getRouting") {
   
   const lastRow = sheet.getLastRow();
   const solutions = data.solutions; // Mảng các chuỗi {...}
-  const examCodeW = data.examCodeW;
+  const examCode = data.examCode;
 
   // Đọc dữ liệu để làm bản đồ
   const range = sheet.getRange(1, 1, lastRow, 6).getValues(); 
@@ -482,7 +482,7 @@ if (action === "getRouting") {
       const solId = idMatch[1].toString();
       // Dò đúng dòng có Mã đề + ID
       for (let i = 1; i < range.length; i++) {
-        if (range[i][0].toString() === examCodeW.toString() && range[i][1].toString() === solId) {
+        if (range[i][0].toString() === examCode.toString() && range[i][1].toString() === solId) {
           sheet.getRange(i + 1, 6).setValue(solText);
           range[i][5] = solText; // Cập nhật vào mảng tạm để tránh ghi đè
           updatedCount++;
@@ -495,7 +495,7 @@ if (action === "getRouting") {
     // 2. Nếu không có ID hoặc không tìm thấy dòng khớp ID -> Tìm dòng trống đầu tiên của mã đề đó
     if (!found) {
       for (let i = 1; i < range.length; i++) {
-        if (range[i][0].toString() === examCodeW.toString() && (!range[i][5] || range[i][5].toString().trim() === "")) {
+        if (range[i][0].toString() === examCode.toString() && (!range[i][5] || range[i][5].toString().trim() === "")) {
           sheet.getRange(i + 1, 6).setValue(solText);
           range[i][5] = solText; // Đánh dấu là đã điền
           updatedCount++;
@@ -506,33 +506,33 @@ if (action === "getRouting") {
     }
   });
 
-  return createResponse("success", `Đã nạp xong ${updatedCount} lời giải cho mã ${examCodeW}!`);
+  return createResponse("success", `Đã nạp xong ${updatedCount} lời giải cho mã ${examCode}!`);
 }
 
 
 
     // 2. NHÁNH NẠP CÂU HỎI (Khớp 100% với React ở trên)
-    if (action === "saveOnlyQuestionsW") {
+    if (action === "saveOnlyQuestions") {
   const sheet = ss.getSheetByName("exam_data") || ss.insertSheet("exam_data");
-  const qArray = data.questionsW;
-  const examCodeW = data.examCodeW;
+  const qArray = data.questions;
+  const examCode = data.examCode;
   const force = data.force || false; // Nhận lệnh ghi đè từ React
 
-  if (!Array.isArray(qArray)) return createResponse("error", "questionsW không phải mảng!");
+  if (!Array.isArray(qArray)) return createResponse("error", "questions không phải mảng!");
 
   // --- LOGIC DÒ MÃ EXAMS ---
   const fullData = sheet.getDataRange().getValues();
-  const exists = fullData.some(row => row[0].toString() === examCodeW.toString());
+  const exists = fullData.some(row => row[0].toString() === examCode.toString());
 
   if (exists && !force) {
-    return createResponse("exists", `Mã exams ${examCodeW} đã có câu hỏi!`);
+    return createResponse("exists", `Mã exams ${examCode} đã có câu hỏi!`);
   }
 
   // Nếu thầy chọn GHI ĐÈ (force = true), tiến hành xóa các hàng cũ của mã đó
   if (exists && force) {
     // Xóa từ dưới lên để không bị lệch Index
     for (let i = fullData.length - 1; i >= 0; i--) {
-      if (fullData[i][0].toString() === examCodeW.toString()) {
+      if (fullData[i][0].toString() === examCode.toString()) {
         sheet.deleteRow(i + 1);
       }
     }
@@ -540,7 +540,7 @@ if (action === "getRouting") {
   // -------------------------
 
   const rows = qArray.map(q => ([
-    examCodeW,               // A
+    examCode,               // A
     q.id || "",            // B
     q.classTag || "1001.a", // C
     q.type || "mcq",       // D
@@ -550,7 +550,7 @@ if (action === "getRouting") {
   ]));
 
   sheet.getRange(sheet.getLastRow() + 1, 1, rows.length, 7).setValues(rows);
-  return createResponse("success", `Đã nạp ${rows.length} câu vào mã ${examCodeW}`);
+  return createResponse("success", `Đã nạp ${rows.length} câu vào mã ${examCode}`);
 }
 
 
@@ -559,7 +559,7 @@ if (action === "saveExamConfig") {
   // Lấy sheet "exams" từ spreadsheet của GV (ss)
   const sheetExamsGV = ss.getSheetByName("exams") || ss.insertSheet("exams");
   
-  const examCodeW = (data.examCodeW || "").toString().trim();
+  const examCode = (data.examCode || "").toString().trim();
   const idgv = (data.idgv || "").toString().trim();
   const cfg = data.config;
   const isForce = e.parameter.force === "true";
@@ -569,7 +569,7 @@ if (action === "saveExamConfig") {
   let existingRow = -1;
 
   for (let i = 1; i < vals.length; i++) {
-    if (vals[i][0] && vals[i][0].toString().trim() === examCodeW) {
+    if (vals[i][0] && vals[i][0].toString().trim() === examCode) {
       existingRow = i + 1;
       break;
     }
@@ -582,7 +582,7 @@ if (action === "saveExamConfig") {
 
   // Dàn quân 12 cột chuẩn vào sheet exams của GV
   const rowData = [
-    examCodeW,           // 1. Mã đề
+    examCode,           // 1. Mã đề
     idgv,               // 2. IDGV
     cfg.numMCQ,         // 3. Số câu MCQ
     cfg.scoreMCQ,       // 4. Điểm mỗi câu MCQ
@@ -604,7 +604,7 @@ if (action === "saveExamConfig") {
     sheetExamsGV.appendRow(rowData);
   }
 
-  return createResponse("success", "✅ Đã lưu cấu hình đề " + examCodeW + " vào đúng Spreadsheet của Giáo viên!");
+  return createResponse("success", "✅ Đã lưu cấu hình đề " + examCode + " vào đúng Spreadsheet của Giáo viên!");
 }
 
 
@@ -677,7 +677,7 @@ if (action === "saveExamConfig") {
       return createResponse("success", "✅ Đã tạo ma trận " + data.makiemtra + " thành công!");
     }
 
-    // 3. NHÁNH LƯU CÂU HỎI MỚI VAO NGAN HANG (saveQuestions)
+    // 3. NHÁNH LƯU CÂU HỎI MỚI (saveQuestions)
     if (action === 'saveQuestions') {
       var now = new Date();
       var yymmdd = now.getFullYear().toString().slice(-2) + ("0" + (now.getMonth() + 1)).slice(-2) + ("0" + now.getDate()).slice(-2);
@@ -732,7 +732,16 @@ if (action === "saveExamConfig") {
       var adminPass = ss.getSheetByName("danhsach").getRange("I2").getValue().toString().trim();
       if (data.password.toString().trim() === adminPass) return resJSON({ status: "success", message: "Chào Admin!" });
       return resJSON({ status: "error", message: "Sai mật khẩu!" });
-    }    
+    }
+
+    // 7. LƯU TỪ WORD (uploadWord)
+    if (action === "uploadWord") {
+      const sheetExams = ss.getSheetByName("Exams") || ss.insertSheet("Exams");
+      const sheetBank = ss.getSheetByName("QuestionBank") || ss.insertSheet("QuestionBank");
+      sheetExams.appendRow([data.config.title, data.idNumber, data.config.duration, data.config.minTime, data.config.tabLimit, JSON.stringify(data.config.points)]);
+      data.questions.forEach(function (q) { sheetBank.appendRow([data.config.title, q.part, q.type, q.classTag, q.question, q.answer, q.image]); });
+      return createResponse("success", "UPLOAD_DONE");
+    }
 
     // 8. NHÁNH THEO TYPE (quiz, rating, ketqua)
     if (data.type === 'rating') {
@@ -746,16 +755,10 @@ if (action === "saveExamConfig") {
       return createResponse("success", "Đã lưu kết quả Quiz");
     }
 
-   // 9. LƯU KẾT QUẢ THI TỔNG HỢP THEO MA TRAN (Mặc định nếu có data.examCode)
+    // 9. LƯU KẾT QUẢ THI TỔNG HỢP (Mặc định nếu có data.examCode)
     if (data.examCode) {
       let sheetResult = ss.getSheetByName("ketqua") || ss.insertSheet("ketqua");
       sheetResult.appendRow([new Date(), data.examCode, data.sbd, data.name, data.className, data.score, data.totalTime, JSON.stringify(data.details)]);
-      return createResponse("success", "Đã lưu kết quả thi");
-    }
-     // 9. LƯU KẾT QUẢ THI TỔNG HỢP DE THI LE (Mặc định nếu có data.examCodeW)
-    if (data.examCodeW) {
-      let sheetResult = ss.getSheetByName("ketqua") || ss.insertSheet("ketqua");
-      sheetResult.appendRow([new Date(), data.examCodeW, data.sbd, data.name, data.className, data.score, data.totalTime, JSON.stringify(data.details)]);
       return createResponse("success", "Đã lưu kết quả thi");
     }
 

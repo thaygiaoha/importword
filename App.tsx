@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import ExamRoom from '@/components/ExamRoom';
 import { Student, ExamResult, Question, AppUser } from './types';
 import { API_ROUTING, DEFAULT_API_URL, DANHGIA_URL, fetchApiRouting, fetchAdminConfig } from './config';
 // Sửa lại đoạn này trong App.tsx của thầy:
@@ -27,7 +26,6 @@ const App: React.FC = () => {
   const [activeStudent, setActiveStudent] = useState<Student | null>(null);
   const [examResult, setExamResult] = useState<ExamResult | null>(null);
   const [questions, setQuestions] = useState<Question[]>([]);
-  const [questionsW, setQuestionsW] = useState<QuestionW[]>([]);
   const [user, setUser] = useState<AppUser | null>(null);
   const [showAuth, setShowAuth] = useState(false);
   const [showVipModal, setShowVipModal] = useState(false);
@@ -121,7 +119,7 @@ const App: React.FC = () => {
   // 3. Đóng gói 7 cột CHUẨN ĐÉT cho sheet(ketqua)
   const payload = {
     timestamp: new Date().toLocaleString('vi-VN'),    // Cột A
-    exams: activeStudent?.examCodeW || "KHONG_MA",    // Cột B: Mã đề biến đổi (601, 1201...)
+    exams: activeStudent?.examCode || "KHONG_MA",    // Cột B: Mã đề biến đổi (601, 1201...)
     sbd: activeStudent?.sbd,                         // Cột C
     name: activeStudent?.name,                       // Cột D
     class: activeStudent?.class || activeStudent?.className,                 // Cột E (Khớp với className trong props)
@@ -207,13 +205,13 @@ const App: React.FC = () => {
             {/* 5. Giao diện làm bài CHÍNH THỨC (Dành cho học sinh làm đề Word) */}
 {currentView === 'exam' && activeExam && activeStudent && (
   <ExamRoom 
-    questionsW={questionsW}
+    questions={questions}
     studentInfo={{
       idgv: activeStudent.idgv, 
       sbd: activeStudent.sbd,
       name: activeStudent.name,
       className: activeStudent.class,
-      examCodeW: activeExam.code // Mã đề biến đổi 601, 1001...
+      examCode: activeExam.code // Mã đề biến đổi 601, 1001...
     }}
     duration={activeExam.fullTime}
     minSubmitTime={activeExam.miniTime}

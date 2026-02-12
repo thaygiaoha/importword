@@ -16,7 +16,7 @@ export const handleWordUpload = async (file) => {
         const chunks = html.split(/Câu\s+\d+[\.:]/g).filter(c => c.length > 10);
         let currentPart = "PHẦN I";
 
-        const questionsW = chunks.map((chunk, index) => {
+        const questions = chunks.map((chunk, index) => {
           // Nhận diện chuyển phần
           if (chunk.toUpperCase().includes("PHẦN I")) currentPart = "PHẦN I";
           if (chunk.toUpperCase().includes("PHẦN II")) currentPart = "PHẦN II";
@@ -63,7 +63,7 @@ export const handleWordUpload = async (file) => {
             image: imgMatch ? imgMatch[2] : "" 
           };
         });
-        resolve(questionsW);
+        resolve(questions);
       } catch (err) { reject(err); }
     };
     reader.readAsArrayBuffer(file);
