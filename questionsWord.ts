@@ -1,8 +1,8 @@
 export const fetchQuestionsBankW = async (
-  examCode?: string,
+  examCodeW?: string,
   idgv?: string,
   customUrl?: string
-): Promise<Question[]> => {
+): Promise<QuestionW[]> => {
   try {
     let targetUrl = customUrl
       ? customUrl
@@ -10,8 +10,8 @@ export const fetchQuestionsBankW = async (
       ? API_ROUTING[idgv]
       : DANHGIA_URL;
 
-   const finalUrl = examCode
-  ? `${targetUrl}?action=getQuestionsByCode&examCode=${examCode}&t=${Date.now()}`
+   const finalUrl = examCodeW
+  ? `${targetUrl}?action=getQuestionsByCode&examCode=${examCodeW}&t=${Date.now()}`
   : `${targetUrl}?action=getQuestions&t=${Date.now()}`;
 
 
@@ -22,8 +22,8 @@ export const fetchQuestionsBankW = async (
       return [];
 
     const parsed = result.data.map((q: any) => {
-      let obj = typeof q.question === "string"
-        ? JSON.parse(q.question)
+      let obj = typeof q.questionW === "string"
+        ? JSON.parse(q.questionW)
         : q;
 
       // 🔥 TRỘN MCQ
@@ -46,10 +46,10 @@ export const fetchQuestionsBankW = async (
     ];
 
     // 🔥 LƯU LUÔN JSON ĐÃ TRỘN
-    questionsBankW = final.map(q => ({
+    sBankW = final.map(q => ({
       id: q.id,
       type: q.type,
-      question: JSON.stringify(q),
+      questionW: JSON.stringify(q),
     }));
 
     console.log("🎲 Đã trộn xong:", final);
