@@ -49,12 +49,12 @@ export const fetchQuestionsBankW = async (
     sBankW = final.map(q => ({
       id: q.id,
       type: q.type,
-      questionW: JSON.stringify(q),
+      W: JSON.stringify(q),
     }));
 
     console.log("🎲 Đã trộn xong:", final);
 
-    return questionsBankW;
+    return sBankW;
   } catch (err) {
     console.error("Lỗi fetch:", err);
     return [];
