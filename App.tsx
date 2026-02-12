@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { ExamRoom } from '../ExamRoom';
 import { Student, ExamResult, Question, AppUser } from './types';
 import { API_ROUTING, DEFAULT_API_URL, DANHGIA_URL, fetchApiRouting, fetchAdminConfig } from './config';
 // Sửa lại đoạn này trong App.tsx của thầy:
