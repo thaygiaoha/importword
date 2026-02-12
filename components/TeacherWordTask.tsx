@@ -5,7 +5,7 @@ const TeacherWordTask = ({ onBack }) => {
   const [loading, setLoading] = useState(false);
   const [idgv, setIdgv] = useState('');
   const [customLink, setCustomLink] = useState(''); // Để dự phòng nếu cần dán trực tiếp link
-  const [examCodeW, setExamCodeW] = useState('');
+  const [examCode, setExamCode] = useState('');
   const [rawLGText, setRawLGText] = useState('');
 
   const [config, setConfig] = useState({
@@ -20,52 +20,6 @@ const TeacherWordTask = ({ onBack }) => {
 
   const [jsonInputWord, setJsonInputWord] = useState('');
   const [jsonInputLG, setJsonInputLG] = useState('');
-  // ===========================VBA chuyển Latex cho Web ======================
-  
-  const vbaCode = `' MACRO CHUẨN HÓA LATEX CHO WEB THAY HA
-Sub ChuanHoaLatexMathJax()
-    Application.ScreenUpdating = False
-    
-    ' 1. Chuyển hệ phương trình (align) sang cases
-    Call ExecReplace("\\\\left\\{([ ^13^l^t]@)\\\\begin\\{align\\}", "\\\\begin{cases}", True)
-    Call ExecReplace("\\\\end\\{align\\}([ ^13^l^t]@)\\\\right.", "\\\\end{cases}", True)
-    Call ExecReplace("\\\\begin\\{align\\}", "\\\\begin{cases}", False)
-    Call ExecReplace("\\\\end\\{align\\}", "\\\\end{cases}", False)
-
-    ' 2. Bảo vệ ngoặc vuông [ ] tránh lỗi Wildcard
-    Call ExecReplace("\\\\left\\[", "<<L_SQ>>", False)
-    Call ExecReplace("\\\\right\\]", "<<R_SQ>>", False)
-
-    ' 3. Chuyển $$ ... $$ sang \\[ ... \\]
-    Call ExecReplace("\\$\\$([!\\$]@)\\$\\$", "\\\\[\\1\\\\]", True)
-
-    ' 4. Chuyển \\( \\) sang $
-    Call ExecReplace("\\\\(", "$", False)
-    Call ExecReplace("\\\\)", "$", False)
-
-    ' 5. Fix Độ C
-    Call ExecReplace("^\\circ C", "^\\circ\\text{C}", False)
-
-    ' 6. Trả lại ngoặc vuông
-    Call ExecReplace("<<L_SQ>>", "\\\\left[", False)
-    Call ExecReplace("<<R_SQ>>", "\\\\right]", False)
-
-    Application.ScreenUpdating = True
-    MsgBox "Đã chuẩn hóa LaTeX thành công!", vbInformation
-End Sub
-
-Sub ExecReplace(fnd As String, rpl As String, isWild As Boolean)
-    With ActiveDocument.Content.Find
-        .ClearFormatting
-        .Replacement.ClearFormatting
-        .Text = fnd
-        .Replacement.Text = rpl
-        .Forward = True
-        .Wrap = wdFindContinue
-        .MatchWildcards = isWild
-        .Execute Replace:=wdReplaceAll
-    End With
-End Sub`;
 
   // Tái sử dụng hàm bóc tách của thầy
   // =========================================================================================================================================
@@ -110,13 +64,13 @@ End Sub`;
   }
 
   // 3️⃣ Gửi thẳng sang GAS
-  handleSaveQuestionsW(results);
+  handleSaveQuestions(results);
 };
 
 
   // ==============================================================================================================================================
    
-const handleSaveQuestionsW = async (dataArray) => {
+const handleSaveQuestions = async (dataArray) => {
   // 1. Kiểm tra dữ liệu đầu vào
   if (!dataArray || (Array.isArray(dataArray) && dataArray.length === 0)) {
     alert("Chưa có dữ liệu để nạp!");
@@ -130,10 +84,10 @@ const handleSaveQuestionsW = async (dataArray) => {
       method: "POST",
       headers: { "Content-Type": "text/plain" },
       body: JSON.stringify({
-        action: "saveOnlyQuestionsW", // Thầy nhớ check bên GAS tên action này nhé
-        examCodeW: examCodeW,
+        action: "saveOnlyQuestions", // Thầy nhớ check bên GAS tên action này nhé
+        examCode: examCode,
         idgv: idgv,
-        questionsW: dataArray // ĐÃ SỬA: Dùng đúng tên tham số dataArray
+        questions: dataArray // ĐÃ SỬA: Dùng đúng tên tham số dataArray
       }),
     });
 
@@ -153,7 +107,7 @@ const handleSaveQuestionsW = async (dataArray) => {
   // 1. LƯU CẤU HÌNH =====================================================================================================
   const handleSaveConfig = async (force = false) => {
     if (!idgv) return alert("❌ Thầy chưa nhập ID Giáo viên!");
-    if (!examCodeW) return alert("❌ Cần nhập Mã đề!");
+    if (!examCode) return alert("❌ Cần nhập Mã đề!");
     
     const targetUrl = customLink || API_ROUTING[idgv];
     if (!targetUrl) return alert("❌ Không tìm thấy Link Script cho ID này!");
@@ -163,7 +117,7 @@ const handleSaveQuestionsW = async (dataArray) => {
       const resp = await fetch(`${targetUrl}?action=saveExamConfig&force=${force}`, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain' },
-        body: JSON.stringify({ idgv, examCodeW, config })
+        body: JSON.stringify({ idgv, examCode, config })
       });
       const res = await resp.json();
 
@@ -223,7 +177,7 @@ const handleSaveQuestionsW = async (dataArray) => {
 
   // 3. LƯU LỜI GIẢI từ word ==========================================================================================================================================================
   const handleUpdateSolutions = async () => {
-  if (!idgv || !examCodeW) {
+  if (!idgv || !examCode) {
     alert("❌ Thiếu IDGV hoặc mã đề");
     return;
   }
@@ -242,7 +196,7 @@ const handleSaveQuestionsW = async (dataArray) => {
       headers: { "Content-Type": "text/plain" },
       body: JSON.stringify({
         action: "saveOnlySolutions",
-        examCodeW,
+        examCode,
         solutions: jsonInputLG   // 🔥 ĐÚNG KIỂU
       })
     });
@@ -276,8 +230,8 @@ const handleSaveQuestionsW = async (dataArray) => {
             <input 
               className="w-full p-4 rounded-xl bg-slate-500 text-white font-black text-center placeholder-slate-300 shadow-inner" 
               placeholder="MÃ ĐỀ KT (EXAMS)..." 
-              value={examCodeW} 
-              onChange={e => setExamCodeW(e.target.value)} 
+              value={examCode} 
+              onChange={e => setExamCode(e.target.value)} 
             />
           </div>
 

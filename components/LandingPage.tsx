@@ -58,7 +58,6 @@ const LandingPage: React.FC<LandingPageProps> = ({
   const [loadingMatrix, setLoadingMatrix] = useState(false); //
   const [idgv, setIdgv] = useState('');
   const [questions, setQuestions] = useState([]);
-  const [questionsW, setQuestionsW] = useState([]);
   const [studentName, setStudentName] = useState("");
   const [duration, setDuration] = useState(90);          
   const [examStarted, setExamStarted] = useState(false);
@@ -75,7 +74,7 @@ const LandingPage: React.FC<LandingPageProps> = ({
 const [showStudentLogin, setShowStudentLogin] = useState(false);
 
 // Nơi chứa dữ liệu HS nhập vào (IDGV, SBD, Mã Đề)
-const [studentInfo, setStudentInfo] = useState({ idgv: '', sbd: '', examCodeW: '' });
+const [studentInfo, setStudentInfo] = useState({ idgv: '', sbd: '', examCode: '' });
 
 
   // Trạng thái chờ khi đang xác thực
@@ -183,7 +182,7 @@ const handleStudentSubmit = async (e) => {
       body: JSON.stringify({
         action: "studentGetExam",
         sbd: studentInfo.sbd.toString().trim(),
-        examCodeW: studentInfo.examCodeW.toString().trim(),
+        examCode: studentInfo.examCode.toString().trim(),
         idgv: currentIDGV
       }),
     });
@@ -192,12 +191,12 @@ const handleStudentSubmit = async (e) => {
 
     if (result.status === "success") {
       // Cập nhật dữ liệu từ GAS vào State của LandingPage
-      if (result.data.questionsW) setQuestionsW(result.data.questionsW); 
+      if (result.data.questions) setQuestions(result.data.questions); 
       
       // Lưu tên học sinh và thời gian thi vào state để truyền cho ExamRoom
       const d = result.data;
   
-      setQuestionsW(d.questionsW || []);
+      setQuestions(d.questions || []);
       setDuration(Number(d.duration) || 90);
       setMinSubmitTime(Number(d.minSubmitTime) || 0);    // Thêm State này
       setMaxTabSwitches(Number(d.maxTabSwitches) || 99); // Thêm State này
@@ -536,7 +535,7 @@ const handleRedirect = () => {
       body: JSON.stringify({
         action: "submitExam", // Hành động ghi điểm
         sbd: studentInfo.sbd,
-        examCodeW: studentInfo.examCodeW,
+        examCode: studentInfo.examCode,
         className: studentInfo.className,
         idgv: currentIDGV,
         name: studentInfo.name,
@@ -560,7 +559,7 @@ const handleRedirect = () => {
     {examStarted ? (
   <div className="animate-in slide-in-from-bottom duration-500">
     <ExamRoom 
-      questionsW={questionsW} 
+      questions={questions} 
       studentInfo={studentInfo}
       duration={duration} 
       minSubmitTime={minSubmitTime}
@@ -580,7 +579,7 @@ const handleRedirect = () => {
   const payload = {
     action: "submitExam",
     timestamp: new Date().toLocaleString('vi-VN'),
-    exams: String(studentInfo.examCodeW || "").toUpperCase(),
+    exams: String(studentInfo.examCode || "").toUpperCase(),
     sbd: String(studentInfo.sbd || ""),
     name: String(studentInfo.name || ""),
     class: String(studentInfo.className || ""), // Đảm bảo key này khớp với GAS
@@ -1487,8 +1486,8 @@ const handleRedirect = () => {
                 <input 
                   className="w-full p-4 rounded-xl bg-slate-800 text-emerald-400 border border-slate-700 font-black text-xs focus:ring-2 focus:ring-emerald-500 outline-none uppercase" 
                   placeholder="MÃ ĐỀ THI (EXAMS)..." 
-                  value={studentInfo.examCodeW} 
-                  onChange={e => setStudentInfo({...studentInfo, examCodeW: e.target.value.toUpperCase()})} 
+                  value={studentInfo.examCode} 
+                  onChange={e => setStudentInfo({...studentInfo, examCode: e.target.value.toUpperCase()})} 
                 />
                 
                 <div className="grid grid-cols-2 gap-3 mt-6">
