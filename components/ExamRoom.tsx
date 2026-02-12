@@ -10,13 +10,13 @@ interface Question {
 }
 
 interface ExamRoomProps {
-  questions: Question[];
+  questionsW: QuestionW[];
   studentInfo: {
     idgv: string;
     sbd: string;
     name: string;
     className: string;
-    examCode: string;
+    examCodeW: string;
   };
   duration: number;
   minSubmitTime?: number; 
@@ -110,7 +110,7 @@ const formatTime = (seconds: number) => {
 };
 
 export default function ExamRoom({ 
-  questions = [], 
+  questionsW = [], 
   studentInfo, 
   duration, 
   minSubmitTime = 0, // Để mặc định là 0 để test cho dễ
@@ -143,7 +143,7 @@ export default function ExamRoom({ 
     // 1. GỌI SCOREWORD ĐỂ CHẤM ĐIỂM NGAY TỨC THÌ
     // Lấy điểm từ props: scoreMCQ (Cột D), scoreTF (Cột F), scoreSA (Cột H)
     const result = scoreWord(
-      questions, 
+      questionsW, 
       answers, 
       Number(scoreMCQ) || 0.25, 
       Number(scoreTF) || 1.0, 
@@ -159,7 +159,7 @@ export default function ExamRoom({ 
       timestamp: new Date().toLocaleString('vi-VN'),            // Cột A
       details: result.details                                   // Chi tiết nếu cần
     });
-  }, [startTime, minSubmitTime, questions, answers, scoreMCQ, scoreTF, scoreSA, onFinish]);
+  }, [startTime, minSubmitTime, questionsW, answers, scoreMCQ, scoreTF, scoreSA, onFinish]);
    const [currentIdx, setCurrentIdx] = useState(0); 
   // 3. RENDER MATHJAX (Để công thức không bị lỗi "trơ" mã LaTeX)
   useEffect(() => {
@@ -169,7 +169,7 @@ export default function ExamRoom({ 
         (window as any).MathJax.typesetPromise().catch((err: any) => console.error(err));
       }, 50); 
     }
-  }, [currentIdx, questions, answers]); // Thêm currentIdx vào đây
+  }, [currentIdx, questionsW, answers]); // Thêm currentIdx vào đây
 
  
   
@@ -218,7 +218,7 @@ useEffect(() => {
   }, [handleFinish]);
 
   const handleSelect = useCallback((idx: number, val: any) => setAnswers(p => ({ ...p, [idx]: val })), []); 
-  const currentQuestion = questions[currentIdx];
+  const currentQuestion = questionsW[currentIdx];
   
   return (  
   <div className="min-h-screen bg-slate-950 pb-20">
@@ -252,7 +252,7 @@ useEffect(() => {
 
         {/* Danh sách nút số câu hỏi */}
         <div className="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar justify-center border-t border-slate-800/50 pt-3">
-          {questions.map((_, idx) => {
+          {questionsW.map((_, idx) => {
             const isDone = answers[idx] !== undefined && answers[idx] !== null;
             const isCurrent = currentIdx === idx;
             
@@ -277,11 +277,11 @@ useEffect(() => {
 
       {/* NỘI DUNG CÂU HỎI HIỆN TẠI */}
       <main className="max-w-4xl mx-auto p-4 md:p-8 mt-6">
-        {/* Gọi trực tiếp questions[currentIdx] để tránh lỗi chập chờn */}
-        {questions[currentIdx] ? (
+        {/* Gọi trực tiếp questionsW[currentIdx] để tránh lỗi chập chờn */}
+        {questionsW[currentIdx] ? (
           <QuestionCard 
             key={currentIdx} // Thêm key để React ép render lại hoàn toàn khi đổi câu
-            q={questions[currentIdx]} 
+            q={questionsW[currentIdx]} 
             idx={currentIdx} 
             answer={answers[currentIdx]} 
             onSelect={handleSelect} 
@@ -303,7 +303,7 @@ useEffect(() => {
   
   <button 
             type="button"
-            disabled={currentIdx === questions.length - 1} 
+            disabled={currentIdx === questionsW.length - 1} 
             onClick={() => setCurrentIdx(prev => prev + 1)}
             className="px-6 py-3 rounded-2xl bg-slate-800 text-slate-100 font-bold disabled:opacity-20 transition-all hover:bg-slate-700 border border-slate-700"
           >
