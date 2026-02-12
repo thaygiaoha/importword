@@ -5,7 +5,7 @@ const TeacherWordTask = ({ onBack }) => {
   const [loading, setLoading] = useState(false);
   const [idgv, setIdgv] = useState('');
   const [customLink, setCustomLink] = useState(''); // Để dự phòng nếu cần dán trực tiếp link
-  const [examCode, setExamCode] = useState('');
+  const [examCodeW, setExamCodeW] = useState('');
   const [rawLGText, setRawLGText] = useState('');
 
   const [config, setConfig] = useState({
@@ -110,13 +110,13 @@ End Sub`;
   }
 
   // 3️⃣ Gửi thẳng sang GAS
-  handleSaveQuestions(results);
+  handleSaveQuestionsW(results);
 };
 
 
   // ==============================================================================================================================================
    
-const handleSaveQuestions = async (dataArray) => {
+const handleSaveQuestionsW = async (dataArray) => {
   // 1. Kiểm tra dữ liệu đầu vào
   if (!dataArray || (Array.isArray(dataArray) && dataArray.length === 0)) {
     alert("Chưa có dữ liệu để nạp!");
@@ -130,10 +130,10 @@ const handleSaveQuestions = async (dataArray) => {
       method: "POST",
       headers: { "Content-Type": "text/plain" },
       body: JSON.stringify({
-        action: "saveOnlyQuestions", // Thầy nhớ check bên GAS tên action này nhé
-        examCode: examCode,
+        action: "saveOnlyQuestionsW", // Thầy nhớ check bên GAS tên action này nhé
+        examCodeW: examCodeW,
         idgv: idgv,
-        questions: dataArray // ĐÃ SỬA: Dùng đúng tên tham số dataArray
+        questionsW: dataArray // ĐÃ SỬA: Dùng đúng tên tham số dataArray
       }),
     });
 
@@ -153,7 +153,7 @@ const handleSaveQuestions = async (dataArray) => {
   // 1. LƯU CẤU HÌNH =====================================================================================================
   const handleSaveConfig = async (force = false) => {
     if (!idgv) return alert("❌ Thầy chưa nhập ID Giáo viên!");
-    if (!examCode) return alert("❌ Cần nhập Mã đề!");
+    if (!examCodeW) return alert("❌ Cần nhập Mã đề!");
     
     const targetUrl = customLink || API_ROUTING[idgv];
     if (!targetUrl) return alert("❌ Không tìm thấy Link Script cho ID này!");
@@ -163,7 +163,7 @@ const handleSaveQuestions = async (dataArray) => {
       const resp = await fetch(`${targetUrl}?action=saveExamConfig&force=${force}`, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain' },
-        body: JSON.stringify({ idgv, examCode, config })
+        body: JSON.stringify({ idgv, examCodeW, config })
       });
       const res = await resp.json();
 
@@ -223,7 +223,7 @@ const handleSaveQuestions = async (dataArray) => {
 
   // 3. LƯU LỜI GIẢI từ word ==========================================================================================================================================================
   const handleUpdateSolutions = async () => {
-  if (!idgv || !examCode) {
+  if (!idgv || !examCodeW) {
     alert("❌ Thiếu IDGV hoặc mã đề");
     return;
   }
@@ -242,7 +242,7 @@ const handleSaveQuestions = async (dataArray) => {
       headers: { "Content-Type": "text/plain" },
       body: JSON.stringify({
         action: "saveOnlySolutions",
-        examCode,
+        examCodeW,
         solutions: jsonInputLG   // 🔥 ĐÚNG KIỂU
       })
     });
@@ -276,8 +276,8 @@ const handleSaveQuestions = async (dataArray) => {
             <input 
               className="w-full p-4 rounded-xl bg-slate-500 text-white font-black text-center placeholder-slate-300 shadow-inner" 
               placeholder="MÃ ĐỀ KT (EXAMS)..." 
-              value={examCode} 
-              onChange={e => setExamCode(e.target.value)} 
+              value={examCodeW} 
+              onChange={e => setExamCodeW(e.target.value)} 
             />
           </div>
 
