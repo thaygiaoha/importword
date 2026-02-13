@@ -32,8 +32,11 @@ const App: React.FC = () => {
   const [showAuth, setShowAuth] = useState(false);
   const [showVipModal, setShowVipModal] = useState(false);
   const goHome = () => {
-  setCurrentView('home');
-};
+    setCurrentView('landing');
+    setActiveExam(null);
+    setActiveStudent(null);
+    setExamResult(null);
+  };
 
 
   // Khởi tạo dữ liệu hệ thống
