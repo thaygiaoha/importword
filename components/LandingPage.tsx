@@ -822,7 +822,7 @@ const handleRedirect = () => {
             </button>
            <div className="grid grid-cols-2 gap-2">
   {/* 3 Nút chọn lớp 10, 11, 12 */}
-  {[10, 11, 12].map(g => (
+  {[12, 11, 10].map(g => (
    <button 
     key={g} 
     onClick={() => onSelectGrade(g)} 
