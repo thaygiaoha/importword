@@ -97,23 +97,28 @@ const App: React.FC = () => {
 
   // Kết thúc bài thi và gửi dữ liệu từ đề ma trận
   const handleFinishExam = async (result: ExamResult) => {
-    setExamResult(result);
-    setCurrentView('result');
-    let targetUrl = DEFAULT_API_URL;
-    if (result.type === 'quiz') targetUrl = DANHGIA_URL;
-    else if (activeStudent && API_ROUTING[activeStudent.idnumber]) targetUrl = API_ROUTING[activeStudent.idnumber];
+  setExamResult(result);
+  setCurrentView('result');
 
-    try {
-      await fetch(targetUrl, { method: 'POST', mode: 'no-cors', body: JSON.stringify(result) });
-    } catch (e) { console.error("Lỗi gửi kết quả:", e); }
-  };
+  let targetUrl = DEFAULT_API_URL;
 
-  const goHome = () => {
-    setCurrentView('landing');
-    setActiveExam(null);
-    setActiveStudent(null);
-    setExamResult(null);
-  };
+  if (result.type === 'quiz') {
+    targetUrl = DANHGIA_URL;
+  } else if (activeStudent && API_ROUTING[activeStudent.idnumber]) {
+    targetUrl = API_ROUTING[activeStudent.idnumber];
+  }
+
+  try {
+    await fetch(targetUrl, {
+      method: 'POST',
+      mode: 'no-cors',
+      body: JSON.stringify(result)
+    });
+  } catch (e) {
+    console.error("Lỗi gửi kết quả:", e);
+  }
+};
+
 
   // Kết thúc bài thi và gửi dữ liệu từ đề nhập word
  const handleFinishWord = async (result: any) => {
