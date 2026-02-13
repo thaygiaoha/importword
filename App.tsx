@@ -57,7 +57,8 @@ const App: React.FC = () => {
   setActiveExam(config);
   setActiveStudent(student);
   setQuestions(selectedQuestions);
-  set('exam'); // Đảm bảo chuyển sang view 'exam' để dùng ExamRoom
+  setCurrentView('exam'); // ✅ ĐÚNG hoặc Set
+ // Đảm bảo chuyển sang view 'exam' để dùng ExamRoom
 };
 
   // Xử lý bắt đầu Quiz nhanh (Landing)
