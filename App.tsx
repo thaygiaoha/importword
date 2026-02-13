@@ -122,35 +122,26 @@ const App: React.FC = () => {
 
   // Kết thúc bài thi và gửi dữ liệu từ đề nhập word
  const handleFinishWord = async (result: any) => {
-
-  const normalizedResult: ExamResult = {
-    score: Number(result.tongdiem ?? 0),
-    correct: result.correct ?? 0,
-    total: result.total ?? 0,
-    time: result.timeUsed ?? 0,
-    type: 'word'
-  };
-
-  setExamResult(normalizedResult);
+  // 1. result ở đây là { score, timeUsed } nhận từ ExamRoom gửi lên
+  setExamResult(result);
   setCurrentView('result');
 
-  let targetUrl = DEFAULT_API_URL;
-  if (activeStudent && API_ROUTING[activeStudent.idnumber]) {
-    targetUrl = API_ROUTING[activeStudent.idnumber];
-  }
+  // 2. Routing: Dùng studentInfo.idgv (ID Giáo viên) để tìm link Script
+  // Lưu ý: Trong ExamRoomProps thầy đặt là idgv, nên ở đây ta dùng đúng tên đó
+  const targetUrl = (activeStudent && API_ROUTING[activeStudent.idgv]) 
+                    ? API_ROUTING[activeStudent.idgv] 
+                    : DEFAULT_API_URL;
 
-  try {
-    await fetch(targetUrl, {
-      method: 'POST',
-      mode: 'no-cors',
-      body: JSON.stringify(normalizedResult)
-    });
-  } catch (e) {
-    console.error("Lỗi gửi kết quả:", e);
-  }
-};
-
-
+  // 3. Đóng gói 7 cột CHUẨN ĐÉT cho sheet(ketqua)
+  const payload = {
+    timestamp: new Date().toLocaleString('vi-VN'),    // Cột A
+    exams: activeStudent?.examCode || "KHONG_MA",    // Cột B: Mã đề biến đổi (601, 1201...)
+    sbd: activeStudent?.sbd,                         // Cột C
+    name: activeStudent?.name,                       // Cột D
+    class: activeStudent?.class || activeStudent?.className,                 // Cột E (Khớp với className trong props)
+    tongdiem: result.tongdiem, // Cột F
+    time: result.timeUsed                             // Cột G
+  };
  return (
     <AppProvider>
       <div className="min-h-screen flex flex-col font-sans selection:bg-blue-100 bg-slate-50 text-slate-900">
