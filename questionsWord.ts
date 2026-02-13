@@ -1,62 +1,53 @@
+import { Question } from './types';
+import { DANHGIA_URL, API_ROUTING } from './config'; // Nhập API_ROUTING vào đây
+
+export let questionsBankW: Question[] = [];
+
+const shuffleArray = <T>(array: T[]): T[] => {
+  const newArr = [...array];
+  for (let i = newArr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [newArr[i], newArr[j]] = [newArr[j], newArr[i]];
+  }
+  return newArr;
+};
+
+/**
+ * Lấy câu hỏi linh hoạt:
+ * 1. Nếu có customUrl (GV tự nhập link file riêng) -> Dùng luôn.
+ * 2. Nếu có idgv -> Tra cứu trong API_ROUTING.
+ * 3. Nếu không có gì -> Dùng DANHGIA_URL (Admin).
+ */
 export const fetchQuestionsBankW = async (
-  examCode?: string,
-  idgv?: string,
+  examCode?: string, 
+  idgv?: string, 
   customUrl?: string
 ): Promise<Question[]> => {
   try {
-    let targetUrl = customUrl
-      ? customUrl
-      : idgv && API_ROUTING[idgv]
-      ? API_ROUTING[idgv]
-      : DANHGIA_URL;
+    // Logic xác định "đầu nguồn" dữ liệu
+    let targetUrl = DANHGIA_URL;
+    
+    if (customUrl) {
+      targetUrl = customUrl; // Ưu tiên 1: Link GV tự dán vào
+    } else if (idgv && API_ROUTING[idgv]) {
+      targetUrl = API_ROUTING[idgv]; // Ưu tiên 2: Link định tuyến theo ID
+    }
 
-   const finalUrl = examCode
-  ? `${targetUrl}?action=getQuestionsByCode&examCode=${examCode}&t=${Date.now()}`
-  : `${targetUrl}?action=getQuestions&t=${Date.now()}`;
+    // Xây dựng URL cuối cùng
+    const finalUrl = examCode 
+      ? `${targetUrl}?action=getQuestionsByCode&examCode=${examCode}`
+      : `${targetUrl}?action=getQuestions`;
 
+    const response = await fetch(finalUrl);
+    const result = await response.json();
 
-    const res = await fetch(finalUrl);
-    const result = await res.json();
-
-    if (result.status !== "success" || !Array.isArray(result.data))
-      return [];
-
-    const parsed = result.data.map((q: any) => {
-      let obj = typeof q.question === "string"
-        ? JSON.parse(q.question)
-        : q;
-
-      // 🔥 TRỘN MCQ
-      if (obj.type === "mcq" && Array.isArray(obj.o)) {
-        obj.o = shuffleArray([...obj.o]); // clone trước khi trộn
-      }
-
-      return obj;
-    });
-
-    // 🔥 Chia phần
-    const part1 = parsed.filter(q => q.part?.includes("PHẦN I"));
-    const part2 = parsed.filter(q => q.part?.includes("PHẦN II"));
-    const part3 = parsed.filter(q => q.part?.includes("PHẦN III"));
-
-    const final = [
-      ...shuffleArray(part1),
-      ...shuffleArray(part2),
-      ...shuffleArray(part3),
-    ];
-
-    // 🔥 LƯU LUÔN JSON ĐÃ TRỘN
-    questionsBankW = final.map(q => ({
-      id: q.id,
-      type: q.type,
-      question: JSON.stringify(q),
-    }));
-
-    console.log("🎲 Đã trộn xong:", final);
-
-    return questionsBankW;
-  } catch (err) {
-    console.error("Lỗi fetch:", err);
+    if (result.status === "success" && Array.isArray(result.data)) {
+      questionsBankW = shuffleArray(result.data);
+      return questionsBankW;
+    } 
+    return [];
+  } catch (error) {
+    console.error("Lỗi fetch questions:", error);
     return [];
   }
 };
