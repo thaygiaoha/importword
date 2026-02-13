@@ -31,6 +31,10 @@ const App: React.FC = () => {
   const [user, setUser] = useState<AppUser | null>(null);
   const [showAuth, setShowAuth] = useState(false);
   const [showVipModal, setShowVipModal] = useState(false);
+  const goHome = () => {
+  setCurrentView('home');
+};
+
 
   // Khởi tạo dữ liệu hệ thống
   useEffect(() => {
