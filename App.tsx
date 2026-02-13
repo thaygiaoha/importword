@@ -14,7 +14,7 @@ import TeacherWordTask from '@/components/TeacherWordTask';
 // Thêm dấu ngoặc nhọn bao quanh tên hàm
 import { fetchQuestionsBank } from '@/questions';
 import { fetchQuestionsBankW } from '@/questionsWord';
-import ExamRoom from '@/ExamRoom';
+import ExamRoom from '@/components/ExamRoom';
 
 const App: React.FC = () => {
   // 1. Quản lý các màn hình (Views)
