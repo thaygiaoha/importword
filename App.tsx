@@ -89,24 +89,49 @@ const App: React.FC = () => {
   };
 
   // Kết thúc bài thi và gửi dữ liệu từ đề ma trận
-  const handleFinishExam = async (result: ExamResult) => {
-    setExamResult(result);
-    setCurrentView('result');
-    let targetUrl = DEFAULT_API_URL;
-    if (result.type === 'quiz') targetUrl = DANHGIA_URL;
-    else if (activeStudent && API_ROUTING[activeStudent.idnumber]) targetUrl = API_ROUTING[activeStudent.idnumber];
+  const handleFinishExam = async (matrixResult: ExamResult) => {
 
-    try {
-      await fetch(targetUrl, { method: 'POST', mode: 'no-cors', body: JSON.stringify(result) });
-    } catch (e) { console.error("Lỗi gửi kết quả:", e); }
+  // 👇 Tạo payload riêng cho MA TRẬN
+  const matrixPayload = {
+    examCode: activeExam?.code || activeExam?.id,   // bắt buộc
+    sbd: activeStudent?.sbd,
+    name: activeStudent?.name,
+    className: activeStudent?.class,
+    score: matrixResult.score ?? 0,
+    totalTime: matrixResult.time ?? 0,
+    details: matrixResult.details ?? []
   };
 
-  const goHome = () => {
-    setCurrentView('landing');
-    setActiveExam(null);
-    setActiveStudent(null);
-    setExamResult(null);
-  };
+  // 👇 Set riêng cho ResultView
+  setExamResult({
+    score: matrixPayload.score,
+    correct: matrixResult.correct ?? 0,
+    total: matrixResult.total ?? 0,
+    time: matrixPayload.totalTime,
+    type: 'matrix'
+  });
+
+  setCurrentView('result');
+
+  let targetUrl = DEFAULT_API_URL;
+
+  if (activeStudent && API_ROUTING[activeStudent.idnumber]) {
+    targetUrl = API_ROUTING[activeStudent.idnumber];
+  }
+
+  try {
+    await fetch(targetUrl, {
+      method: 'POST',
+      mode: 'no-cors',
+      body: JSON.stringify(matrixPayload)
+    });
+
+    console.log("🚀 Đã nộp bài MA TRẬN:", matrixPayload);
+  } catch (e) {
+    console.error("❌ Lỗi gửi kết quả:", e);
+  }
+};
+
   // Kết thúc bài thi và gửi dữ liệu từ đề nhập word
  const handleFinishWord = async (result: any) => {
 
