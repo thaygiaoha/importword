@@ -87,7 +87,7 @@ const App: React.FC = () => {
       stk: quizStudent.stk,
       bank: quizStudent.bank,
       limit: 10, 
-      limittab: 10, 
+      limittab: 2, 
       idnumber: 'QUIZ', 
       taikhoanapp: user?.isVip ? 'VIP' : 'FREE' 
     });
@@ -97,6 +97,7 @@ const App: React.FC = () => {
 
   // Kết thúc bài thi và gửi dữ liệu từ đề ma trận
   const handleFinishExam = async (result: ExamResult) => {
+  console.log("FINAL RESULT:", result);
   setExamResult(result);
   setCurrentView('result');
 
