@@ -138,19 +138,7 @@ const App: React.FC = () => {
 };
 
 
-  try {
-    await fetch(targetUrl, { 
-      method: 'POST', 
-      mode: 'no-cors', 
-      body: JSON.stringify(payload) 
-    });
-    console.log("🚀 Đã nộp bài về Sheet của IDGV:", activeStudent?.idgv);
-  } catch (e) { 
-    console.error("❌ Lỗi nộp bài:", e); 
-  }
-};
-
-  return (
+ return (
     <AppProvider>
       <div className="min-h-screen flex flex-col font-sans selection:bg-blue-100 bg-slate-50 text-slate-900">
         <header className="bg-blue-800 text-white py-8 md:py-12 shadow-2xl text-center relative overflow-hidden border-b-8 border-blue-900 px-4">
