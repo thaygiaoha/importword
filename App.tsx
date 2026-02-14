@@ -177,7 +177,7 @@ const App: React.FC = () => {
           <div className="absolute top-0 left-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
           <div className="relative z-10">
             <h1 className="text-2xl md:text-5xl font-black uppercase tracking-tighter mb-2 drop-shadow-lg leading-tight">
-              HỆ THỐNG HỌC TẬP VÀ KIỂM TRA ONLINE <br className="md:hidden" /> MÔN TOÁN THPT
+              HỆ THỐNG HỌC TẬP VÀ KIỂM TRA ONLINE  <br className="md:hidden" /> THPT
             </h1>
             <p className="text-sm md:text-lg opacity-90 font-black tracking-wide max-w-2xl mx-auto uppercase">
               Học tập chuyên nghiệp - Kết quả bứt phá
