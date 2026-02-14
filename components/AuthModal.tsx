@@ -59,12 +59,12 @@ const ExamPortal: React.FC<ExamPortalProps> = ({ grade, onBack, onStart }) => {
 
   // HÀM MỞ RỘNG CHUYÊN ĐỀ
   const getRelatedGrades = (currentGrade: string | number) => {
-    if (currentGrade === 12) return [10, 11, 12];
-    if (currentGrade === 11) return [10, 11];
+    if (currentGrade === 12) return [12, 11, 10];
+    if (currentGrade === 11) return [11, 10];
     if (currentGrade === 10) return [10];
-    if (currentGrade === 9) return [6, 7, 8, 9];
-    if (currentGrade === 8) return [6, 7, 8];
-    if (currentGrade === 7) return [6, 7];
+    if (currentGrade === 9) return [9, 8, 7, 6];
+    if (currentGrade === 8) return [8, 7, 6];
+    if (currentGrade === 7) return [7, 6];
     if (currentGrade === 6) return [6];
     return [currentGrade];
   };
@@ -119,7 +119,7 @@ const ExamPortal: React.FC<ExamPortalProps> = ({ grade, onBack, onStart }) => {
   };
 
   const handleStart = () => {
-    if (!verifiedStudent || !selectedCode) return alert("Vui lòng xác minh thí sinh và !");
+    if (!verifiedStudent || !selectedCode) return alert("Vui lòng xác minh thí sinh và chọn mã đề!");
     const fc = currentCodeDef?.fixedConfig;
     if (!fc) return alert("Cấu hình đề thi bị lỗi!");
     const finalConfig = { id: selectedCode, title: currentCodeDef.name, time: fc.duration, mcqPoints: fc.scoreMC, tfPoints: fc.scoreTF, saPoints: fc.scoreSA, gradingScheme: 1 };
@@ -255,7 +255,7 @@ const ExamPortal: React.FC<ExamPortalProps> = ({ grade, onBack, onStart }) => {
   </div>
 </div>
 
-        {/* Cột 2:  */}
+        {/* Cột 2: Chọn mã đề */}
 <div className="space-y-6">
   <h3 className="text-xl font-black text-slate-800 uppercase flex items-center gap-2 border-l-8 border-blue-600 pl-4">Đề Thi</h3>
   <div className="space-y-4">
