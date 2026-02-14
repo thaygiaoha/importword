@@ -164,68 +164,7 @@ const [newsList, setNewsList] = useState<{t: string, l: string}[]>([]);
   // =================================================================================================================
  // TRONG REACT - Hàm handleStudentSubmit
 // Thêm (e) vào đây thầy nhé
-const handleStudentSubmit = async (e) => {
-  if (e && typeof e.preventDefault === 'function') e.preventDefault();
 
-  const currentIDGV = studentInfo.idgv.toString().trim();
-  const targetUrl = API_ROUTING[currentIDGV];
-
-  if (!targetUrl) {
-    alert(`❌ Không tìm thấy link Script của mã GV: "${currentIDGV}"`);
-    return;
-  }
-
-  try {
-    const response = await fetch(targetUrl, {
-      method: "POST",
-      headers: { "Content-Type": "text/plain" },
-      body: JSON.stringify({
-        action: "studentGetExam",
-        sbd: studentInfo.sbd.toString().trim(),
-        examCode: studentInfo.examCode.toString().trim(),
-        idgv: currentIDGV
-      }),
-    });
-
-    const result = await response.json();
-
-    if (result.status === "success") {
-      // Cập nhật dữ liệu từ GAS vào State của LandingPage
-      if (result.data.questions) setQuestions(result.data.questions); 
-      
-      // Lưu tên học sinh và thời gian thi vào state để truyền cho ExamRoom
-      const d = result.data;
-  
-      setQuestions(d.questions || []);
-      setDuration(Number(d.duration) || 90);
-      setMinSubmitTime(Number(d.minSubmitTime) || 0);    // Thêm State này
-      setMaxTabSwitches(Number(d.maxTabSwitches) || 99); // Thêm State này
-      const nameFromGas = result.data.studentName || "Thí sinh";
-      const timeFromGas = result.data.duration || 90;
-      const classFromGas = result.data.studentClass || "HS Tự do";
-      setStudentName(nameFromGas);
-      setDuration(timeFromGas);
-      setStudentClass(classFromGas);
-
-      // Cập nhật lại object studentInfo để có đủ tên (hiển thị trong ExamRoom)
-      setStudentInfo({
-        ...studentInfo,
-        name: nameFromGas,
-        className: classFromGas
-      });
-
-      setExamStarted(true); 
-      setShowStudentLogin(false);
-      
-      alert(`Chúc mừng ${nameFromGas}. Bạn hãy bấm Ok để vào thi nhé`);
-    } else {
-      alert("⚠️ " + result.message);
-    }
-  } catch (error) {
-    console.error("Lỗi thực thi:", error);
-    alert("❌ Không thể kết nối tới máy chủ.");
-  }
-};
   // =================================================================================================================
 const handleSaveMatrix = async () => {
   if (!idgv) {
@@ -521,88 +460,7 @@ const handleRedirect = () => {
   
   setShowSubjectModal(false);
 };
-  const handleFinishExam = async (resultData) => {
-  // resultData chứa { tongdiem, time, timestamp, details } truyền từ ExamRoom sang
-  setExamStarted(false); 
-
-  const currentIDGV = studentInfo.idgv.toString().trim();
-  const targetUrl = API_ROUTING[currentIDGV];
-
-  try {
-    const response = await fetch(targetUrl, {
-      method: "POST",
-      headers: { "Content-Type": "text/plain" },
-      body: JSON.stringify({
-        action: "submitExam", // Hành động ghi điểm
-        sbd: studentInfo.sbd,
-        examCode: studentInfo.examCode,
-        className: studentInfo.className,
-        idgv: currentIDGV,
-        name: studentInfo.name,
-        ...resultData // Đẩy toàn bộ tongdiem, time... vào body
-      }),
-    });
-
-    const finalRes = await response.json();
-    if (finalRes.status === "success") {
-      alert("✅ Đã lưu kết quả vào hệ thống!");
-    }
-  } catch (error) {
-    console.error("Lỗi gửi điểm:", error);
-    alert("❌ Lỗi kết nối, không thể lưu điểm. Hãy chụp màn hình kết quả!");
-  }
-};
-
-  return (
-    <>
-    {/* TRƯỜNG HỢP 1: ĐANG THI (Hiện phòng thi, ẩn toàn bộ Landing) */}
-    {examStarted ? (
-  <div className="animate-in slide-in-from-bottom duration-500">
-    <ExamRoom 
-      questions={questions} 
-      studentInfo={studentInfo}
-      duration={duration} 
-      minSubmitTime={minSubmitTime}
-      maxTabSwitches={maxTabSwitches}
-      deadline={deadline}
-      scoreMCQ={scoreMCQ}
-      scoreTF={scoreTF}
-      scoreSA={scoreSA}
-      onFinish={async (resultData) => {
-  setExamStarted(false);
-  const targetUrl = API_ROUTING[studentInfo.idgv];
-
-  // Hứng điểm an toàn: Kiểm tra cả totalScore và tongdiem để không bị undefined
-  const rawScore = resultData.totalScore ?? resultData.tongdiem ?? 0;
-  const diemHienThi = String(rawScore).replace('.', ',');
-
-  const payload = {
-    action: "submitExam",
-    timestamp: new Date().toLocaleString('vi-VN'),
-    exams: String(studentInfo.examCode || "").toUpperCase(),
-    sbd: String(studentInfo.sbd || ""),
-    name: String(studentInfo.name || ""),
-    class: String(studentInfo.className || ""), // Đảm bảo key này khớp với GAS
-    tongdiem: diemHienThi, 
-    time: resultData.time || 0,
-    details: JSON.stringify(resultData.details || [])
-  };
-
-  try {
-    await fetch(targetUrl, {
-      method: "POST",
-      headers: { "Content-Type": "text/plain" },
-      body: JSON.stringify(payload),
-    });
-    alert(`Nộp bài thành công! Điểm của bạn: ${diemHienThi}`);
-  } catch (e) {
-    console.error("Lỗi:", e);
-  }
-}}
-    />
-  </div> // Đóng thẻ div này trước khi đóng dấu ngoặc nhọn
-    ) : (
-    <div className="min-h-screen bg-slate-50 font-sans pb-12 overflow-x-hidden">
+  
       
      {/* 1. TOP NAV (Style SmartEdu - Đã tích hợp VIP lấp lánh) */}
       <div className="bg-white/90 backdrop-blur-md sticky top-0 z-[100] border-b border-slate-200 px-6 py-3 shadow-sm">
