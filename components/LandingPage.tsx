@@ -51,6 +51,15 @@ const LandingPage: React.FC<LandingPageProps> = ({
   const [studentName, setStudentName] = useState("");
   const [duration, setDuration] = useState(60);          
   const [examStarted, setExamStarted] = useState(false);
+  const [studentLoginDataW, setStudentLoginDataW] = useState({
+  teacherIdW: "",
+  candidateIdW: "",
+  examIdW: ""
+});
+
+const [singleExamDataW, setSingleExamDataW] = useState<any>(null);
+const [isExamStartedW, setIsExamStartedW] = useState(false);
+
  
  
   const [searchId, setSearchId] = useState('');
