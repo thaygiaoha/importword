@@ -821,17 +821,20 @@ const handleRedirect = () => {
               <i className="fas fa-gamepad animate-bounce"></i> Làm bài kiểm tra
             </button>
            <div className="grid grid-cols-2 gap-2">
-  {/* 3 Nút chọn lớp 10, 11, 12 */}
-  {[12, 11, 10].map(g => (
-   <button 
-    key={g} 
-    onClick={() => onSelectGrade(g)} 
+ {[12, 11, 10].map(g => (
+  <a
+    key={g}
+    href={`https://thayhabacninh.vercel.app/?grade=${g}`}
+    target="_blank"
+    rel="noopener noreferrer"
     className="bg-blue-600 text-white p-2.5 rounded-xl font-black text-[10px] uppercase border-b-4 border-blue-800 transition-all active:scale-95 flex items-center justify-center gap-2"
   >
-    <i className="fas fa-graduation-cap text-[10px]"></i> 
+    <i className="fas fa-graduation-cap text-[10px]"></i>
     <span>Lớp {g}</span>
-  </button>
+  </a>
 ))}
+
+
 
 {/* Nút Thi đề lẻ - Chốt ngay sau Lớp 12 */}
 <button 
