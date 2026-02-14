@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { DANHGIA_URL, ADMIN_CONFIG, OTHER_APPS, API_ROUTING } from '../config';
 import { AppUser, Student } from '../types';
 import { postToScript } from '../postToScript';
+import ExamRoom from './ExamRoom';
 
 interface LandingPageProps {
   onSelectGrade: (grade: number) => void;
@@ -27,6 +28,15 @@ const LandingPage: React.FC<LandingPageProps> = ({
 }) => {
   // --- GIỮ NGUYÊN TOÀN BỘ LOGIC DỮ LIỆU CỦA THẦY ---
   const REDIRECT_LINKS: Record<string, string> = { "default": "https://www.facebook.com/hoctoanthayha.bg" };
+  
+
+  const [minSubmitTime, setMinSubmitTime] = useState(0);
+  const [maxTabSwitches, setMaxTabSwitches] = useState(3);
+  const [deadline, setDeadline] = useState("");
+  const [scoreMCQ, setScoreMCQ] = useState(0.25);
+  const [scoreTF, setScoreTF] = useState(1.0);
+  const [scoreSA, setScoreSA] = useState(0.5);
+  
   const [showAppList, setShowAppList] = useState(false);
   const [isOtherBank, setIsOtherBank] = useState(false);
   const [quizMode, setQuizMode] = useState<'free' | 'gift' | null>(null);
@@ -49,17 +59,9 @@ const LandingPage: React.FC<LandingPageProps> = ({
   const [idgv, setIdgv] = useState('');
   const [questions, setQuestions] = useState([]);
   const [studentName, setStudentName] = useState("");
-  const [duration, setDuration] = useState(60);          
+  const [duration, setDuration] = useState(90);          
   const [examStarted, setExamStarted] = useState(false);
-  const [studentInfoW, setStudentInfoW] = useState({
-  idgvW: "",
-  sbdW: "",
-  examsW: ""
-});
-
-const [singleExamDataW, setSingleExamDataW] = useState<any>(null);
-const [isExamStartedW, setIsExamStartedW] = useState(false);
-
+  const [studentClass, setStudentClass] = useState("");
  
  
   const [searchId, setSearchId] = useState('');
@@ -160,25 +162,70 @@ const [newsList, setNewsList] = useState<{t: string, l: string}[]>([]);
   fetchContentData();
 }, []);
   // =================================================================================================================
-
+ // TRONG REACT - Hàm handleStudentSubmit
 // Thêm (e) vào đây thầy nhé
-const handleStudentSubmitW = () => {
-  if (!studentInfoW.idgvW || !studentInfoW.sbdW || !studentInfoW.examsW) {
-    alert("Nhập đầy đủ thông tin!")
-    return
+const handleStudentSubmit = async (e) => {
+  if (e && typeof e.preventDefault === 'function') e.preventDefault();
+
+  const currentIDGV = studentInfo.idgv.toString().trim();
+  const targetUrl = API_ROUTING[currentIDGV];
+
+  if (!targetUrl) {
+    alert(`❌ Không tìm thấy link Script của mã GV: "${currentIDGV}"`);
+    return;
   }
 
-  setShowStudentLogin(false)
+  try {
+    const response = await fetch(targetUrl, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain" },
+      body: JSON.stringify({
+        action: "studentGetExam",
+        sbd: studentInfo.sbd.toString().trim(),
+        examCode: studentInfo.examCode.toString().trim(),
+        idgv: currentIDGV
+      }),
+    });
 
-  setExamDeleDataW({
-    idgvW: studentInfoW.idgvW,
-    sbdW: studentInfoW.sbdW,
-    examsW: studentInfoW.examsW
-  })
+    const result = await response.json();
 
-  setPage("examDeleW")
+    if (result.status === "success") {
+      // Cập nhật dữ liệu từ GAS vào State của LandingPage
+      if (result.data.questions) setQuestions(result.data.questions); 
+      
+      // Lưu tên học sinh và thời gian thi vào state để truyền cho ExamRoom
+      const d = result.data;
+  
+      setQuestions(d.questions || []);
+      setDuration(Number(d.duration) || 90);
+      setMinSubmitTime(Number(d.minSubmitTime) || 0);    // Thêm State này
+      setMaxTabSwitches(Number(d.maxTabSwitches) || 99); // Thêm State này
+      const nameFromGas = result.data.studentName || "Thí sinh";
+      const timeFromGas = result.data.duration || 90;
+      const classFromGas = result.data.studentClass || "HS Tự do";
+      setStudentName(nameFromGas);
+      setDuration(timeFromGas);
+      setStudentClass(classFromGas);
+
+      // Cập nhật lại object studentInfo để có đủ tên (hiển thị trong ExamRoom)
+      setStudentInfo({
+        ...studentInfo,
+        name: nameFromGas,
+        className: classFromGas
+      });
+
+      setExamStarted(true); 
+      setShowStudentLogin(false);
+      
+      alert(`Chúc mừng ${nameFromGas}. Bạn hãy bấm Ok để vào thi nhé`);
+    } else {
+      alert("⚠️ " + result.message);
+    }
+  } catch (error) {
+    console.error("Lỗi thực thi:", error);
+    alert("❌ Không thể kết nối tới máy chủ.");
+  }
 };
-
   // =================================================================================================================
 const handleSaveMatrix = async () => {
   if (!idgv) {
@@ -474,8 +521,87 @@ const handleRedirect = () => {
   
   setShowSubjectModal(false);
 };
+  const handleFinishExam = async (resultData) => {
+  // resultData chứa { tongdiem, time, timestamp, details } truyền từ ExamRoom sang
+  setExamStarted(false); 
+
+  const currentIDGV = studentInfo.idgv.toString().trim();
+  const targetUrl = API_ROUTING[currentIDGV];
+
+  try {
+    const response = await fetch(targetUrl, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain" },
+      body: JSON.stringify({
+        action: "submitExam", // Hành động ghi điểm
+        sbd: studentInfo.sbd,
+        examCode: studentInfo.examCode,
+        className: studentInfo.className,
+        idgv: currentIDGV,
+        name: studentInfo.name,
+        ...resultData // Đẩy toàn bộ tongdiem, time... vào body
+      }),
+    });
+
+    const finalRes = await response.json();
+    if (finalRes.status === "success") {
+      alert("✅ Đã lưu kết quả vào hệ thống!");
+    }
+  } catch (error) {
+    console.error("Lỗi gửi điểm:", error);
+    alert("❌ Lỗi kết nối, không thể lưu điểm. Hãy chụp màn hình kết quả!");
+  }
+};
 
   return (
+    <>
+    {/* TRƯỜNG HỢP 1: ĐANG THI (Hiện phòng thi, ẩn toàn bộ Landing) */}
+    {examStarted ? (
+  <div className="animate-in slide-in-from-bottom duration-500">
+    <ExamRoom 
+      questions={questions} 
+      studentInfo={studentInfo}
+      duration={duration} 
+      minSubmitTime={minSubmitTime}
+      maxTabSwitches={maxTabSwitches}
+      deadline={deadline}
+      scoreMCQ={scoreMCQ}
+      scoreTF={scoreTF}
+      scoreSA={scoreSA}
+      onFinish={async (resultData) => {
+  setExamStarted(false);
+  const targetUrl = API_ROUTING[studentInfo.idgv];
+
+  // Hứng điểm an toàn: Kiểm tra cả totalScore và tongdiem để không bị undefined
+  const rawScore = resultData.totalScore ?? resultData.tongdiem ?? 0;
+  const diemHienThi = String(rawScore).replace('.', ',');
+
+  const payload = {
+    action: "submitExam",
+    timestamp: new Date().toLocaleString('vi-VN'),
+    exams: String(studentInfo.examCode || "").toUpperCase(),
+    sbd: String(studentInfo.sbd || ""),
+    name: String(studentInfo.name || ""),
+    class: String(studentInfo.className || ""), // Đảm bảo key này khớp với GAS
+    tongdiem: diemHienThi, 
+    time: resultData.time || 0,
+    details: JSON.stringify(resultData.details || [])
+  };
+
+  try {
+    await fetch(targetUrl, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain" },
+      body: JSON.stringify(payload),
+    });
+    alert(`Nộp bài thành công! Điểm của bạn: ${diemHienThi}`);
+  } catch (e) {
+    console.error("Lỗi:", e);
+  }
+}}
+    />
+  </div> // Đóng thẻ div này trước khi đóng dấu ngoặc nhọn
+    ) : (
     <div className="min-h-screen bg-slate-50 font-sans pb-12 overflow-x-hidden">
       
      {/* 1. TOP NAV (Style SmartEdu - Đã tích hợp VIP lấp lánh) */}
@@ -696,7 +822,7 @@ const handleRedirect = () => {
             </button>
            <div className="grid grid-cols-2 gap-2">
   {/* 3 Nút chọn lớp 10, 11, 12 */}
-  {[10, 11, 12].map(g => (
+  {[12, 11, 10].map(g => (
    <button 
     key={g} 
     onClick={() => onSelectGrade(g)} 
@@ -710,10 +836,18 @@ const handleRedirect = () => {
 {/* Nút Thi đề lẻ - Chốt ngay sau Lớp 12 */}
 <button 
   onClick={() => setShowStudentLogin(true)} 
-  className="bg-emerald-600 text-white p-2.5 rounded-xl font-black text-[10px] uppercase border-b-4 border-emerald-800 transition-all active:scale-95 flex items-center justify-center gap-2"
+  className="bg-orange-500 text-white p-2.5 rounded-xl font-black text-[10px] uppercase border-b-4 border-emerald-800 transition-all active:scale-95 flex items-center justify-center gap-2"
 >
   <i className="fas fa-user-edit text-[10px]"></i> 
   <span>Thi đề lẻ</span>
+</button>
+             {/* Nút xem điểm */}
+<button 
+  onClick={() => setShowStudentLogin(true)} 
+  className="bg-orange-500 text-white p-2.5 rounded-xl font-black text-[10px] uppercase border-b-4 border-emerald-800 transition-all active:scale-95 flex items-center justify-center gap-2"
+>
+  <i className="fas fa-user-edit text-[10px]"></i> 
+  <span>Xem điểm</span>
 </button>
 
 {/* Nút Lời giải - Nằm bên dưới */}
@@ -1326,91 +1460,69 @@ const handleRedirect = () => {
     </div>
   </div>
 )}
-      {showStudentLogin && (
-  <div className="fixed inset-0 bg-slate-950/90 backdrop-blur-md flex items-center justify-center z-[100] p-4">
-    <div className="bg-slate-900 border-2 border-emerald-500/30 p-8 rounded-[2rem] w-full max-w-sm shadow-2xl">
-      <div className="text-emerald-400 font-black text-center mb-6 text-sm uppercase tracking-tighter">
-        <i className="fas fa-user-shield mr-2"></i> Hệ thống thi lẻ
+     {/* 4. MODAL ĐĂNG NHẬP THI LẺ */}
+        {showStudentLogin && (
+          <div className="fixed inset-0 bg-slate-950/90 backdrop-blur-md flex items-center justify-center z-[110] p-4">
+            <div className="bg-slate-900 border-2 border-emerald-500/30 p-8 rounded-[2rem] w-full max-w-sm shadow-2xl animate-in zoom-in duration-300">
+              <div className="text-emerald-400 font-black text-center mb-6 text-sm uppercase tracking-tighter">
+                <i className="fas fa-user-shield mr-2"></i> Hệ thống thi lẻ
+              </div>
+              
+              <div className="space-y-3">
+                <input 
+                  className="w-full p-4 rounded-xl bg-slate-800 text-white border border-slate-700 font-bold text-xs focus:ring-2 focus:ring-emerald-500 outline-none" 
+                  placeholder="MÃ GIÁO VIÊN (IDGV)..." 
+                  value={studentInfo.idgv} 
+                  onChange={e => setStudentInfo({...studentInfo, idgv: e.target.value})} 
+                />
+                
+                <input 
+                  className="w-full p-4 rounded-xl bg-slate-800 text-white border border-slate-700 font-bold text-xs focus:ring-2 focus:ring-emerald-500 outline-none" 
+                  placeholder="SỐ BÁO DANH (SBD)..." 
+                  value={studentInfo.sbd} 
+                  onChange={e => setStudentInfo({...studentInfo, sbd: e.target.value})} 
+                />
+                
+                <input 
+                  className="w-full p-4 rounded-xl bg-slate-800 text-emerald-400 border border-slate-700 font-black text-xs focus:ring-2 focus:ring-emerald-500 outline-none uppercase" 
+                  placeholder="MÃ ĐỀ THI (EXAMS)..." 
+                  value={studentInfo.examCode} 
+                  onChange={e => setStudentInfo({...studentInfo, examCode: e.target.value.toUpperCase()})} 
+                />
+                
+                <div className="grid grid-cols-2 gap-3 mt-6">
+                  <button onClick={() => setShowStudentLogin(false)} className="py-3 bg-slate-800 text-slate-400 rounded-xl font-bold text-[10px] hover:bg-slate-700 transition-colors">HỦY</button>
+                  <button onClick={handleStudentSubmit} className="py-3 bg-emerald-600 text-white rounded-xl font-black text-[10px] shadow-lg shadow-emerald-900/40 hover:bg-emerald-500 transition-all active:scale-95">VÀO THI</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
+    )}
 
-      <div className="space-y-3">
-        <input
-  value={studentInfoW.idgvW}
-  onChange={e =>
-    setStudentInfoW({
-      ...studentInfoW,
-      idgvW: e.target.value.trim()
-    })
-  }
-/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
 
-<input
-  value={studentInfoW.sbdW}
-  onChange={e =>
-    setStudentInfoW({
-      ...studentInfoW,
-      sbdW: e.target.value.trim()
-    })
-  }
-/>
-
-<input
-  value={studentInfoW.examsW}
-  onChange={e =>
-    setStudentInfoW({
-      ...studentInfoW,
-      examsW: e.target.value.toUpperCase().trim()
-    })
-  }
-/>
-
-
-        <div className="grid grid-cols-2 gap-3 mt-6">
-          <button
-            onClick={() => setShowStudentLogin(false)}
-            className="py-3 bg-slate-800 text-slate-400 rounded-xl font-bold text-[10px]"
-          >
-            HỦY
-          </button>
-
-          <button
-            onClick={handleStudentSubmitW}
-            className="py-3 bg-emerald-600 text-white rounded-xl font-black text-[10px] shadow-lg shadow-emerald-900/40"
-          >
-            VÀO THI
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-)}
-
-{/* GIAO DIỆN TRA CỨU LỜI GIẢI - BẢN FULL KHÔNG THIẾU THỨ GÌ */}
-
-      {/* ICON FONTAWESOME */}
-      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
-
-     {/* STYLE TỔNG HỢP: CHỮ CHẠY & HIỆU ỨNG VIP */}
-      <style>{`
-        @keyframes marquee { 
-          0% { transform: translateX(100%); } 
-          100% { transform: translateX(-100%); } 
-        }
-        @keyframes shimmer {
-          100% { transform: translateX(100%); }
-        }
-        .animate-marquee { 
-          display: inline-block; 
-          animation: marquee 25s linear infinite; 
-        }
-        .animate-shimmer {
-          animation: shimmer 2s infinite;
-        }
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-      `}</style>
-    </div>
+    <style>{`
+      @keyframes marquee { 
+        0% { transform: translateX(100%); } 
+        100% { transform: translateX(-100%); } 
+      }
+      @keyframes shimmer {
+        100% { transform: translateX(100%); }
+      }
+      .animate-marquee { 
+        display: inline-block; 
+        animation: marquee 25s linear infinite; 
+      }
+      .animate-shimmer {
+        animation: shimmer 2s infinite;
+      }
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    `}</style>
+  </>
   );
-};
+}
 
 export default LandingPage;

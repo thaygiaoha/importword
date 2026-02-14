@@ -24,12 +24,12 @@ const ExamPortal: React.FC<ExamPortalProps> = ({ grade: rawGrade, onBack, onStar
 
   // 3. Helpers (Đã ép kiểu String chuẩn)
   const getRelatedGrades = (g: string) => {
-    if (g === "12") return ["10", "11", "12"];
-    if (g === "11") return ["10", "11"];
+    if (g === "12") return ["12", "11", "10"];
+    if (g === "11") return ["11", "10"];
     if (g === "10") return ["10"];
-    if (g === "9") return ["6", "7", "8", "9"];
-    if (g === "8") return ["6", "7", "8"];
-    if (g === "7") return ["6", "7"];
+    if (g === "9") return ["9", "8", "7", "6"];
+    if (g === "8") return ["8", "7", "6"];
+    if (g === "7") return ["7", "6"];
     if (g === "6") return ["6"];
     return [g];
   };
