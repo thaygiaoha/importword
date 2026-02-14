@@ -461,8 +461,7 @@ const handleRedirect = () => {
   setShowSubjectModal(false);
 };
    return (
-      <div className="min-h-screen bg-slate-50 font-sans pb-12 overflow-x-hidden">
-      
+      <div className="min-h-screen bg-slate-50 font-sans pb-12 overflow-x-hidden">      
      {/* 1. TOP NAV (Style SmartEdu - Đã tích hợp VIP lấp lánh) */}
       <div className="bg-white/90 backdrop-blur-md sticky top-0 z-[100] border-b border-slate-200 px-6 py-3 shadow-sm">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
@@ -1356,7 +1355,7 @@ const handleRedirect = () => {
               </div>
             </div>
           </div>
-        </div>
+        
         )}
      
 
@@ -1381,6 +1380,6 @@ const handleRedirect = () => {
       .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     `}</style> 
   );
-}
+};
 
 export default LandingPage;
