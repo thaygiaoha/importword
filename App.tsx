@@ -230,14 +230,25 @@ const handleFinishWord = async (result: any) => {
 
             {/* 5. Giao diện làm bài */}
             {currentView === 'quiz' && activeExam && activeStudent && (
-              <QuizInterface 
-                config={activeExam} 
-                student={activeStudent} 
-                questions={questions} 
-                onFinish={handleFinishExam} 
-                isQuizMode={activeExam.id === 'QUIZ'} 
-              />
-            )}            
+  <ExamRoom
+    questions={questions}
+    studentInfo={{
+      idgv: 'QUIZ',  // chỉ để tránh undefined
+      sbd: activeStudent.sbd,
+      name: activeStudent.name,
+      className: activeStudent.class,
+      examCode: 'QUIZ'
+    }}
+    duration={activeExam.time}
+    minSubmitTime={0}
+    maxTabSwitches={999}
+    scoreMCQ={activeExam.mcqPoints}
+    scoreTF={activeExam.tfPoints}
+    scoreSA={activeExam.saPoints}
+    onFinish={handleFinishQuiz}
+  />
+)}
+         
             {/* 6. Giao diện làm bài CHÍNH THỨC (Dành cho học sinh làm đề Word) */}
 {currentView === 'exam' && activeExam && activeStudent && (
   <ExamRoom 
