@@ -334,11 +334,48 @@ if (action === "getRouting") {
         JSON.stringify({ status, message, data: payload || null })
       ).setMimeType(ContentService.MimeType.JSON);
 
+      // 2. Nếu sau này thầy gửi dữ liệu đăng ký (có pass, phone...)
+    if (data.type === 'register') {
+      var sheetUser = ss.getSheetByName("users");
+      sheetUser.appendRow([new Date(), data.phone, data.pass]);
+      return ContentService.createTextOutput("Đã đăng ký thành công");
+    }
+
+    // Ghi kết quả thi lẻ
+   if (data.action === "submitExam") {
+  try {
+    
+    const sheetExams = ss.getSheetByName("exams"); 
+    
+    // Tìm dòng chứa mã đề để biết hàng cần ghi hoặc ghi mới vào sheet kết quả
+    // Ở đây mình ví dụ ghi vào cuối sheet "exams" hoặc bạn nên tạo sheet "ketqua" riêng
+    const sheetKq = ss.getSheetByName("ketqua") || sheetExams; 
+
+    sheetKq.appendRow([
+  data.timestamp,                                // Cột A
+  data.examCode || data.exams || "",             // Cột B: Nhận cả 2 tên biến
+  data.sbd || "",                                // Cột C
+  data.name || "",                               // Cột D
+  data.className || data.class || "",            // Cột E: Nhận cả 2 tên biến
+  data.tongdiem || 0,                            // Cột F
+  data.time || 0,                                // Cột G
+  data.details || ""                             // Cột H
+]);
+
+    return ContentService.createTextOutput(JSON.stringify({status: "success"}))
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    return ContentService.createTextOutput(JSON.stringify({status: "error", message: err.toString()}))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+
     
 
     // =================================================================== TRỘN ĐỀ ===========================================
     
-    if (action === "studentGetExam") {
+   if (action === "studentGetExam") {
   try {
     const sbd = data.sbd?.toString().trim();
     const examCode = data.examCode?.toString().trim();
@@ -354,6 +391,26 @@ if (action === "getRouting") {
 
     const exRow = sheetExam.getDataRange().getValues().find(r => r[0].toString() == examCode);
     if (!exRow) return createResponseW("error", "Không tìm thấy mã đề: " + examCode);
+    // chuẩn hóa
+    const toInt = (v, def = 0) => {
+      const n = parseInt(v?.toString().trim(), 10);
+      return isNaN(n) ? def : n;
+    };
+
+    const toFloat = (v, def = 0) => {
+      if (v === null || v === undefined) return def;
+      const s = v.toString().replace(",", ".");
+      const n = parseFloat(s);
+      return isNaN(n) ? def : n;
+    };
+
+    const toDateISO = (v) => {
+      if (v instanceof Date) {
+        return Utilities.formatDate(v, "GMT+7", "yyyy-MM-dd");
+      }
+      const s = v?.toString().trim();
+      return s || "";
+    };
 
     // 2. Lấy câu hỏi - ĐOẠN NÀY QUAN TRỌNG
     const allRows = sheetData.getDataRange().getValues();
@@ -383,7 +440,15 @@ if (action === "getRouting") {
     // 3. Trả về (Em bỏ qua bước trộn để test xem nó có lên đủ câu không đã)
     return createResponseW("success", "OK", {
       studentName: student[1],
-      duration: Number(exRow[2]) || 60,
+      studentClass: student[2],
+      duration: toInt(exRow[8], 33),
+      minSubmitTime: toInt(exRow[9], 0),     // minitime
+      maxTabSwitches: toInt(exRow[10], 3),        // tab limit
+      deadline: toDateISO(exRow[11]),     // yyyy-MM-dd
+      scoreMCQ: toFloat(exRow[3], 0),
+      scoreTF: toFloat(exRow[5], 0),
+      scoreSA: toFloat(exRow[7], 0),
+           
       questions: filteredQuestions // Gửi hết về xem có đủ không
     });
 
@@ -391,6 +456,7 @@ if (action === "getRouting") {
     return createResponseW("error", "Lỗi GAS: " + error.toString());
   }
 }
+
 
 
     // 3 nhánh ghi LG word ==========================================================================================================

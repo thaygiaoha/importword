@@ -14,9 +14,11 @@ import TeacherWordTask from '@/components/TeacherWordTask';
 // Thêm dấu ngoặc nhọn bao quanh tên hàm
 import { fetchQuestionsBank } from '@/questions';
 import { fetchQuestionsBankW } from '@/questionsWord';
+import ExamRoom from '@/components/ExamRoom';
+
 const App: React.FC = () => {
   // 1. Quản lý các màn hình (Views)
-  const [currentView, setCurrentView] = useState<'landing' | 'portal' | 'quiz' | 'result' | 'admin' | 'teacher_task'>('landing');
+ const [currentView, setCurrentView] = useState<'landing' | 'portal' | 'quiz' | 'result' | 'admin' | 'teacher_task' | 'exam'>('landing');
   
   // 2. Quản lý chế độ (Mode) cho Admin hoặc Giáo viên
   const [adminMode, setAdminMode] = useState<'matran' | 'cauhoi' | 'word'>('matran'); 
@@ -29,6 +31,13 @@ const App: React.FC = () => {
   const [user, setUser] = useState<AppUser | null>(null);
   const [showAuth, setShowAuth] = useState(false);
   const [showVipModal, setShowVipModal] = useState(false);
+  const goHome = () => {
+    setCurrentView('landing');
+    setActiveExam(null);
+    setActiveStudent(null);
+    setExamResult(null);
+  };
+
 
   // Khởi tạo dữ liệu hệ thống
   useEffect(() => {
@@ -50,12 +59,14 @@ const App: React.FC = () => {
   }, []);
 
   // Xử lý bắt đầu thi (Portal)
-  const handleStartExam = (config: any, student: Student, selectedQuestions: Question[]) => {
-    setActiveExam(config);
-    setActiveStudent(student);
-    setQuestions(selectedQuestions);
-    setCurrentView('quiz');
-  };
+ const handleStartExam = (config: any, student: Student, selectedQuestions: Question[]) => {
+  console.log("Học sinh bắt đầu thi, IDGV là:", student.idgv); // Log để check
+  setActiveExam(config);
+  setActiveStudent(student);
+  setQuestions(selectedQuestions);
+  setCurrentView('exam'); // ✅ ĐÚNG hoặc Set
+ // Đảm bảo chuyển sang view 'exam' để dùng ExamRoom
+};
 
   // Xử lý bắt đầu Quiz nhanh (Landing)
   const handleStartQuizMode = (num: number, pts: number, quizStudent: any) => {
@@ -76,35 +87,74 @@ const App: React.FC = () => {
       stk: quizStudent.stk,
       bank: quizStudent.bank,
       limit: 10, 
-      limittab: 10, 
+      limittab: 2, 
       idnumber: 'QUIZ', 
       taikhoanapp: user?.isVip ? 'VIP' : 'FREE' 
     });
     setQuestions(quizQuestions);
-    setCurrentView('quiz');
+    set('quiz');
   };
 
-  // Kết thúc bài thi và gửi dữ liệu
+  // Kết thúc bài thi và gửi dữ liệu từ đề ma trận
   const handleFinishExam = async (result: ExamResult) => {
-    setExamResult(result);
-    setCurrentView('result');
-    let targetUrl = DEFAULT_API_URL;
-    if (result.type === 'quiz') targetUrl = DANHGIA_URL;
-    else if (activeStudent && API_ROUTING[activeStudent.idnumber]) targetUrl = API_ROUTING[activeStudent.idnumber];
+  console.log("FINAL RESULT:", result);
+  setExamResult(result);
+  setCurrentView('result');
 
-    try {
-      await fetch(targetUrl, { method: 'POST', mode: 'no-cors', body: JSON.stringify(result) });
-    } catch (e) { console.error("Lỗi gửi kết quả:", e); }
+  let targetUrl = DEFAULT_API_URL;
+
+  if (result.type === 'quiz') {
+    targetUrl = DANHGIA_URL;
+  } else if (activeStudent && API_ROUTING[activeStudent.idnumber]) {
+    targetUrl = API_ROUTING[activeStudent.idnumber];
+  }
+
+  try {
+    await fetch(targetUrl, {
+      method: 'POST',
+      mode: 'no-cors',
+      body: JSON.stringify(result)
+    });
+  } catch (e) {
+    console.error("Lỗi gửi kết quả:", e);
+  }
+};
+
+
+  // Kết thúc bài thi và gửi dữ liệu từ đề nhập word
+const handleFinishWord = async (result: any) => {
+  if (!activeStudent || !activeExam) return;
+
+  const payload = {
+    timestamp: new Date().toLocaleString('vi-VN'), // Cột A
+    exams: activeExam.code || "KHONG_MA",          // Cột B
+    sbd: activeStudent.sbd,                        // Cột C
+    name: activeStudent.name,                      // Cột D
+    class: activeStudent.class || activeStudent.className, // Cột E
+    tongdiem: result.tongdiem || 0,                // Cột F
+    time: result.timeUsed || "0 phút"              // Cột G
   };
 
-  const goHome = () => {
-    setCurrentView('landing');
-    setActiveExam(null);
-    setActiveStudent(null);
-    setExamResult(null);
-  };
+  console.log("WORD SUBMIT:", payload);
 
-  return (
+  const targetUrl =
+    API_ROUTING[activeStudent.idgv] || DEFAULT_API_URL;
+
+  try {
+    await fetch(targetUrl, {
+      method: 'POST',
+      mode: 'no-cors',
+      body: JSON.stringify(payload)
+    });
+  } catch (error) {
+    console.error("Lỗi gửi đề lẻ:", error);
+  }
+
+  goHome();
+};
+
+
+ return (
     <AppProvider>
       <div className="min-h-screen flex flex-col font-sans selection:bg-blue-100 bg-slate-50 text-slate-900">
         <header className="bg-blue-800 text-white py-8 md:py-12 shadow-2xl text-center relative overflow-hidden border-b-8 border-blue-900 px-4">
@@ -167,7 +217,26 @@ const App: React.FC = () => {
                 isQuizMode={activeExam.id === 'QUIZ'} 
               />
             )}
-
+            {/* 5. Giao diện làm bài CHÍNH THỨC (Dành cho học sinh làm đề Word) */}
+{currentView === 'exam' && activeExam && activeStudent && (
+  <ExamRoom 
+    questions={questions}
+    studentInfo={{
+      idgv: activeStudent.idgv, 
+      sbd: activeStudent.sbd,
+      name: activeStudent.name,
+      className: activeStudent.class,
+      examCode: activeExam.code // Mã đề biến đổi 601, 1001...
+    }}
+    duration={activeExam.fullTime}
+    minSubmitTime={activeExam.miniTime}
+    maxTabSwitches={activeExam.tabLimit}
+   scoreMCQ={Number(activeExam.scoreMCQ) || 0.25}
+   scoreTF={Number(activeExam.scoreTF) || 1.0}
+   scoreSA={Number(activeExam.scoreSA) || 0.5}
+   onFinish={handleFinishWord} // Nộp về sheet(ketqua) 7 cột
+  />
+)}
             {/* 6. Kết quả bài thi */}
             {currentView === 'result' && examResult && (
               <ResultView result={examResult} questions={questions} onBack={goHome} />
@@ -205,7 +274,6 @@ const AuthModal = ({ onClose, onSuccess }: { onClose: () => void, onSuccess: (u:
       setLoading(false);
     }
   };
-
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm">
       <div className="bg-white w-full max-w-md rounded-[2.5rem] overflow-hidden shadow-2xl relative animate-fade-in border border-slate-100">
