@@ -22,7 +22,7 @@ const App: React.FC = () => {
   
   // 2. Quản lý chế độ (Mode) cho Admin hoặc Giáo viên
   const [adminMode, setAdminMode] = useState<'matran' | 'cauhoi' | 'word'>('matran'); 
-  
+  const [examMode, setExamMode] = useState<'matrix' | 'word' | null>(null);  
   const [selectedGrade, setSelectedGrade] = useState<string | null>(null);
   const [activeExam, setActiveExam] = useState<any>(null);
   const [activeStudent, setActiveStudent] = useState<Student | null>(null);
@@ -61,6 +61,7 @@ const App: React.FC = () => {
   // Xử lý bắt đầu thi (Portal)
  const handleStartExam = (config: any, student: Student, selectedQuestions: Question[]) => {
   console.log("Học sinh bắt đầu thi, IDGV là:", student.idgv); // Log để check
+  setExamMode('matrix');
   setActiveExam(config);
   setActiveStudent(student);
   setQuestions(selectedQuestions);
@@ -217,7 +218,7 @@ const handleFinishWord = async (result: any) => {
                 isQuizMode={activeExam.id === 'QUIZ'} 
               />
             )}
-            {/* 5. Giao diện làm bài CHÍNH THỨC (Dành cho học sinh làm đề Word) */}
+            {/* 6. Giao diện làm bài CHÍNH THỨC (Dành cho học sinh làm đề Word) */}
 {currentView === 'exam' && activeExam && activeStudent && (
   <ExamRoom 
     questions={questions}
@@ -237,7 +238,7 @@ const handleFinishWord = async (result: any) => {
    onFinish={handleFinishWord} // Nộp về sheet(ketqua) 7 cột
   />
 )}
-            {/* 6. Kết quả bài thi */}
+            {/* 7. Kết quả bài thi */}
             {currentView === 'result' && examResult && (
               <ResultView result={examResult} questions={questions} onBack={goHome} />
             )}
