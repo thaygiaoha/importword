@@ -460,8 +460,9 @@ const handleRedirect = () => {
   
   setShowSubjectModal(false);
 };
-   return (
-      <div className="min-h-screen bg-slate-50 font-sans pb-12 overflow-x-hidden">      
+    return (
+    <div className="min-h-screen bg-slate-50 font-sans pb-12 overflow-x-hidden">
+      
      {/* 1. TOP NAV (Style SmartEdu - Đã tích hợp VIP lấp lánh) */}
       <div className="bg-white/90 backdrop-blur-md sticky top-0 z-[100] border-b border-slate-200 px-6 py-3 shadow-sm">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
@@ -681,41 +682,24 @@ const handleRedirect = () => {
            <div className="grid grid-cols-2 gap-2">
   {/* 3 Nút chọn lớp 10, 11, 12 */}
   {[10, 11, 12].map(g => (
-   <button 
-    key={g} 
-    onClick={() => onSelectGrade(g)} 
-    className="bg-blue-600 text-white p-2.5 rounded-xl font-black text-[10px] uppercase border-b-4 border-blue-800 transition-all active:scale-95 flex items-center justify-center gap-2"
+    <button 
+      key={g} 
+      onClick={() => onSelectGrade(g)} 
+      className="bg-blue-600 text-white p-2.5 rounded-xl font-black text-[10px] uppercase border-b-4 border-blue-800 transition-all active:scale-95 flex items-center justify-center gap-2"
+    >
+      <i className="fas fa-graduation-cap text-[10px]"></i> 
+      <span>Lớp {g}</span>
+    </button>
+  ))}
+
+  {/* Nút Lời giải - Ngang hàng và bằng kích thước */}
+  <button 
+    onClick={() => setShowModal(true)}
+    className="bg-orange-500 text-white p-2.5 rounded-xl font-black text-[10px] uppercase border-b-4 border-orange-700 transition-all active:scale-95 flex items-center justify-center gap-2"
   >
-    <i className="fas fa-graduation-cap text-[10px]"></i> 
-    <span>Lớp {g}</span>
+    <i className="fas fa-search text-[10px]"></i> 
+    <span>Lời giải</span>
   </button>
-))}
-
-{/* Nút Thi đề lẻ - Chốt ngay sau Lớp 12 */}
-<button 
-  onClick={() => setShowStudentLogin(true)} 
-  className="bg-orange-500 text-white p-2.5 rounded-xl font-black text-[10px] uppercase border-b-4 border-emerald-800 transition-all active:scale-95 flex items-center justify-center gap-2"
->
-  <i className="fas fa-user-edit text-[10px]"></i> 
-  <span>Thi đề lẻ</span>
-</button>
-             {/* Nút xem điểm */}
-<button 
-  onClick={() => setShowStudentLogin(true)} 
-  className="bg-orange-500 text-white p-2.5 rounded-xl font-black text-[10px] uppercase border-b-4 border-emerald-800 transition-all active:scale-95 flex items-center justify-center gap-2"
->
-  <i className="fas fa-user-edit text-[10px]"></i> 
-  <span>Xem điểm</span>
-</button>
-
-{/* Nút Lời giải - Nằm bên dưới */}
-<button 
-  onClick={() => setShowModal(true)}
-  className="bg-orange-500 text-white p-2.5 rounded-xl font-black text-[10px] uppercase border-b-4 border-orange-700 transition-all active:scale-95 flex items-center justify-center gap-2"
->
-  <i className="fas fa-search text-[10px]"></i> 
-  <span>Lời giải</span>
-</button>
 </div>
 
             {/* QUẢN TRỊ */}
@@ -1318,67 +1302,31 @@ const handleRedirect = () => {
     </div>
   </div>
 )}
-     {/* 4. MODAL ĐĂNG NHẬP THI LẺ */}
-        {showStudentLogin && (
-          <div className="fixed inset-0 bg-slate-950/90 backdrop-blur-md flex items-center justify-center z-[110] p-4">
-            <div className="bg-slate-900 border-2 border-emerald-500/30 p-8 rounded-[2rem] w-full max-w-sm shadow-2xl animate-in zoom-in duration-300">
-              <div className="text-emerald-400 font-black text-center mb-6 text-sm uppercase tracking-tighter">
-                <i className="fas fa-user-shield mr-2"></i> Hệ thống thi lẻ
-              </div>
-              
-              <div className="space-y-3">
-                <input 
-                  className="w-full p-4 rounded-xl bg-slate-800 text-white border border-slate-700 font-bold text-xs focus:ring-2 focus:ring-emerald-500 outline-none" 
-                  placeholder="MÃ GIÁO VIÊN (IDGV)..." 
-                  value={studentInfo.idgv} 
-                  onChange={e => setStudentInfo({...studentInfo, idgv: e.target.value})} 
-                />
-                
-                <input 
-                  className="w-full p-4 rounded-xl bg-slate-800 text-white border border-slate-700 font-bold text-xs focus:ring-2 focus:ring-emerald-500 outline-none" 
-                  placeholder="SỐ BÁO DANH (SBD)..." 
-                  value={studentInfo.sbd} 
-                  onChange={e => setStudentInfo({...studentInfo, sbd: e.target.value})} 
-                />
-                
-                <input 
-                  className="w-full p-4 rounded-xl bg-slate-800 text-emerald-400 border border-slate-700 font-black text-xs focus:ring-2 focus:ring-emerald-500 outline-none uppercase" 
-                  placeholder="MÃ ĐỀ THI (EXAMS)..." 
-                  value={studentInfo.examCode} 
-                  onChange={e => setStudentInfo({...studentInfo, examCode: e.target.value.toUpperCase()})} 
-                />
-                
-                <div className="grid grid-cols-2 gap-3 mt-6">
-                  <button onClick={() => setShowStudentLogin(false)} className="py-3 bg-slate-800 text-slate-400 rounded-xl font-bold text-[10px] hover:bg-slate-700 transition-colors">HỦY</button>
-                  <button onClick={handleStudentSubmit} className="py-3 bg-emerald-600 text-white rounded-xl font-black text-[10px] shadow-lg shadow-emerald-900/40 hover:bg-emerald-500 transition-all active:scale-95">VÀO THI</button>
-                </div>
-              </div>
-            </div>
-          </div>
-        
-        )}
-     
+{/* GIAO DIỆN TRA CỨU LỜI GIẢI - BẢN FULL KHÔNG THIẾU THỨ GÌ */}
 
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+      {/* ICON FONTAWESOME */}
+      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
 
-    <style>{`
-      @keyframes marquee { 
-        0% { transform: translateX(100%); } 
-        100% { transform: translateX(-100%); } 
-      }
-      @keyframes shimmer {
-        100% { transform: translateX(100%); }
-      }
-      .animate-marquee { 
-        display: inline-block; 
-        animation: marquee 25s linear infinite; 
-      }
-      .animate-shimmer {
-        animation: shimmer 2s infinite;
-      }
-      .no-scrollbar::-webkit-scrollbar { display: none; }
-      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-    `}</style> 
+     {/* STYLE TỔNG HỢP: CHỮ CHẠY & HIỆU ỨNG VIP */}
+      <style>{`
+        @keyframes marquee { 
+          0% { transform: translateX(100%); } 
+          100% { transform: translateX(-100%); } 
+        }
+        @keyframes shimmer {
+          100% { transform: translateX(100%); }
+        }
+        .animate-marquee { 
+          display: inline-block; 
+          animation: marquee 25s linear infinite; 
+        }
+        .animate-shimmer {
+          animation: shimmer 2s infinite;
+        }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      `}</style>
+    </div>
   );
 };
 
