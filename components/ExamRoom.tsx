@@ -92,7 +92,7 @@ const QuestionCard = React.memo(({ q, idx, answer, onSelect }: any) => {
       {(qType === 'sa' || qType === 'short-answer') && (
         <div className="mt-4 p-6 bg-slate-800/50 rounded-[2rem] border-2 border-slate-700 flex flex-col md:flex-row items-center gap-4">
           <span className="font-black text-emerald-400 shrink-0">ĐÁP ÁN:</span>
-          <input type="text" className="w-full bg-slate-900 border-2 border-slate-700 p-4 rounded-xl text-white font-bold focus:border-emerald-500 outline-none text-2xl font-mono" placeholder="Dùng dấu (.) thay (,) nhé.Ví dụ: 6.32" value={answer || ''} onChange={(e) => onSelect(idx, e.target.value)} />
+          <input type="text" className="w-full bg-slate-900 border-2 border-slate-700 p-4 rounded-xl text-white font-bold focus:border-emerald-500 outline-none text-2xl font-mono" placeholder="Ví dụ: 6.32" value={answer || ''} onChange={(e) => onSelect(idx, e.target.value)} />
         </div>
       )}
     </div>
