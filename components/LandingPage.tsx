@@ -570,9 +570,7 @@ const handleRedirect = () => {
       scoreSA={scoreSA}
       onFinish={async (resultData) => {
   setExamStarted(false);
-  const targetUrl = API_ROUTING[studentInfo.idgv];
 
-  // Hứng điểm an toàn: Kiểm tra cả totalScore và tongdiem để không bị undefined
   const rawScore = resultData.totalScore ?? resultData.tongdiem ?? 0;
   const diemHienThi = String(rawScore).replace('.', ',');
 
@@ -582,23 +580,43 @@ const handleRedirect = () => {
     exams: String(studentInfo.examCode || "").toUpperCase(),
     sbd: String(studentInfo.sbd || ""),
     name: String(studentInfo.name || ""),
-    class: String(studentInfo.className || ""), // Đảm bảo key này khớp với GAS
-    tongdiem: diemHienThi, 
+    class: String(studentInfo.className || ""),
+    school: String(studentInfo.school || ""),
+    tongdiem: diemHienThi,
     time: resultData.time || 0,
     details: JSON.stringify(resultData.details || [])
   };
 
   try {
+
+    // 🔥 QUIZ → gửi về DANHGIA_URL
+    if (studentInfo.idgv === 'QUIZ') {
+      await fetch(DANHGIA_URL, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain" },
+        body: JSON.stringify(payload),
+      });
+
+      alert(`Hoàn thành Quiz! Điểm của bạn: ${diemHienThi}`);
+      return;
+    }
+
+    // ===== Thi chính → gửi theo IDGV =====
+    const targetUrl = API_ROUTING[studentInfo.idgv];
+
     await fetch(targetUrl, {
       method: "POST",
       headers: { "Content-Type": "text/plain" },
       body: JSON.stringify(payload),
     });
+
     alert(`Nộp bài thành công! Điểm của bạn: ${diemHienThi}`);
+
   } catch (e) {
     console.error("Lỗi:", e);
   }
 }}
+
     />
   </div> // Đóng thẻ div này trước khi đóng dấu ngoặc nhọn
     ) : (
