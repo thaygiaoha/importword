@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react"
 import { fetchExamConfigW, fetchExamQuestionsW } from "./questionsWord"
 import { calculateScoreW } from "./scoreWord"
+import { API_ROUTING } from '../config';
 
 export interface ExamConfigW {
   exams: string
