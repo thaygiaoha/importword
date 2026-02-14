@@ -21,6 +21,11 @@ const App: React.FC = () => {
  const [currentView, setCurrentView] = useState<'landing' | 'portal' | 'quiz' | 'result' | 'admin' | 'teacher_task' | 'exam'>('landing');
   
   // 2. Quản lý chế độ (Mode) cho Admin hoặc Giáo viên
+  // ===== QUIZ STATE =====
+const [quizQuestions, setQuizQuestions] = useState<Question[]>([]);
+const [quizStudent, setQuizStudent] = useState<any>(null);
+const [quizConfig, setQuizConfig] = useState<any>(null);
+
   const [adminMode, setAdminMode] = useState<'matran' | 'cauhoi' | 'word'>('matran'); 
   const [examMode, setExamMode] = useState<'matrix' | 'word' | null>(null);  
   const [selectedGrade, setSelectedGrade] = useState<string | null>(null);
@@ -94,6 +99,7 @@ const App: React.FC = () => {
     });
     setQuestions(quizQuestions);
     set('quiz');
+    setCurrentView('quiz');
   };
 
   // Kết thúc bài thi và gửi dữ liệu từ đề ma trận
