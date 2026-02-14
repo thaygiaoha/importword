@@ -16,7 +16,7 @@ import { fetchQuestionsBank } from '@/questions';
 import { fetchQuestionsBankW } from '@/questionsWord';
 const App: React.FC = () => {
   // 1. Quản lý các màn hình (Views)
- const [currentView, setCurrentView] = useState<'landing' | 'portal' | 'quiz' | 'result' | 'admin' | 'teacher_task' | 'exam'>('landing');
+  const [currentView, setCurrentView] = useState<'landing' | 'portal' | 'quiz' | 'result' | 'admin' | 'teacher_task'>('landing');
   
   // 2. Quản lý chế độ (Mode) cho Admin hoặc Giáo viên
   const [adminMode, setAdminMode] = useState<'matran' | 'cauhoi' | 'word'>('matran'); 
@@ -50,13 +50,12 @@ const App: React.FC = () => {
   }, []);
 
   // Xử lý bắt đầu thi (Portal)
- const handleStartExam = (config: any, student: Student, selectedQuestions: Question[]) => {
-  console.log("Học sinh bắt đầu thi, IDGV là:", student.idgv); // Log để check
-  setActiveExam(config);
-  setActiveStudent(student);
-  setQuestions(selectedQuestions);
-  setCurrentView('exam'); // Đảm bảo chuyển sang view 'exam' để dùng ExamRoom
-};
+  const handleStartExam = (config: any, student: Student, selectedQuestions: Question[]) => {
+    setActiveExam(config);
+    setActiveStudent(student);
+    setQuestions(selectedQuestions);
+    setCurrentView('quiz');
+  };
 
   // Xử lý bắt đầu Quiz nhanh (Landing)
   const handleStartQuizMode = (num: number, pts: number, quizStudent: any) => {
@@ -85,7 +84,7 @@ const App: React.FC = () => {
     setCurrentView('quiz');
   };
 
-  // Kết thúc bài thi và gửi dữ liệu từ đề ma trận
+  // Kết thúc bài thi và gửi dữ liệu
   const handleFinishExam = async (result: ExamResult) => {
     setExamResult(result);
     setCurrentView('result');
@@ -104,40 +103,6 @@ const App: React.FC = () => {
     setActiveStudent(null);
     setExamResult(null);
   };
-  // Thi từ word
-  const handleFinishWord = async (result: any) => {
-  // 1. result ở đây là { score, timeUsed } nhận từ ExamRoom gửi lên
-  setExamResult(result);
-  setCurrentView('result');
-
-  // 2. Routing: Dùng studentInfo.idgv (ID Giáo viên) để tìm link Script
-  // Lưu ý: Trong ExamRoomProps thầy đặt là idgv, nên ở đây ta dùng đúng tên đó
-  const targetUrl = (activeStudent && API_ROUTING[activeStudent.idgv]) 
-                    ? API_ROUTING[activeStudent.idgv] 
-                    : DEFAULT_API_URL;
-
-  // 3. Đóng gói 7 cột CHUẨN ĐÉT cho sheet(ketqua)
-  const payload = {
-    timestamp: new Date().toLocaleString('vi-VN'),    // Cột A
-    exams: activeStudent?.examCode || "KHONG_MA",    // Cột B: Mã đề biến đổi (601, 1201...)
-    sbd: activeStudent?.sbd,                         // Cột C
-    name: activeStudent?.name,                       // Cột D
-    class: activeStudent?.class || activeStudent?.className,                 // Cột E (Khớp với className trong props)
-    tongdiem: result.tongdiem, // Cột F
-    time: result.timeUsed                             // Cột G
-  };
-
-  try {
-    await fetch(targetUrl, { 
-      method: 'POST', 
-      mode: 'no-cors', 
-      body: JSON.stringify(payload) 
-    });
-    console.log("🚀 Đã nộp bài về Sheet của IDGV:", activeStudent?.idgv);
-  } catch (e) { 
-    console.error("❌ Lỗi nộp bài:", e); 
-  }
-};
 
   return (
     <AppProvider>
@@ -202,26 +167,7 @@ const App: React.FC = () => {
                 isQuizMode={activeExam.id === 'QUIZ'} 
               />
             )}
-            {/* 5. Giao diện làm bài CHÍNH THỨC (Dành cho học sinh làm đề Word) */}
-{currentView === 'exam' && activeExam && activeStudent && (
-  <ExamRoom 
-    questions={questions}
-    studentInfo={{
-      idgv: activeStudent.idgv, 
-      sbd: activeStudent.sbd,
-      name: activeStudent.name,
-      className: activeStudent.class,
-      examCode: activeExam.code // Mã đề biến đổi 601, 1001...
-    }}
-    duration={activeExam.fullTime}
-    minSubmitTime={activeExam.miniTime}
-    maxTabSwitches={activeExam.tabLimit}
-   scoreMCQ={Number(activeExam.scoreMCQ) || 0.25}
-   scoreTF={Number(activeExam.scoreTF) || 1.0}
-   scoreSA={Number(activeExam.scoreSA) || 0.5}
-   onFinish={handleFinishWord} // Nộp về sheet(ketqua) 7 cột
-  />
-)}
+
             {/* 6. Kết quả bài thi */}
             {currentView === 'result' && examResult && (
               <ResultView result={examResult} questions={questions} onBack={goHome} />
@@ -259,6 +205,7 @@ const AuthModal = ({ onClose, onSuccess }: { onClose: () => void, onSuccess: (u:
       setLoading(false);
     }
   };
+
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm">
       <div className="bg-white w-full max-w-md rounded-[2.5rem] overflow-hidden shadow-2xl relative animate-fade-in border border-slate-100">
