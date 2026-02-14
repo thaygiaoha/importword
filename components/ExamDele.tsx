@@ -4,53 +4,46 @@ import { calculateScoreW } from "./scoreWord"
 import { API_ROUTING } from '../config';
 
 export interface ExamConfigW {
-  exams: string
-  idgv: string
-  mcq: number
-  scoremcq: number
-  tf: number
-  scoretf: number
-  sa: number
-  scoresa: number
-  fulltime: number
-  minitime: number
-  tab: number
-  close: string
+  exams: string,
+  idgv: string,
+  mcq: number,
+  scoremcq: number,
+  tf: number,
+  scoretf: number,
+  sa: number,
+  scoresa: number,
+  fulltime: number,
+  minitime: number,
+  tab: number,
+  close: string,
+}
+interface ExamDelePropsW {
+  idgvW: string,
+  sbdW: string,
+  examsW: string
 }
 
-export default function ExamDeleW() {
-  /* ================= STATE ================= */
+export default function ExamDeleW({
+  idgvW,
+  sbdW,
+  examsW
+}: ExamDelePropsW) {
+  const [examConfigW, setExamConfigW] = useState<ExamConfigW | null>(null);
+  const [questionsW, setQuestionsW] = useState<any[]>([]);
+  const [answersW, setAnswersW] = useState<any>({});
+  const [timeLeftW, setTimeLeftW] = useState<number>(0);
+  const [tabCountW, setTabCountW] = useState<number>(0);
+  const [submittedW, setSubmittedW] = useState<boolean>(false);
+  const [reviewModeW, setReviewModeW] = useState<boolean>(false);
+  const [studentNameW, setStudentNameW] = useState<string>("");
+const [studentClassW, setStudentClassW] = useState<string>("");
 
-  const [examConfigW, setExamConfigW] = useState<ExamConfigW | null>(null)
-  const [questionsW, setQuestionsW] = useState<any[]>([])
-  const [answersW, setAnswersW] = useState<any>({})
-  const [timeLeftW, setTimeLeftW] = useState<number>(0)
-  const [tabCountW, setTabCountW] = useState<number>(0)
-  const [submittedW, setSubmittedW] = useState<boolean>(false)
-  const [reviewModeW, setReviewModeW] = useState<boolean>(false)
-  
-
-  /* ================= INIT ================= */
-
-  useEffect(() => {
-    initExamW()
-  }, [])
-
-  const initExamW = async () => {
-    const configW = await fetchExamConfigW()
-    const questionsRawW = await fetchExamQuestionsW()
-
-    setExamConfigW(configW)
-    setQuestionsW(questionsRawW)
-    setTimeLeftW(configW.fulltime * 60)
-
-    startTimerW(configW.fulltime * 60)
-  }
- /* ================= verifyStudent ================= */
+   /* ================= verifyStudent ================= */
   const verifyStudentW = async () => {
   try {
     const resW = await fetch(API_ROUTING[idgvW], {
       method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         actionW: "verifyStudentW",
         idgvW,
@@ -77,6 +70,27 @@ export default function ExamDeleW() {
     return false
   }
 }
+
+  /* ================= INIT ================= */
+
+  const startExamFlowW = async () => {
+  const isValidW = await verifyStudentW()
+
+  if (!isValidW) return
+
+  await initExamW()
+}
+  const initExamW = async () => {
+    const configW = await fetchExamConfigW()
+    const questionsRawW = await fetchExamQuestionsW()
+
+    setExamConfigW(configW)
+    setQuestionsW(questionsRawW)
+    setTimeLeftW(configW.fulltime * 60)
+
+    startTimerW(configW.fulltime * 60)
+  }
+
 
 
   /* ================= TIMER ================= */
