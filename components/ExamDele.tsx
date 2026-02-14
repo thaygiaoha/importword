@@ -27,6 +27,7 @@ export default function ExamDeleW() {
   const [tabCountW, setTabCountW] = useState<number>(0)
   const [submittedW, setSubmittedW] = useState<boolean>(false)
   const [reviewModeW, setReviewModeW] = useState<boolean>(false)
+  
 
   /* ================= INIT ================= */
 
@@ -44,6 +45,38 @@ export default function ExamDeleW() {
 
     startTimerW(configW.fulltime * 60)
   }
+ /* ================= verifyStudent ================= */
+  const verifyStudentW = async () => {
+  try {
+    const resW = await fetch(API_ROUTING[idgvW], {
+      method: "POST",
+      body: JSON.stringify({
+        actionW: "verifyStudentW",
+        idgvW,
+        sbdW
+      })
+    })
+
+    const dataW = await resW.json()
+    console.log("VERIFY:", dataW)
+
+    if (!dataW.successW) {
+      alert("Không tìm thấy học sinh")
+      return false
+    }
+
+    setStudentNameW(dataW.nameW)
+    setStudentClassW(dataW.classW)
+
+    return true
+
+  } catch (errW) {
+    console.error(errW)
+    alert("Lỗi kết nối")
+    return false
+  }
+}
+
 
   /* ================= TIMER ================= */
 
