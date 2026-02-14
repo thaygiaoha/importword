@@ -99,8 +99,7 @@ const [quizConfig, setQuizConfig] = useState<any>(null);
       idnumber: 'QUIZ', 
       taikhoanapp: user?.isVip ? 'VIP' : 'FREE' 
     });
-    setQuestions(quizQuestions);
-    set('quiz');
+    setQuestions(quizQuestions);    
     setCurrentView('quiz');
   };
 
