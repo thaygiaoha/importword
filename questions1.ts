@@ -1,5 +1,5 @@
 import { Question } from './types';
-import { DANHGIA_URL, API_ROUTING } from './config';
+import { DANHGIA_URL } from './config';
 
 // 1. Lưu trữ ngân hàng câu hỏi
 export let questionsBank: Question[] = [];
@@ -36,8 +36,7 @@ const shuffleArray = <T>(array: T[]): T[] => {
 export const pickQuestionsSmart = (
   topicIds: string[], 
   counts: { mc: number[], tf: number[], sa: number[] },
-  // Cập nhật tên biến mức độ cho đồng bộ c, d
-  levels: { mcc: number[], mcd: number[], tfc: number[], tfd: number[], sac: number[], sad: number[] }
+  levels: { mc3: number[], mc4: number[], tf3: number[], tf4: number[], sa3: number[], sa4: number[] }
 ) => {
   let selectedPart1: Question[] = [];
   let selectedPart2: Question[] = [];
@@ -51,28 +50,26 @@ export const pickQuestionsSmart = (
   topicIds.forEach((tid, idx) => {
     const tidStr = tid.toString();
     
-    // Giữ nguyên logic lọc Topic của bản gốc
+    // LỌC THÔNG MINH: Chấp nhận cả "1001" và "1001.3"
     const pool = questionsBank.filter(q => {
       const tag = q.classTag.toString();
       return tag === tidStr || tag.startsWith(tidStr + ".");
     });
     
-    const getSub = (type: string, lc: number, ld: number, total: number) => {
+    const getSub = (type: string, l3: number, l4: number, total: number) => {
       const typePool = pool.filter(q => q.type === type);
       
-      // THAY ĐỔI: Chuyển .4 -> .d và .3 -> .c
-      const p4 = typePool.filter(q => q.classTag.toString().endsWith(".d"));
-      const p3 = typePool.filter(q => q.classTag.toString().endsWith(".c"));
-      
-      // Giữ nguyên logic lọc pOther (mức 1, 2)
+      // Lọc mức độ 3 và 4
+      const p4 = typePool.filter(q => q.classTag.toString().endsWith(".4"));
+      const p3 = typePool.filter(q => q.classTag.toString().endsWith(".3"));
       const pOther = typePool.filter(q => 
-        !q.classTag.toString().endsWith(".c") && 
-        !q.classTag.toString().endsWith(".d")
+        !q.classTag.toString().endsWith(".3") && 
+        !q.classTag.toString().endsWith(".4")
       );
 
-      let res4 = shuffleArray(p4).slice(0, ld);
-      let deficit4 = Math.max(0, ld - res4.length); 
-      let res3 = shuffleArray(p3).slice(0, lc + deficit4);
+      let res4 = shuffleArray(p4).slice(0, l4);
+      let deficit4 = Math.max(0, l4 - res4.length); 
+      let res3 = shuffleArray(p3).slice(0, l3 + deficit4);
       
       let res = [...res4, ...res3];
       const remainingNeeded = total - res.length;
@@ -83,13 +80,12 @@ export const pickQuestionsSmart = (
       return res;
     };
 
-    // THAY ĐỔI: Truyền tham số levels c, d tương ứng
-    selectedPart1 = [...selectedPart1, ...getSub('mcq', levels.mcc[idx] || 0, levels.mcd[idx] || 0, counts.mc[idx] || 0)];
-    selectedPart2 = [...selectedPart2, ...getSub('true-false', levels.tfc[idx] || 0, levels.tfd[idx] || 0, counts.tf[idx] || 0)];
-    selectedPart3 = [...selectedPart3, ...getSub('short-answer', levels.sac[idx] || 0, levels.sad[idx] || 0, counts.sa[idx] || 0)];
+    selectedPart1 = [...selectedPart1, ...getSub('mcq', levels.mc3[idx] || 0, levels.mc4[idx] || 0, counts.mc[idx] || 0)];
+    selectedPart2 = [...selectedPart2, ...getSub('true-false', levels.tf3[idx] || 0, levels.tf4[idx] || 0, counts.tf[idx] || 0)];
+    selectedPart3 = [...selectedPart3, ...getSub('short-answer', levels.sa3[idx] || 0, levels.sa4[idx] || 0, counts.sa[idx] || 0)];
   });
 
-  // BỔ SUNG TỪ BẢN 1: Trộn đáp án/ý hỏi trước khi xuất xưởng
+  // Trộn đáp án trước khi xuất xưởng
   return [...selectedPart1, ...selectedPart2, ...selectedPart3].map(q => {
     const newQ = { ...q };
     if (newQ.o && newQ.type === 'mcq') {

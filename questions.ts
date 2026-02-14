@@ -1,5 +1,45 @@
 import { Question } from './types';
 import { DANHGIA_URL } from './config';
+// Lọc câu trùng
+const findDuplicates = (bank) => {
+  const groups = [];
+  const usedIds = new Set();
+
+  for (let i = 0; i < bank.length; i++) {
+    if (usedIds.has(bank[i].id)) continue;
+    let group = [bank[i]];
+
+    for (let j = i + 1; j < bank.length; j++) {
+      const q1 = bank[i];
+      const q2 = bank[j];
+
+      // TIÊU CHUẨN LỌC TRÙNG CỦA THẦY:
+      // 1. Đáp án giống nhau (q1.a === q2.a)
+      // 2. Nội dung câu hỏi khá giống nhau (dùng độ dài hoặc từ khóa)
+      const contentSimilarity = checkSimilarity(q1.question, q2.question);
+      
+      if (q1.a === q2.a && contentSimilarity > 0.8) {
+        group.push(q2);
+        usedIds.add(q2.id);
+      }
+    }
+
+    if (group.length > 1) {
+      groups.push(group);
+      usedIds.add(bank[i].id);
+    }
+  }
+  return groups;
+};
+
+// Hàm kiểm tra độ giống nhau cơ bản (Có thể dùng thuật toán Levenshtein nâng cao hơn)
+const checkSimilarity = (str1, str2) => {
+  const s1 = str1.replace(/[0-9]/g, '').toLowerCase(); // Loại bỏ số để so sánh lời dẫn
+  const s2 = str2.replace(/[0-9]/g, '').toLowerCase();
+  // Nếu số liệu giống nhau thì quan trọng hơn, thầy có thể thêm logic lọc số ở đây
+  return s1 === s2 ? 1 : 0.5; // Tạm thời trả về 1 nếu giống hệt lời dẫn
+};
+
 
 // 1. Lưu trữ ngân hàng câu hỏi
 export let questionsBank: Question[] = [];
@@ -60,11 +100,11 @@ export const pickQuestionsSmart = (
       const typePool = pool.filter(q => q.type === type);
       
       // Lọc mức độ 3 và 4
-      const p4 = typePool.filter(q => q.classTag.toString().endsWith(".d"));
-      const p3 = typePool.filter(q => q.classTag.toString().endsWith(".c"));
+      const p4 = typePool.filter(q => q.classTag.toString().endsWith(".4"));
+      const p3 = typePool.filter(q => q.classTag.toString().endsWith(".3"));
       const pOther = typePool.filter(q => 
-        !q.classTag.toString().endsWith(".c") && 
-        !q.classTag.toString().endsWith(".d")
+        !q.classTag.toString().endsWith(".3") && 
+        !q.classTag.toString().endsWith(".4")
       );
 
       let res4 = shuffleArray(p4).slice(0, l4);
