@@ -266,7 +266,6 @@ const handleFinishWord = async (result: any) => {
     scoreTF={Number(activeExam.scoreTF || activeExam.tfPoints) || 1.0}
     scoreSA={Number(activeExam.scoreSA || activeExam.saPoints) || 0.5}
     onFinish={
-     onFinish={
       examMode === 'matrix'
     ? handleFinishExam
     : handleFinishWord
