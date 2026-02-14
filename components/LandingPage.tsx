@@ -51,10 +51,10 @@ const LandingPage: React.FC<LandingPageProps> = ({
   const [studentName, setStudentName] = useState("");
   const [duration, setDuration] = useState(60);          
   const [examStarted, setExamStarted] = useState(false);
-  const [studentLoginDataW, setStudentLoginDataW] = useState({
-  teacherIdW: "",
-  candidateIdW: "",
-  examIdW: ""
+  const [studentInfoW, setStudentInfoW] = useState({
+  idgvW: "",
+  sbdW: "",
+  examsW: ""
 });
 
 const [singleExamDataW, setSingleExamDataW] = useState<any>(null);
@@ -162,63 +162,23 @@ const [newsList, setNewsList] = useState<{t: string, l: string}[]>([]);
   // =================================================================================================================
  // TRONG REACT - Hàm handleStudentSubmit
 // Thêm (e) vào đây thầy nhé
-const handleStudentSubmit = async (e) => {
-  if (e && typeof e.preventDefault === 'function') e.preventDefault();
-
-  // 1. Lấy giá trị trực tiếp từ state studentInfo
-  const currentIDGV = studentInfo.idgv.toString().trim();
-  
-  // 2. Truy xuất URL
-  const targetUrl = API_ROUTING[currentIDGV];
-
-  // LOG ĐỂ SOI LỖI (Thầy bật F12 lên xem cái này)
-  console.log("--- DEBUG ĐĂNG NHẬP ---");
-  console.log("IDGV nhập vào:", currentIDGV);
-  console.log("Link tìm được:", targetUrl);
-  console.log("Toàn bộ API_ROUTING:", API_ROUTING);
-
-  if (!targetUrl) {
-    alert(`❌ Không tìm thấy link Script của mã GV: "${currentIDGV}"`);
-    return;
+const handleStudentSubmitW = () => {
+  if (!studentInfoW.idgvW || !studentInfoW.sbdW || !studentInfoW.examsW) {
+    alert("Nhập đầy đủ thông tin!")
+    return
   }
 
-  try {
-    const response = await fetch(targetUrl, {
-      method: "POST",
-      headers: { "Content-Type": "text/plain" },
-      body: JSON.stringify({
-        action: "studentGetExam",
-        sbd: studentInfo.sbd.toString().trim(),
-        examCode: studentInfo.examCode.toString().trim(),
-        idgv: currentIDGV // Dùng luôn biến vừa lấy
-      }),
-    });
+  setShowStudentLogin(false)
 
-    const result = await response.json();
+  setExamDeleDataW({
+    idgvW: studentInfoW.idgvW,
+    sbdW: studentInfoW.sbdW,
+    examsW: studentInfoW.examsW
+  })
 
-    if (result.status === "success") {
-      console.log("Dữ liệu đề nhận được:", result.data);
-      
-      // Cập nhật toàn bộ thông tin vào State
-      // Đảm bảo các hàm set... này đã được khai báo bằng useState ở trên
-      if (result.data.questions) setQuestions(result.data.questions); 
-      if (result.data.studentName) setStudentName(result.data.studentName);
-      if (result.data.duration) setDuration(result.data.duration); 
-
-      // Kích hoạt chuyển trang thi
-      setExamStarted(true); 
-      setShowStudentLogin(false);
-      
-      // Alert này để học sinh biết là đã sẵn sàng
-      alert(`Xác thực thành công! Chào ${result.data.studentName}.`);
-    } else {
-      alert("⚠️ " + result.message);
-    }
-  } catch (error) {
-    console.error("Lỗi thực thi:", error);
-    alert("❌ Không thể kết nối tới máy chủ của Giáo viên. Thầy kiểm tra lại Deploy GAS nhé!");
-  }
+  setPage("examDeleW")
 };
+
   // =================================================================================================================
 const handleSaveMatrix = async () => {
   if (!idgv) {
@@ -1372,26 +1332,59 @@ const handleRedirect = () => {
       <div className="text-emerald-400 font-black text-center mb-6 text-sm uppercase tracking-tighter">
         <i className="fas fa-user-shield mr-2"></i> Hệ thống thi lẻ
       </div>
-      
+
       <div className="space-y-3">
-        <input className="w-full p-4 rounded-xl bg-slate-800 text-white border border-slate-700 font-bold text-xs" 
-               placeholder="MÃ GIÁO VIÊN (IDGV)..." value={studentInfo.idgv} onChange={e => setStudentInfo({...studentInfo, idgv: e.target.value})} />
-        
-        <input className="w-full p-4 rounded-xl bg-slate-800 text-white border border-slate-700 font-bold text-xs" 
-               placeholder="SỐ BÁO DANH (SBD)..." value={studentInfo.sbd} onChange={e => setStudentInfo({...studentInfo, sbd: e.target.value})} />
-        
-        <input className="w-full p-4 rounded-xl bg-slate-800 text-emerald-400 border border-slate-700 font-black text-xs" 
-               placeholder="MÃ ĐỀ THI (EXAMS)..." value={studentInfo.examCode} 
-onChange={e => setStudentInfo({...studentInfo, examCode: e.target.value.toUpperCase()})} />
-        
+        <input
+  value={studentInfoW.idgvW}
+  onChange={e =>
+    setStudentInfoW({
+      ...studentInfoW,
+      idgvW: e.target.value.trim()
+    })
+  }
+/>
+
+<input
+  value={studentInfoW.sbdW}
+  onChange={e =>
+    setStudentInfoW({
+      ...studentInfoW,
+      sbdW: e.target.value.trim()
+    })
+  }
+/>
+
+<input
+  value={studentInfoW.examsW}
+  onChange={e =>
+    setStudentInfoW({
+      ...studentInfoW,
+      examsW: e.target.value.toUpperCase().trim()
+    })
+  }
+/>
+
+
         <div className="grid grid-cols-2 gap-3 mt-6">
-          <button onClick={() => setShowStudentLogin(false)} className="py-3 bg-slate-800 text-slate-400 rounded-xl font-bold text-[10px]">HỦY</button>
-          <button onClick={handleStudentSubmit} className="py-3 bg-emerald-600 text-white rounded-xl font-black text-[10px] shadow-lg shadow-emerald-900/40">VÀO THI</button>
+          <button
+            onClick={() => setShowStudentLogin(false)}
+            className="py-3 bg-slate-800 text-slate-400 rounded-xl font-bold text-[10px]"
+          >
+            HỦY
+          </button>
+
+          <button
+            onClick={handleSingleExamSubmitW}
+            className="py-3 bg-emerald-600 text-white rounded-xl font-black text-[10px] shadow-lg shadow-emerald-900/40"
+          >
+            VÀO THI
+          </button>
         </div>
       </div>
     </div>
   </div>
 )}
+
 {/* GIAO DIỆN TRA CỨU LỜI GIẢI - BẢN FULL KHÔNG THIẾU THỨ GÌ */}
 
       {/* ICON FONTAWESOME */}
