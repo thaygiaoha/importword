@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { DANHGIA_URL, ADMIN_CONFIG, OTHER_APPS, API_ROUTING } from '../config';
 import { AppUser, Student } from '../types';
 import { postToScript } from '../postToScript';
-import ExamRoom from './ExamRoom';
 
 interface LandingPageProps {
   onSelectGrade: (grade: number) => void;
@@ -28,15 +27,6 @@ const LandingPage: React.FC<LandingPageProps> = ({
 }) => {
   // --- GIỮ NGUYÊN TOÀN BỘ LOGIC DỮ LIỆU CỦA THẦY ---
   const REDIRECT_LINKS: Record<string, string> = { "default": "https://www.facebook.com/hoctoanthayha.bg" };
-  
-
-  const [minSubmitTime, setMinSubmitTime] = useState(0);
-  const [maxTabSwitches, setMaxTabSwitches] = useState(3);
-  const [deadline, setDeadline] = useState("");
-  const [scoreMCQ, setScoreMCQ] = useState(0.25);
-  const [scoreTF, setScoreTF] = useState(1.0);
-  const [scoreSA, setScoreSA] = useState(0.5);
-  
   const [showAppList, setShowAppList] = useState(false);
   const [isOtherBank, setIsOtherBank] = useState(false);
   const [quizMode, setQuizMode] = useState<'free' | 'gift' | null>(null);
@@ -59,9 +49,8 @@ const LandingPage: React.FC<LandingPageProps> = ({
   const [idgv, setIdgv] = useState('');
   const [questions, setQuestions] = useState([]);
   const [studentName, setStudentName] = useState("");
-  const [duration, setDuration] = useState(90);          
+  const [duration, setDuration] = useState(60);          
   const [examStarted, setExamStarted] = useState(false);
-  const [studentClass, setStudentClass] = useState("");
  
  
   const [searchId, setSearchId] = useState('');
@@ -164,7 +153,63 @@ const [newsList, setNewsList] = useState<{t: string, l: string}[]>([]);
   // =================================================================================================================
  // TRONG REACT - Hàm handleStudentSubmit
 // Thêm (e) vào đây thầy nhé
+const handleStudentSubmit = async (e) => {
+  if (e && typeof e.preventDefault === 'function') e.preventDefault();
 
+  // 1. Lấy giá trị trực tiếp từ state studentInfo
+  const currentIDGV = studentInfo.idgv.toString().trim();
+  
+  // 2. Truy xuất URL
+  const targetUrl = API_ROUTING[currentIDGV];
+
+  // LOG ĐỂ SOI LỖI (Thầy bật F12 lên xem cái này)
+  console.log("--- DEBUG ĐĂNG NHẬP ---");
+  console.log("IDGV nhập vào:", currentIDGV);
+  console.log("Link tìm được:", targetUrl);
+  console.log("Toàn bộ API_ROUTING:", API_ROUTING);
+
+  if (!targetUrl) {
+    alert(`❌ Không tìm thấy link Script của mã GV: "${currentIDGV}"`);
+    return;
+  }
+
+  try {
+    const response = await fetch(targetUrl, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain" },
+      body: JSON.stringify({
+        action: "studentGetExam",
+        sbd: studentInfo.sbd.toString().trim(),
+        examCode: studentInfo.examCode.toString().trim(),
+        idgv: currentIDGV // Dùng luôn biến vừa lấy
+      }),
+    });
+
+    const result = await response.json();
+
+    if (result.status === "success") {
+      console.log("Dữ liệu đề nhận được:", result.data);
+      
+      // Cập nhật toàn bộ thông tin vào State
+      // Đảm bảo các hàm set... này đã được khai báo bằng useState ở trên
+      if (result.data.questions) setQuestions(result.data.questions); 
+      if (result.data.studentName) setStudentName(result.data.studentName);
+      if (result.data.duration) setDuration(result.data.duration); 
+
+      // Kích hoạt chuyển trang thi
+      setExamStarted(true); 
+      setShowStudentLogin(false);
+      
+      // Alert này để học sinh biết là đã sẵn sàng
+      alert(`Xác thực thành công! Chào ${result.data.studentName}.`);
+    } else {
+      alert("⚠️ " + result.message);
+    }
+  } catch (error) {
+    console.error("Lỗi thực thi:", error);
+    alert("❌ Không thể kết nối tới máy chủ của Giáo viên. Thầy kiểm tra lại Deploy GAS nhé!");
+  }
+};
   // =================================================================================================================
 const handleSaveMatrix = async () => {
   if (!idgv) {
@@ -460,7 +505,8 @@ const handleRedirect = () => {
   
   setShowSubjectModal(false);
 };
-    return (
+
+  return (
     <div className="min-h-screen bg-slate-50 font-sans pb-12 overflow-x-hidden">
       
      {/* 1. TOP NAV (Style SmartEdu - Đã tích hợp VIP lấp lánh) */}
@@ -682,24 +728,33 @@ const handleRedirect = () => {
            <div className="grid grid-cols-2 gap-2">
   {/* 3 Nút chọn lớp 10, 11, 12 */}
   {[10, 11, 12].map(g => (
-    <button 
-      key={g} 
-      onClick={() => onSelectGrade(g)} 
-      className="bg-blue-600 text-white p-2.5 rounded-xl font-black text-[10px] uppercase border-b-4 border-blue-800 transition-all active:scale-95 flex items-center justify-center gap-2"
-    >
-      <i className="fas fa-graduation-cap text-[10px]"></i> 
-      <span>Lớp {g}</span>
-    </button>
-  ))}
-
-  {/* Nút Lời giải - Ngang hàng và bằng kích thước */}
-  <button 
-    onClick={() => setShowModal(true)}
-    className="bg-orange-500 text-white p-2.5 rounded-xl font-black text-[10px] uppercase border-b-4 border-orange-700 transition-all active:scale-95 flex items-center justify-center gap-2"
+   <button 
+    key={g} 
+    onClick={() => onSelectGrade(g)} 
+    className="bg-blue-600 text-white p-2.5 rounded-xl font-black text-[10px] uppercase border-b-4 border-blue-800 transition-all active:scale-95 flex items-center justify-center gap-2"
   >
-    <i className="fas fa-search text-[10px]"></i> 
-    <span>Lời giải</span>
+    <i className="fas fa-graduation-cap text-[10px]"></i> 
+    <span>Lớp {g}</span>
   </button>
+))}
+
+{/* Nút Thi đề lẻ - Chốt ngay sau Lớp 12 */}
+<button 
+  onClick={() => setShowStudentLogin(true)} 
+  className="bg-emerald-600 text-white p-2.5 rounded-xl font-black text-[10px] uppercase border-b-4 border-emerald-800 transition-all active:scale-95 flex items-center justify-center gap-2"
+>
+  <i className="fas fa-user-edit text-[10px]"></i> 
+  <span>Thi đề lẻ</span>
+</button>
+
+{/* Nút Lời giải - Nằm bên dưới */}
+<button 
+  onClick={() => setShowModal(true)}
+  className="bg-orange-500 text-white p-2.5 rounded-xl font-black text-[10px] uppercase border-b-4 border-orange-700 transition-all active:scale-95 flex items-center justify-center gap-2"
+>
+  <i className="fas fa-search text-[10px]"></i> 
+  <span>Lời giải</span>
+</button>
 </div>
 
             {/* QUẢN TRỊ */}
@@ -1298,6 +1353,32 @@ const handleRedirect = () => {
 
       <div className="bg-slate-50 p-4 text-center">
          <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest">Hỗ trợ MathJax & Render sạch nội dung</p>
+      </div>
+    </div>
+  </div>
+)}
+      {showStudentLogin && (
+  <div className="fixed inset-0 bg-slate-950/90 backdrop-blur-md flex items-center justify-center z-[100] p-4">
+    <div className="bg-slate-900 border-2 border-emerald-500/30 p-8 rounded-[2rem] w-full max-w-sm shadow-2xl">
+      <div className="text-emerald-400 font-black text-center mb-6 text-sm uppercase tracking-tighter">
+        <i className="fas fa-user-shield mr-2"></i> Hệ thống thi lẻ
+      </div>
+      
+      <div className="space-y-3">
+        <input className="w-full p-4 rounded-xl bg-slate-800 text-white border border-slate-700 font-bold text-xs" 
+               placeholder="MÃ GIÁO VIÊN (IDGV)..." value={studentInfo.idgv} onChange={e => setStudentInfo({...studentInfo, idgv: e.target.value})} />
+        
+        <input className="w-full p-4 rounded-xl bg-slate-800 text-white border border-slate-700 font-bold text-xs" 
+               placeholder="SỐ BÁO DANH (SBD)..." value={studentInfo.sbd} onChange={e => setStudentInfo({...studentInfo, sbd: e.target.value})} />
+        
+        <input className="w-full p-4 rounded-xl bg-slate-800 text-emerald-400 border border-slate-700 font-black text-xs" 
+               placeholder="MÃ ĐỀ THI (EXAMS)..." value={studentInfo.examCode} 
+onChange={e => setStudentInfo({...studentInfo, examCode: e.target.value.toUpperCase()})} />
+        
+        <div className="grid grid-cols-2 gap-3 mt-6">
+          <button onClick={() => setShowStudentLogin(false)} className="py-3 bg-slate-800 text-slate-400 rounded-xl font-bold text-[10px]">HỦY</button>
+          <button onClick={handleStudentSubmit} className="py-3 bg-emerald-600 text-white rounded-xl font-black text-[10px] shadow-lg shadow-emerald-900/40">VÀO THI</button>
+        </div>
       </div>
     </div>
   </div>

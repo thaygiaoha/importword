@@ -20,52 +20,6 @@ const TeacherWordTask = ({ onBack }) => {
 
   const [jsonInputWord, setJsonInputWord] = useState('');
   const [jsonInputLG, setJsonInputLG] = useState('');
-  // ===========================VBA chuyển Latex cho Web ======================
-  
-  const vbaCode = `' MACRO CHUẨN HÓA LATEX CHO WEB THAY HA
-Sub ChuanHoaLatexMathJax()
-    Application.ScreenUpdating = False
-    
-    ' 1. Chuyển hệ phương trình (align) sang cases
-    Call ExecReplace("\\\\left\\{([ ^13^l^t]@)\\\\begin\\{align\\}", "\\\\begin{cases}", True)
-    Call ExecReplace("\\\\end\\{align\\}([ ^13^l^t]@)\\\\right.", "\\\\end{cases}", True)
-    Call ExecReplace("\\\\begin\\{align\\}", "\\\\begin{cases}", False)
-    Call ExecReplace("\\\\end\\{align\\}", "\\\\end{cases}", False)
-
-    ' 2. Bảo vệ ngoặc vuông [ ] tránh lỗi Wildcard
-    Call ExecReplace("\\\\left\\[", "<<L_SQ>>", False)
-    Call ExecReplace("\\\\right\\]", "<<R_SQ>>", False)
-
-    ' 3. Chuyển $$ ... $$ sang \\[ ... \\]
-    Call ExecReplace("\\$\\$([!\\$]@)\\$\\$", "\\\\[\\1\\\\]", True)
-
-    ' 4. Chuyển \\( \\) sang $
-    Call ExecReplace("\\\\(", "$", False)
-    Call ExecReplace("\\\\)", "$", False)
-
-    ' 5. Fix Độ C
-    Call ExecReplace("^\\circ C", "^\\circ\\text{C}", False)
-
-    ' 6. Trả lại ngoặc vuông
-    Call ExecReplace("<<L_SQ>>", "\\\\left[", False)
-    Call ExecReplace("<<R_SQ>>", "\\\\right]", False)
-
-    Application.ScreenUpdating = True
-    MsgBox "Đã chuẩn hóa LaTeX thành công!", vbInformation
-End Sub
-
-Sub ExecReplace(fnd As String, rpl As String, isWild As Boolean)
-    With ActiveDocument.Content.Find
-        .ClearFormatting
-        .Replacement.ClearFormatting
-        .Text = fnd
-        .Replacement.Text = rpl
-        .Forward = True
-        .Wrap = wdFindContinue
-        .MatchWildcards = isWild
-        .Execute Replace:=wdReplaceAll
-    End With
-End Sub`;
 
   // Tái sử dụng hàm bóc tách của thầy
   // =========================================================================================================================================
