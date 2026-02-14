@@ -160,7 +160,7 @@ const [newsList, setNewsList] = useState<{t: string, l: string}[]>([]);
   fetchContentData();
 }, []);
   // =================================================================================================================
- // TRONG REACT - Hàm handleStudentSubmit
+
 // Thêm (e) vào đây thầy nhé
 const handleStudentSubmitW = () => {
   if (!studentInfoW.idgvW || !studentInfoW.sbdW || !studentInfoW.examsW) {
@@ -1374,7 +1374,7 @@ const handleRedirect = () => {
           </button>
 
           <button
-            onClick={handleSingleExamSubmitW}
+            onClick={handleStudentSubmitW}
             className="py-3 bg-emerald-600 text-white rounded-xl font-black text-[10px] shadow-lg shadow-emerald-900/40"
           >
             VÀO THI
