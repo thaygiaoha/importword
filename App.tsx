@@ -266,10 +266,12 @@ const handleFinishWord = async (result: any) => {
     scoreTF={Number(activeExam.scoreTF || activeExam.tfPoints) || 1.0}
     scoreSA={Number(activeExam.scoreSA || activeExam.saPoints) || 0.5}
     onFinish={
-      activeExam.id === 'QUIZ' || activeExam.gradingScheme === 1
-        ? handleFinishExam   // 🔵 Ma trận
-        : handleFinishWord   // 🔴 Đề lẻ
-    }
+     onFinish={
+      examMode === 'matrix'
+    ? handleFinishExam
+    : handleFinishWord
+}
+
   />
 )}
 
