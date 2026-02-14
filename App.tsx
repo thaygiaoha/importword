@@ -14,20 +14,13 @@ import TeacherWordTask from '@/components/TeacherWordTask';
 // Thêm dấu ngoặc nhọn bao quanh tên hàm
 import { fetchQuestionsBank } from '@/questions';
 import { fetchQuestionsBankW } from '@/questionsWord';
-import ExamRoom from '@/components/ExamRoom';
-
 const App: React.FC = () => {
   // 1. Quản lý các màn hình (Views)
  const [currentView, setCurrentView] = useState<'landing' | 'portal' | 'quiz' | 'result' | 'admin' | 'teacher_task' | 'exam'>('landing');
   
   // 2. Quản lý chế độ (Mode) cho Admin hoặc Giáo viên
-  // ===== QUIZ STATE =====
-const [quizQuestions, setQuizQuestions] = useState<Question[]>([]);
-const [quizStudent, setQuizStudent] = useState<any>(null);
-const [quizConfig, setQuizConfig] = useState<any>(null);
-
   const [adminMode, setAdminMode] = useState<'matran' | 'cauhoi' | 'word'>('matran'); 
-  const [examMode, setExamMode] = useState<'matrix' | 'word' | null>(null);  
+  
   const [selectedGrade, setSelectedGrade] = useState<string | null>(null);
   const [activeExam, setActiveExam] = useState<any>(null);
   const [activeStudent, setActiveStudent] = useState<Student | null>(null);
@@ -35,16 +28,7 @@ const [quizConfig, setQuizConfig] = useState<any>(null);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [user, setUser] = useState<AppUser | null>(null);
   const [showAuth, setShowAuth] = useState(false);
-  const [showVipModal, setShowVipModal] = useState(false);  
-  const [quizResult, setQuizResult] = useState<any>(null);
-
-  const goHome = () => {
-    setCurrentView('landing');
-    setActiveExam(null);
-    setActiveStudent(null);
-    setExamResult(null);
-  };
-
+  const [showVipModal, setShowVipModal] = useState(false);
 
   // Khởi tạo dữ liệu hệ thống
   useEffect(() => {
@@ -68,12 +52,10 @@ const [quizConfig, setQuizConfig] = useState<any>(null);
   // Xử lý bắt đầu thi (Portal)
  const handleStartExam = (config: any, student: Student, selectedQuestions: Question[]) => {
   console.log("Học sinh bắt đầu thi, IDGV là:", student.idgv); // Log để check
-  setExamMode('matrix');
   setActiveExam(config);
   setActiveStudent(student);
   setQuestions(selectedQuestions);
-  setCurrentView('exam'); // ✅ ĐÚNG hoặc Set
- // Đảm bảo chuyển sang view 'exam' để dùng ExamRoom
+  setCurrentView('exam'); // Đảm bảo chuyển sang view 'exam' để dùng ExamRoom
 };
 
   // Xử lý bắt đầu Quiz nhanh (Landing)
@@ -85,7 +67,7 @@ const [quizConfig, setQuizConfig] = useState<any>(null);
       usedIds.add(q.id);
       quizQuestions.push({...q, shuffledOptions: q.o ? [...q.o].sort(() => 0.5 - Math.random()) : undefined});
     }
-    setActiveExam({ id: 'QUIZ', title: `Luyện tập Quiz (${num} câu)`, time: 15, mcqPoints: pts, tfPoints: pts, saPoints: pts, gradingScheme: 999 });
+    setActiveExam({ id: 'QUIZ', title: `Luyện tập Quiz (${num} câu)`, time: 15, mcqPoints: pts, tfPoints: pts, saPoints: pts, gradingScheme: 1 });
     setActiveStudent({ 
       sbd: quizStudent.phoneNumber || 'QUIZ_GUEST', 
       name: quizStudent.name || 'Khách', 
@@ -95,86 +77,69 @@ const [quizConfig, setQuizConfig] = useState<any>(null);
       stk: quizStudent.stk,
       bank: quizStudent.bank,
       limit: 10, 
-      limittab: 2, 
+      limittab: 10, 
       idnumber: 'QUIZ', 
       taikhoanapp: user?.isVip ? 'VIP' : 'FREE' 
     });
-    setQuestions(quizQuestions);    
+    setQuestions(quizQuestions);
     setCurrentView('quiz');
   };
 
   // Kết thúc bài thi và gửi dữ liệu từ đề ma trận
   const handleFinishExam = async (result: ExamResult) => {
-  console.log("FINAL RESULT:", result);
+    setExamResult(result);
+    setCurrentView('result');
+    let targetUrl = DEFAULT_API_URL;
+    if (result.type === 'quiz') targetUrl = DANHGIA_URL;
+    else if (activeStudent && API_ROUTING[activeStudent.idnumber]) targetUrl = API_ROUTING[activeStudent.idnumber];
+
+    try {
+      await fetch(targetUrl, { method: 'POST', mode: 'no-cors', body: JSON.stringify(result) });
+    } catch (e) { console.error("Lỗi gửi kết quả:", e); }
+  };
+
+  const goHome = () => {
+    setCurrentView('landing');
+    setActiveExam(null);
+    setActiveStudent(null);
+    setExamResult(null);
+  };
+  // Thi từ word
+  const handleFinishWord = async (result: any) => {
+  // 1. result ở đây là { score, timeUsed } nhận từ ExamRoom gửi lên
   setExamResult(result);
   setCurrentView('result');
 
-  let targetUrl = DEFAULT_API_URL;
+  // 2. Routing: Dùng studentInfo.idgv (ID Giáo viên) để tìm link Script
+  // Lưu ý: Trong ExamRoomProps thầy đặt là idgv, nên ở đây ta dùng đúng tên đó
+  const targetUrl = (activeStudent && API_ROUTING[activeStudent.idgv]) 
+                    ? API_ROUTING[activeStudent.idgv] 
+                    : DEFAULT_API_URL;
 
-  if (result.type === 'quiz') {
-    targetUrl = DANHGIA_URL;
-  } else if (activeStudent && API_ROUTING[activeStudent.idnumber]) {
-    targetUrl = API_ROUTING[activeStudent.idnumber];
-  }
-
-  try {
-    await fetch(targetUrl, {
-      method: 'POST',
-      mode: 'no-cors',
-      body: JSON.stringify(result)
-    });
-  } catch (e) {
-    console.error("Lỗi gửi kết quả:", e);
-  }
-};
-
-
-  // Kết thúc bài thi và gửi dữ liệu từ đề nhập word
-const handleFinishWord = async (result: any) => {
-  if (!activeStudent || !activeExam) return;
-
+  // 3. Đóng gói 7 cột CHUẨN ĐÉT cho sheet(ketqua)
   const payload = {
-    timestamp: new Date().toLocaleString('vi-VN'), // Cột A
-    exams: activeExam.code || "KHONG_MA",          // Cột B
-    sbd: activeStudent.sbd,                        // Cột C
-    name: activeStudent.name,                      // Cột D
-    class: activeStudent.class || activeStudent.className, // Cột E
-    tongdiem: result.tongdiem || 0,                // Cột F
-    time: result.timeUsed || "0 phút"              // Cột G
+    timestamp: new Date().toLocaleString('vi-VN'),    // Cột A
+    exams: activeStudent?.examCode || "KHONG_MA",    // Cột B: Mã đề biến đổi (601, 1201...)
+    sbd: activeStudent?.sbd,                         // Cột C
+    name: activeStudent?.name,                       // Cột D
+    class: activeStudent?.class || activeStudent?.className,                 // Cột E (Khớp với className trong props)
+    tongdiem: result.tongdiem, // Cột F
+    time: result.timeUsed                             // Cột G
   };
 
-  console.log("WORD SUBMIT:", payload);
-
-  const targetUrl =
-    API_ROUTING[activeStudent.idgv] || DEFAULT_API_URL;
-
   try {
-    await fetch(targetUrl, {
-      method: 'POST',
-      mode: 'no-cors',
-      body: JSON.stringify(payload)
+    await fetch(targetUrl, { 
+      method: 'POST', 
+      mode: 'no-cors', 
+      body: JSON.stringify(payload) 
     });
-  } catch (error) {
-    console.error("Lỗi gửi đề lẻ:", error);
+    console.log("🚀 Đã nộp bài về Sheet của IDGV:", activeStudent?.idgv);
+  } catch (e) { 
+    console.error("❌ Lỗi nộp bài:", e); 
   }
-
-  goHome();
-};
-  const handleFinishQuiz = (result: any) => {
-
-  const safeScore = Number(result?.totalScore || 0);
-
-  setQuizResult({
-    ...result,
-    totalScore: safeScore
-  });
-
-  setCurrentView('quiz');
 };
 
-
-
- return (
+  return (
     <AppProvider>
       <div className="min-h-screen flex flex-col font-sans selection:bg-blue-100 bg-slate-50 text-slate-900">
         <header className="bg-blue-800 text-white py-8 md:py-12 shadow-2xl text-center relative overflow-hidden border-b-8 border-blue-900 px-4">
@@ -229,26 +194,15 @@ const handleFinishWord = async (result: any) => {
 
             {/* 5. Giao diện làm bài */}
             {currentView === 'quiz' && activeExam && activeStudent && (
-  <ExamRoom
-    questions={questions}
-    studentInfo={{
-      idgv: 'QUIZ',  // chỉ để tránh undefined
-      sbd: activeStudent.sbd,
-      name: activeStudent.name,
-      className: activeStudent.class,
-      examCode: 'QUIZ'
-    }}
-    duration={activeExam.time}
-    minSubmitTime={0}
-    maxTabSwitches={999}
-    scoreMCQ={activeExam.mcqPoints}
-    scoreTF={activeExam.tfPoints}
-    scoreSA={activeExam.saPoints}
-    onFinish={handleFinishQuiz}
-  />
-)}
-         
-            {/* 6. Giao diện làm bài CHÍNH THỨC (Dành cho học sinh làm đề Word) */}
+              <QuizInterface 
+                config={activeExam} 
+                student={activeStudent} 
+                questions={questions} 
+                onFinish={handleFinishExam} 
+                isQuizMode={activeExam.id === 'QUIZ'} 
+              />
+            )}
+            {/* 5. Giao diện làm bài CHÍNH THỨC (Dành cho học sinh làm đề Word) */}
 {currentView === 'exam' && activeExam && activeStudent && (
   <ExamRoom 
     questions={questions}
@@ -257,24 +211,18 @@ const handleFinishWord = async (result: any) => {
       sbd: activeStudent.sbd,
       name: activeStudent.name,
       className: activeStudent.class,
-      examCode: activeExam.code
+      examCode: activeExam.code // Mã đề biến đổi 601, 1001...
     }}
-    duration={activeExam.fullTime || activeExam.time}
-    minSubmitTime={activeStudent.limit || 0}
-    maxTabSwitches={activeStudent.limittab || 99}
-    scoreMCQ={Number(activeExam.scoreMCQ || activeExam.mcqPoints) || 0.25}
-    scoreTF={Number(activeExam.scoreTF || activeExam.tfPoints) || 1.0}
-    scoreSA={Number(activeExam.scoreSA || activeExam.saPoints) || 0.5}
-    onFinish={
-      examMode === 'matrix'
-    ? handleFinishExam
-    : handleFinishWord
-}
-
+    duration={activeExam.fullTime}
+    minSubmitTime={activeExam.miniTime}
+    maxTabSwitches={activeExam.tabLimit}
+   scoreMCQ={Number(activeExam.scoreMCQ) || 0.25}
+   scoreTF={Number(activeExam.scoreTF) || 1.0}
+   scoreSA={Number(activeExam.scoreSA) || 0.5}
+   onFinish={handleFinishWord} // Nộp về sheet(ketqua) 7 cột
   />
 )}
-
-            {/* 7. Kết quả bài thi */}
+            {/* 6. Kết quả bài thi */}
             {currentView === 'result' && examResult && (
               <ResultView result={examResult} questions={questions} onBack={goHome} />
             )}
