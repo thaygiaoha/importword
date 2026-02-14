@@ -35,7 +35,9 @@ const [quizConfig, setQuizConfig] = useState<any>(null);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [user, setUser] = useState<AppUser | null>(null);
   const [showAuth, setShowAuth] = useState(false);
-  const [showVipModal, setShowVipModal] = useState(false);
+  const [showVipModal, setShowVipModal] = useState(false);  
+  const [quizResult, setQuizResult] = useState<any>(null);
+
   const goHome = () => {
     setCurrentView('landing');
     setActiveExam(null);
@@ -83,7 +85,7 @@ const [quizConfig, setQuizConfig] = useState<any>(null);
       usedIds.add(q.id);
       quizQuestions.push({...q, shuffledOptions: q.o ? [...q.o].sort(() => 0.5 - Math.random()) : undefined});
     }
-    setActiveExam({ id: 'QUIZ', title: `Luyện tập Quiz (${num} câu)`, time: 15, mcqPoints: pts, tfPoints: pts, saPoints: pts, gradingScheme: 1 });
+    setActiveExam({ id: 'QUIZ', title: `Luyện tập Quiz (${num} câu)`, time: 15, mcqPoints: pts, tfPoints: pts, saPoints: pts, gradingScheme: 999 });
     setActiveStudent({ 
       sbd: quizStudent.phoneNumber || 'QUIZ_GUEST', 
       name: quizStudent.name || 'Khách', 
@@ -159,6 +161,18 @@ const handleFinishWord = async (result: any) => {
 
   goHome();
 };
+  const handleFinishQuiz = (result: any) => {
+
+  const safeScore = Number(result?.totalScore || 0);
+
+  setQuizResult({
+    ...result,
+    totalScore: safeScore
+  });
+
+  setCurrentView('quiz');
+};
+
 
 
  return (
@@ -223,7 +237,7 @@ const handleFinishWord = async (result: any) => {
                 onFinish={handleFinishExam} 
                 isQuizMode={activeExam.id === 'QUIZ'} 
               />
-            )}
+            )}            
             {/* 6. Giao diện làm bài CHÍNH THỨC (Dành cho học sinh làm đề Word) */}
 {currentView === 'exam' && activeExam && activeStudent && (
   <ExamRoom 
