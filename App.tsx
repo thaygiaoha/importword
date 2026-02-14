@@ -227,17 +227,22 @@ const handleFinishWord = async (result: any) => {
       sbd: activeStudent.sbd,
       name: activeStudent.name,
       className: activeStudent.class,
-      examCode: activeExam.code // Mã đề biến đổi 601, 1001...
+      examCode: activeExam.code
     }}
-    duration={activeExam.fullTime}
-    minSubmitTime={activeExam.miniTime}
-    maxTabSwitches={activeExam.tabLimit}
-   scoreMCQ={Number(activeExam.scoreMCQ) || 0.25}
-   scoreTF={Number(activeExam.scoreTF) || 1.0}
-   scoreSA={Number(activeExam.scoreSA) || 0.5}
-   onFinish={handleFinishWord} // Nộp về sheet(ketqua) 7 cột
+    duration={activeExam.fullTime || activeExam.time}
+    minSubmitTime={activeStudent.limit || 0}
+    maxTabSwitches={activeStudent.limittab || 99}
+    scoreMCQ={Number(activeExam.scoreMCQ || activeExam.mcqPoints) || 0.25}
+    scoreTF={Number(activeExam.scoreTF || activeExam.tfPoints) || 1.0}
+    scoreSA={Number(activeExam.scoreSA || activeExam.saPoints) || 0.5}
+    onFinish={
+      activeExam.id === 'QUIZ' || activeExam.gradingScheme === 1
+        ? handleFinishExam   // 🔵 Ma trận
+        : handleFinishWord   // 🔴 Đề lẻ
+    }
   />
 )}
+
             {/* 7. Kết quả bài thi */}
             {currentView === 'result' && examResult && (
               <ResultView result={examResult} questions={questions} onBack={goHome} />
