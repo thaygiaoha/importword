@@ -1,5 +1,8 @@
-
 export type QuestionType = 'mcq' | 'true-false' | 'short-answer';
+
+// BỔ SUNG: Khai báo để TypeScript không báo lỗi thư viện mammoth (xử lý file Word)
+// @ts-ignore
+declare module 'mammoth';
 
 export interface TrueFalseStatement {
   text: string;
@@ -17,12 +20,10 @@ export interface Question {
   s?: TrueFalseStatement[];
   loigiai?: string;
   shuffledOptions?: string[];
- 
 }
 
-
 export interface Topic {
-  id: number;
+  id: number | string; // Bổ sung: Chấp nhận cả string cho linh hoạt
   name: string;
 }
 
@@ -30,8 +31,8 @@ export interface FixedConfig {
   duration: number;
   numMC: number[]; 
   scoreMC: number;
-  mcL3: number[];
-  mcL4: number[];
+  mcL3: number[]; // Ma trận mức độ C
+  mcL4: number[]; // Ma trận mức độ D
   numTF: number[];
   scoreTF: number;
   tfL3: number[];
@@ -45,7 +46,7 @@ export interface FixedConfig {
 export interface ExamCodeDefinition {
   code: string;
   name: string;
-  topics: number[] | 'manual';
+  topics: number[] | string[] | 'manual';
   fixedConfig?: FixedConfig;
 }
 
@@ -104,4 +105,50 @@ export interface AppUser {
   phoneNumber: string;
   isVip: boolean;
   name?: string;
+}
+
+// ==========================================
+// PHẦN BỔ SUNG MỚI: Dành cho Landing Page & AppContext
+// ==========================================
+
+export interface ClassInfo {
+  id: string;
+  grade: number;
+  title: string;
+  description: string;
+  schedule: string;
+  link: string;
+}
+
+export interface ScheduleGrid {
+  days: string[];
+  classNames: string[];
+  cells: Record<string, string>;
+}
+
+export interface DocumentItem {
+  id: number;
+  title: string;
+  type: string;
+  date: string;
+  downloadUrl: string;
+}
+
+export interface HeroData {
+  badge: string;
+  titleLine1: string;
+  titleLine2: string;
+  description: string;
+}
+
+export interface ContactData {
+  phone: string;
+  email: string;
+  address: string;
+}
+
+export interface RatingData {
+  average: number;
+  total: number;
+  breakdown: Record<number, number>;
 }

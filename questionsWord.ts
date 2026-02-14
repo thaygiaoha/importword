@@ -1,22 +1,7 @@
-
 import { Question } from './types';
-import { DANHGIA_URL, API_ROUTING } from './config';
+import { DANHGIA_URL, API_ROUTING } from './config'; // Nhập API_ROUTING vào đây
 
 export let questionsBankW: Question[] = [];
-
-export const fetchQuestionsBankW = async (): Promise<Question[]> => {
-  try {
-    const response = await fetch(`${DANHGIA_URL}?action=getQuestions`);
-    const result = await response.json();
-    if (result.status === "success" && Array.isArray(result.data)) {
-      questionsBankW = result.data;
-      return questionsBankW;
-    } 
-    return [];
-  } catch (error) {
-    return [];
-  }
-};
 
 const shuffleArray = <T>(array: T[]): T[] => {
   const newArr = [...array];
@@ -27,15 +12,42 @@ const shuffleArray = <T>(array: T[]): T[] => {
   return newArr;
 };
 
-export const pickQuestionsSmart = (
-  topicIds: string[], 
-  counts: { mc: number[], tf: number[], sa: number[] },
-  levels: { mc3: number[], mc4: number[], tf3: number[], tf4: number[], sa3: number[], sa4: number[] }
-) => {
-  if (questionsBank.length === 0) return [];
-  
-  let selected: Question[] = [];
-  // Logic lấy câu hỏi thông minh theo topic và level...
-  // (Giữ logic cũ nhưng sửa các import/export)
-  return shuffleArray(questionsBank).slice(0, 10); // Mock-up logic
+/**
+ * Lấy câu hỏi linh hoạt:
+ * 1. Nếu có customUrl (GV tự nhập link file riêng) -> Dùng luôn.
+ * 2. Nếu có idgv -> Tra cứu trong API_ROUTING.
+ * 3. Nếu không có gì -> Dùng DANHGIA_URL (Admin).
+ */
+export const fetchQuestionsBankW = async (
+  examCode?: string, 
+  idgv?: string, 
+  customUrl?: string
+): Promise<Question[]> => {
+  try {
+    // Logic xác định "đầu nguồn" dữ liệu
+    let targetUrl = DANHGIA_URL;
+    
+    if (customUrl) {
+      targetUrl = customUrl; // Ưu tiên 1: Link GV tự dán vào
+    } else if (idgv && API_ROUTING[idgv]) {
+      targetUrl = API_ROUTING[idgv]; // Ưu tiên 2: Link định tuyến theo ID
+    }
+
+    // Xây dựng URL cuối cùng
+    const finalUrl = examCode 
+      ? `${targetUrl}?action=getQuestionsByCode&examCode=${examCode}`
+      : `${targetUrl}?action=getQuestions`;
+
+    const response = await fetch(finalUrl);
+    const result = await response.json();
+
+    if (result.status === "success" && Array.isArray(result.data)) {
+      questionsBankW = shuffleArray(result.data);
+      return questionsBankW;
+    } 
+    return [];
+  } catch (error) {
+    console.error("Lỗi fetch questions:", error);
+    return [];
+  }
 };
