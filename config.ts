@@ -1,7 +1,7 @@
 
 import { Topic, ExamCodeDefinition, NewsItem, FixedConfig } from './types';
 export const DEFAULT_API_URL = "https://script.google.com/macros/s/AKfycbwZdb9kvZk6acp9aVkZBvsV-4hXpnQOdHYzOS1jHFmvwPsYcjXz7IDBQ8xuF_PgB3Bkkg/exec";
-export const SPREADSHEET_ID_ADMIN = "16w4EzHhTyS1CnTfJOWE7QQNM0o2mMQIqePpPK8TEYrg";
+export const SPREADSHEET_ID_ADMIN = "1LlFAI1J0b7YQ84BL674r2kr3wSoW9shgsXSIXVPDypM"; // Admin 1
 
 export const DANHGIA_URL = DEFAULT_API_URL;
 // Khởi tạo rỗng, chúng ta sẽ lấp đầy nó sau khi App chạy
