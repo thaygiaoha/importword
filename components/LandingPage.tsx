@@ -814,12 +814,15 @@ const handleRedirect = () => {
         <div className="lg:col-span-3 flex flex-col gap-4 order-3">
           {/* CỤM NÚT ĐIỀU KHIỂN */}
           <div className="bg-white p-4 rounded-[2rem] shadow-lg border border-slate-100 flex flex-col gap-3">
-            <button onClick={() => setShowQuizModal({num: 20, pts: 0.5})} className="w-full bg-orange-500 text-white p-4 rounded-2xl font-black text-xs uppercase shadow-lg border-b-4 border-orange-700 hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-2">
-              <i className="fas fa-gift animate-bounce"></i> SĂN QUÀ QUIZ
-            </button>
-            <button className="w-full bg-blue-500 text-white p-4 rounded-2xl font-black text-xs uppercase shadow-lg border-b-4 border-blue-800 hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-2">
-              <i className="fas fa-gamepad animate-bounce"></i> Làm bài kiểm tra
-            </button>
+            <a
+  href="https://thayhabacninh.vercel.app/?grade=12&mode=quiz&num=20&pts=0.5"
+  target="_blank"
+  rel="noopener noreferrer"
+  className="w-full bg-orange-500 text-white p-4 rounded-2xl font-black text-xs uppercase shadow-lg border-b-4 border-orange-700 hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-2"
+>
+  <i className="fas fa-gift animate-bounce"></i>
+  SĂN QUÀ QUIZ
+</a>
            <div className="grid grid-cols-2 gap-2">
  {[12, 11, 10].map(g => (
   <a
