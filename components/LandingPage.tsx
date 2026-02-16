@@ -133,7 +133,7 @@ const [newsList, setNewsList] = useState<{t: string, l: string}[]>([]);
   useEffect(() => {
   const fetchContentData = async () => {
     try {
-      const sheetId = '16w4EzHhTyS1CnTfJOWE7QQNM0o2mMQIqePpPK8TEYrg'; // ID file admin của thầy
+      const sheetId = '1LlFAI1J0b7YQ84BL674r2kr3wSoW9shgsXSIXVPDypM'; // ID file admin của thầy
       const gid = '1501357631'; // THẦY THAY GID CỦA SHEET linkimg VÀO ĐÂY
       const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&gid=${gid}`;
 
@@ -338,7 +338,7 @@ const handleAuth = async (e: React.FormEvent) => {
 
     try {
 
-      const sheetId = '16w4EzHhTyS1CnTfJOWE7QQNM0o2mMQIqePpPK8TEYrg';
+      const sheetId = '1LlFAI1J0b7YQ84BL674r2kr3wSoW9shgsXSIXVPDypM';
       const gid = '1221175482';
       const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&gid=${gid}`;    
 
@@ -414,7 +414,7 @@ useEffect(() => {
 const fetchSchedules = async () => {
 try {
 // Thay YOUR_SHEET_ID và tên sheet 'lichhoc' vào link dưới
-const sheetId = '16w4EzHhTyS1CnTfJOWE7QQNM0o2mMQIqePpPK8TEYrg'; 
+const sheetId = '1LlFAI1J0b7YQ84BL674r2kr3wSoW9shgsXSIXVPDypM'; 
 const sheetName = 'lichhoc';
 const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=${sheetName}`;
 const response = await fetch(url);
