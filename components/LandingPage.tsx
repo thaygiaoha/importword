@@ -815,7 +815,7 @@ const handleRedirect = () => {
           {/* CỤM NÚT ĐIỀU KHIỂN */}
           <div className="bg-white p-4 rounded-[2rem] shadow-lg border border-slate-100 flex flex-col gap-3">
             <a
-  href="https://thayhabacninh.vercel.app/?grade=12&mode=quiz&num=20&pts=0.5"
+  href="https://thayhabacninh.vercel.app/?mode=quiz"
   target="_blank"
   rel="noopener noreferrer"
   className="w-full bg-orange-500 text-white p-4 rounded-2xl font-black text-xs uppercase shadow-lg border-b-4 border-orange-700 hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-2"
